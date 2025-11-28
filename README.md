@@ -15,3 +15,62 @@ This work supports insights for:
 * EaaS providers and commercial/industrial customers
 * International development partners (WB, AfDB, IRENA)
 
+## 🧠 Core Contributions
+This project achieves four technical and strategic contributions:
+### Reservoir-Integrated Supply Modeling
+A representative gas field supplying the power sector is modeled using Arps decline formulations, constraining annual system-level gas availability.
+### Stochastic Multi-Objective Energy System Optimization
+A Pyomo/PyPSA-based optimization framework evaluates trade-offs between cost, emissions, and reliability using ε-constraint Pareto generation.
+### Monte Carlo Risk Analysis
+Gas price, carbon price, and solar CAPEX uncertainties are incorporated through sampling (N=200–500), producing risk-adjusted planning metrics (CVaR, probability of shortage).
+### Demand-Side EaaS Integration
+Energy-as-a-Service business models are incorporated as demand-modifying and reserve-support modules, enabling assessment of distributed energy’s contribution to national supply adequacy.
+
+## 🏗 Repository Structure
+thesis-repo/
+│
+├── data/                    # Clean and processed datasets
+│   ├── demand/              # Demand projections, load profiles
+│   ├── gas/                 # Reservoir decline inputs, analogs
+│   ├── solar/               # PV irradiance datasets
+│   ├── cost/                # CAPEX/OPEX tables
+│   ├── stochastic/          # Probability distributions & samples
+│   └── README.md            # Data provenance and licenses
+│
+├── src/                     # Core modeling modules
+│   ├── gas_supply.py        # Decline curve model (Arps)
+│   ├── demand.py            # Baseline + EaaS-adjusted demand
+│   ├── solar.py             # PV generation + capacity factors
+│   ├── storage.py           # Battery SOC formulation
+│   ├── dispatch.py          # System dispatch & constraints
+│   ├── optimize.py          # Multi-objective optimization
+│   ├── stochastic.py        # Monte Carlo wrapper
+│   ├── scenarios.py         # Scenario configuration
+│   └── utils.py             # Shared utilities / helpers
+│
+├── notebooks/               # Reproducible analysis notebooks
+│   ├── 01_data_exploration.ipynb
+│   ├── 02_prototype_model.ipynb
+│   ├── 03_optimization_runs.ipynb
+│   ├── 04_stochastic_analysis.ipynb
+│   ├── 05_visualizations.ipynb
+│   └── 99_appendix_figures.ipynb
+│
+├── results/                 # Generated figures, tables, scenario outputs
+│   ├── deterministic/
+│   ├── stochastic/
+│   └── figures/
+│
+├── docs/                    # Draft thesis chapters, reports, policy briefs
+│   ├── thesis/
+│   ├── policy_brief/
+│   ├── investor_note/
+│   └── presentation/
+│
+├── tests/                   # Unit and integration tests
+│
+├── environment.yml          # Full environment specification
+├── requirements.txt         # Python dependencies
+├── LICENSE                  # License for code and reproducibility
+└── README.md                # This file
+
