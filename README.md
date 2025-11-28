@@ -27,6 +27,7 @@ Gas price, carbon price, and solar CAPEX uncertainties are incorporated through 
 Energy-as-a-Service business models are incorporated as demand-modifying and reserve-support modules, enabling assessment of distributed energy’s contribution to national supply adequacy.
 
 ## 🏗 Repository Structure
+```
 thesis-repo/
 │
 ├── data/                    # Clean and processed datasets
@@ -73,6 +74,7 @@ thesis-repo/
 ├── requirements.txt         # Python dependencies
 ├── LICENSE                  # License for code and reproducibility
 └── README.md                # This file
+```
 
 ## ⚙️ Software & Dependencies
 This project uses the following major packages:
