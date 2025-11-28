@@ -111,3 +111,35 @@ python src/stochastic.py --scenario high_decline --samples 300
 Step 6: Reporduce all figures
 Open and execute:
 notebooks/05_visualizations.ipynb
+
+## 📊 Outputs
+The model produces:
+* Optimal generation mixes
+* Capacity expansion schedules
+* Cost and LCOE trajectories
+* Emissions pathways
+* Reliability metrics (LOLP / unmet load)
+* Pareto frontiers for cost–emissions–reliability
+* Monte Carlo distributions (LCOE, reliability, solar share)
+* EaaS impact quantification (demand reduction, reserve contribution)
+Accessible in:
+```
+results/deterministic/
+results/stochastic/
+results/figures/
+```
+## 📄 Reproducibility
+This repository follows FAIR principles and includes:
+* Full environment specifications
+* Data provenance documentation
+* Unit tests for core modules
+* Clear module-level docstrings
+* Notebook-based reproducibility pipeline
+Academic examiners, supervisors, and collaborators can fully replicate all results using the included instructions.
+
+## 🧩 Associated Documents
+* Full thesis draft (in docs/thesis/)
+* Policy brief for regulators
+* Investor memo for EaaS providers
+* Conference paper draft
+* Defense presentation slides
