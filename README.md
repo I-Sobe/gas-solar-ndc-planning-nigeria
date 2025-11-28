@@ -143,3 +143,8 @@ Academic examiners, supervisors, and collaborators can fully replicate all resul
 * Investor memo for EaaS providers
 * Conference paper draft
 * Defense presentation slides
+
+## 👤 Author
+Nwangene Sobe-Olisa Andrew
+MSc Petroleum & Energy Resource Engineering
+Specialization: Energy Systems Strategy, Techno-Economic Modeling, Power System Optimization
