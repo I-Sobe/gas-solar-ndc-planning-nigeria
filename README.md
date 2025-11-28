@@ -74,3 +74,38 @@ thesis-repo/
 ├── LICENSE                  # License for code and reproducibility
 └── README.md                # This file
 
+## ⚙️ Software & Dependencies
+This project uses the following major packages:
+* Python 3.10+
+* Pyomo / PyPSA
+* NumPy, Pandas
+* SciPy
+* Matplotlib / Plotly
+* Salib (global sensitivity, if used)
+* tqdm, joblib (parallel Monte Carlo)
+Full environment details:
+* requirements.txt: pip installation
+* environment.yml: Conda environment with solver support
+
+## ▶️ How to Reproduce the Model
+Step 1: Clone the repository
+git clone https://github.com/I-Sobe/thesis-code.git
+cd thesis-code
+
+Step 2: Create environment
+Using Conda
+conda env create -f environment.yml
+conda activate nigeria-energy
+
+Step 3: Run prototype model
+python src/optimize.py --scenario baseline
+
+Step 4: Run deterministic scenario matrix
+python src/scenarios.py --run all_deterministic
+
+Step 5: Ru stochastic wrapper
+python src/stochastic.py --scenario high_decline --samples 300
+
+Step 6: Reporduce all figures
+Open and execute:
+notebooks/05_visualizations.ipynb
