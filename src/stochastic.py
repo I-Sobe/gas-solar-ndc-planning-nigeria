@@ -20,131 +20,71 @@ import pandas as pd
 from src.utils import validate_non_negative
 
 
-def load_carbon_price_data(filepath):
-    """
-    Load cleaned carbon price reference data.
+"""
+stochastic.py
+Monte Carlo simulation and risk analysis wrapper
+"""
 
-    Parameters
-    ----------
-    filepath : str or Path
+import numpy as np
+import pandas as pd
 
-    Returns
-    -------
-    pd.DataFrame
-    """
-    df = pd.read_csv(filepath)
-    df = df.dropna(subset=["carbon_price"])
-    validate_non_negative(df["carbon_price"], "carbon_price")
-    return df
+from src.optimize import run_deterministic_model
 
 
-def fit_lognormal(carbon_prices):
-    """
-    Fit lognormal distribution parameters.
-
-    Parameters
-    ----------
-    carbon_prices : array-like
-
-    Returns
-    -------
-    tuple
-        (mu, sigma)
-    """
-    prices = np.array(carbon_prices)
-    validate_non_negative(prices, "carbon_prices")
-
-    log_prices = np.log(prices)
-    mu = np.mean(log_prices)
-    sigma = np.std(log_prices)
-
-    return mu, sigma
-
-
-def simulate_carbon_prices(
-    mu,
-    sigma,
-    years,
-    n_sims=1000,
-    seed=None
+# -------------------------------------------------
+# UNCERTAINTY SAMPLING
+# -------------------------------------------------
+def sample_uncertainties(
+    N,
+    base_scenario,
+    carbon_mu,
+    carbon_sigma,
+    demand_sigma=0.01,
+    gas_sigma=0.01,
+    seed=None,
 ):
     """
-    Generate Monte Carlo carbon price paths.
-
-    Parameters
-    ----------
-    mu : float
-        Mean of log prices
-    sigma : float
-        Std dev of log prices
-    years : array-like
-        Simulation years
-    n_sims : int
-        Number of Monte Carlo simulations
-    seed : int or None
-
-    Returns
-    -------
-    np.ndarray
-        Shape (n_sims, n_years)
+    Sample uncertain parameters for Monte Carlo simulation.
     """
 
     if seed is not None:
         np.random.seed(seed)
 
-    n_years = len(years)
+    samples = []
 
-    prices = np.random.lognormal(
-        mean=mu,
-        sigma=sigma,
-        size=(n_sims, n_years)
-    )
+    for _ in range(N):
+        scenario = base_scenario.copy()
 
-    return prices
+        # Demand growth uncertainty
+        scenario["demand_growth"] = max(
+            0.0,
+            np.random.normal(
+                base_scenario["demand_growth"],
+                demand_sigma,
+            ),
+        )
+
+        # Gas decline uncertainty
+        scenario["gas_decline"] = max(
+            0.0,
+            np.random.normal(
+                base_scenario["gas_decline"],
+                gas_sigma,
+            ),
+        )
+
+        # Carbon price uncertainty
+        if scenario["carbon_policy"]["active"]:
+            scenario["carbon_policy"] = scenario["carbon_policy"].copy()
+            scenario["carbon_policy"]["price"] = np.random.lognormal(
+                mean=carbon_mu,
+                sigma=carbon_sigma,
+            )
+        else:
+            scenario["carbon_policy"]["price"] = 0.0
+
+        samples.append(scenario)
+
+    return samples
 
 
-def build_carbon_price_scenarios(
-    filepath,
-    years,
-    n_sims=1000,
-    seed=None
-):
-    """
-    End-to-end carbon price scenario generator.
-
-    Parameters
-    ----------
-    filepath : str or Path
-        Path to carbon_price_reference.csv
-    years : array-like
-        Simulation years
-    n_sims : int
-    seed : int or None
-
-    Returns
-    -------
-    dict
-        {
-            "mu": float,
-            "sigma": float,
-            "prices": np.ndarray
-        }
-    """
-
-    df = load_carbon_price_data(filepath)
-
-    mu, sigma = fit_lognormal(df["carbon_price"])
-
-    price_paths = simulate_carbon_prices(
-        mu=mu,
-        sigma=sigma,
-        years=years,
-        n_sims=n_sims,
-        seed=seed
-    )
-
-    return {
-        "mu": mu,
-        "sigma": sigma,
-        "prices": price_paths
-    }
