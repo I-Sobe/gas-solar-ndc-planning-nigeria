@@ -17,7 +17,9 @@ Gas-fired electricity supply under decline constraints
 """
 
 import numpy as np
-from utils import validate_non_negative
+from src.utils import validate_non_negative
+
+#from utils import validate_non_negative
 
 
 def arps_exponential_decline(
