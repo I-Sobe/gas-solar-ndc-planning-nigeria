@@ -15,6 +15,29 @@ Shared utilities and helper functions
 """
 
 import numpy as np
+import yaml
+import os
+
+
+def load_yaml(filepath):
+    """
+    Load a YAML configuration file.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to YAML file
+
+    Returns
+    -------
+    dict
+        Parsed YAML contents
+    """
+    if not os.path.exists(filepath):
+        raise FileNotFoundError(f"YAML file not found: {filepath}")
+
+    with open(filepath, "r") as f:
+        return yaml.safe_load(f)
 
 
 def discount_factor(rate, year):
