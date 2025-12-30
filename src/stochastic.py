@@ -103,4 +103,48 @@ def simulate_carbon_prices(
     return prices
 
 
+def build_carbon_price_scenarios(
+    filepath,
+    years,
+    n_sims=1000,
+    seed=None
+):
+    """
+    End-to-end carbon price scenario generator.
 
+    Parameters
+    ----------
+    filepath : str or Path
+        Path to carbon_price_reference.csv
+    years : array-like
+        Simulation years
+    n_sims : int
+    seed : int or None
+
+    Returns
+    -------
+    dict
+        {
+            "mu": float,
+            "sigma": float,
+            "prices": np.ndarray
+        }
+    """
+
+    df = load_carbon_price_data(filepath)
+
+    mu, sigma = fit_lognormal(df["carbon_price"])
+
+    price_paths = simulate_carbon_prices(
+        mu=mu,
+        sigma=sigma,
+        years=years,
+        n_sims=n_sims,
+        seed=seed
+    )
+
+    return {
+        "mu": mu,
+        "sigma": sigma,
+        "prices": price_paths
+    }
