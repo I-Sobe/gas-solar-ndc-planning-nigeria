@@ -70,3 +70,31 @@ def gas_decline_scenarios():
     }
 
 
+# ----------------------------
+# SOLAR BUILD-OUT SCENARIOS
+# ----------------------------
+def solar_capacity_scenarios():
+    """
+    Solar PV capacity expansion assumptions.
+
+    Returns
+    -------
+    dict
+        initial_capacity_mw, annual_addition_mw
+    """
+    return {
+        "slow": {
+            "initial_capacity_mw": 500,
+            "annual_addition_mw": 200,
+        },
+        "baseline": {
+            "initial_capacity_mw": 500,
+            "annual_addition_mw": 400,
+        },
+        "accelerated": {
+            "initial_capacity_mw": 500,
+            "annual_addition_mw": 700,
+        },
+    }
+
+
