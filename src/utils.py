@@ -78,3 +78,22 @@ def mw_to_twh(power_mw, hours=8760):
     return power_mw * hours / 1e6
 
 
+def assert_non_negative(array, name="value"):
+    """
+    Assert that all elements in an array are non-negative.
+
+    Parameters
+    ----------
+    array : array-like
+    name : str
+
+    Raises
+    ------
+    ValueError
+        If any element is negative
+    """
+    arr = np.asarray(array)
+    if np.any(arr < 0):
+        raise ValueError(f"{name} contains negative values")
+
+
