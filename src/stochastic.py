@@ -88,3 +88,34 @@ def sample_uncertainties(
     return samples
 
 
+# -------------------------------------------------
+# STOCHASTIC EXECUTION
+# -------------------------------------------------
+def run_stochastic_simulation(
+    base_scenario,
+    carbon_mu,
+    carbon_sigma,
+    N=1000,
+    seed=None,
+):
+    """
+    Run Monte Carlo simulation over deterministic model.
+    """
+
+    samples = sample_uncertainties(
+        N=N,
+        base_scenario=base_scenario,
+        carbon_mu=carbon_mu,
+        carbon_sigma=carbon_sigma,
+        seed=seed,
+    )
+
+    results = []
+
+    for scenario in samples:
+        output = run_deterministic_model(scenario)
+        results.append(output["costs"]["total"])
+
+    return np.array(results)
+
+
