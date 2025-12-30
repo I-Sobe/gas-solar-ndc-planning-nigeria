@@ -10,22 +10,25 @@ Functions:
 """
 """
 scenarios.py
-Centralized scenario and assumption definitions
+Scenario Manager
+Defines scenario dictionaries and automates execution of deterministic
+scenario matrices (decline levels, carbon policies, solar build-out cases).
 """
 
+import itertools
+import pandas as pd
 import numpy as np
 
 
+from src.optimize import run_deterministic_model
+
+
 # ----------------------------
-# TIME HORIZON
+# BASE SCENARIO DEFINITIONS
 # ----------------------------
-def planning_horizon(
-    start_year=2025,
-    end_year=2045
-):
+def planning_horizon(start_year=2025, end_year=2045):
     """
     Define planning horizon.
-
     Returns
     -------
     np.ndarray
@@ -34,13 +37,9 @@ def planning_horizon(
     return np.arange(start_year, end_year + 1)
 
 
-# ----------------------------
-# DEMAND SCENARIOS
-# ----------------------------
 def demand_growth_scenarios():
     """
     Annual electricity demand growth assumptions.
-
     Returns
     -------
     dict
@@ -52,13 +51,9 @@ def demand_growth_scenarios():
     }
 
 
-# ----------------------------
-# GAS SUPPLY SCENARIOS
-# ----------------------------
 def gas_decline_scenarios():
     """
     Gas-field decline rate assumptions.
-
     Returns
     -------
     dict
@@ -70,13 +65,9 @@ def gas_decline_scenarios():
     }
 
 
-# ----------------------------
-# SOLAR BUILD-OUT SCENARIOS
-# ----------------------------
 def solar_capacity_scenarios():
     """
     Solar PV capacity expansion assumptions.
-
     Returns
     -------
     dict
@@ -98,15 +89,10 @@ def solar_capacity_scenarios():
     }
 
 
-# ----------------------------
-# CARBON PRICE SCENARIOS
-# ----------------------------
 def carbon_price_cases():
     """
     Carbon policy stance definitions.
-
     These map to stochastic distributions later.
-
     Returns
     -------
     dict
@@ -127,7 +113,7 @@ def carbon_price_cases():
 
 
 # ----------------------------
-# MASTER SCENARIO BUILDER
+# SCENARIO BUILDER / LOADER
 # ----------------------------
 def build_scenario(
     demand_case="baseline",
@@ -138,11 +124,7 @@ def build_scenario(
     end_year=2045,
 ):
     """
-    Build a unified scenario dictionary.
-
-    Returns
-    -------
-    dict
+    Load a single deterministic scenario configuration.
     """
 
     years = planning_horizon(start_year, end_year)
@@ -153,6 +135,12 @@ def build_scenario(
         "gas_decline": gas_decline_scenarios()[gas_case],
         "solar": solar_capacity_scenarios()[solar_case],
         "carbon_policy": carbon_price_cases()[carbon_case],
+        "labels": {
+            "demand": demand_case,
+            "gas": gas_case,
+            "solar": solar_case,
+            "carbon": carbon_case,
+        },
     }
 
     return scenario
