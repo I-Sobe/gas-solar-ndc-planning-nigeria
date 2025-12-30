@@ -98,3 +98,31 @@ def solar_capacity_scenarios():
     }
 
 
+# ----------------------------
+# CARBON PRICE SCENARIOS
+# ----------------------------
+def carbon_price_cases():
+    """
+    Carbon policy stance definitions.
+
+    These map to stochastic distributions later.
+
+    Returns
+    -------
+    dict
+    """
+    return {
+        "no_policy": {
+            "active": False,
+        },
+        "moderate_policy": {
+            "active": True,
+            "multiplier": 1.0,
+        },
+        "stringent_policy": {
+            "active": True,
+            "multiplier": 1.5,
+        },
+    }
+
+
