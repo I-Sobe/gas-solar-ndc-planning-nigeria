@@ -146,3 +146,26 @@ def year_index(start_year, end_year):
     np.ndarray
     """
     return np.arange(start_year, end_year + 1)
+
+
+def save_results(output, filepath):
+    """
+    Save model results to disk.
+
+    Parameters
+    ----------
+    output : dict or array-like
+        Model results to persist
+    filepath : str
+        Output file path ('.npz' or '.npy')
+
+    Returns
+    -------
+    None
+    """
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+    if isinstance(output, dict):
+        np.savez(filepath, **output)
+    else:
+        np.save(filepath, output)
