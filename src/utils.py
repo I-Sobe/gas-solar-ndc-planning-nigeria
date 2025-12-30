@@ -59,3 +59,22 @@ def interpolate_series(series, method="linear"):
     return np.interp(x, x[mask], series[mask])
 
 
+def mw_to_twh(power_mw, hours=8760):
+    """
+    Convert average power (MW) to energy (TWh).
+
+    Parameters
+    ----------
+    power_mw : float or array-like
+        Average power level in MW
+    hours : int, optional
+        Number of hours (default: 8760)
+
+    Returns
+    -------
+    float or array-like
+        Energy in TWh
+    """
+    return power_mw * hours / 1e6
+
+
