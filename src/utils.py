@@ -97,3 +97,17 @@ def assert_non_negative(array, name="value"):
         raise ValueError(f"{name} contains negative values")
 
 
+def year_index(start_year, end_year):
+    """
+    Generate an inclusive year index.
+
+    Parameters
+    ----------
+    start_year : int
+    end_year : int
+
+    Returns
+    -------
+    np.ndarray
+    """
+    return np.arange(start_year, end_year + 1)
