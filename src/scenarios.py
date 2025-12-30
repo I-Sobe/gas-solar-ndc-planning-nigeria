@@ -144,3 +144,66 @@ def build_scenario(
     }
 
     return scenario
+
+
+
+# -------------------------------------------------
+# SCENARIO MATRIX EXECUTION
+# -------------------------------------------------
+def run_all_scenarios(
+    start_year=2025,
+    end_year=2045,
+):
+    """
+    Execute deterministic model across all scenario combinations.
+
+    Returns
+    -------
+    pd.DataFrame
+        Summary results for all scenarios
+    """
+
+    results = []
+
+    demand_cases = demand_growth_scenarios().keys()
+    gas_cases = gas_decline_scenarios().keys()
+    solar_cases = solar_capacity_scenarios().keys()
+    carbon_cases = carbon_price_cases().keys()
+
+    for (
+        demand_case,
+        gas_case,
+        solar_case,
+        carbon_case,
+    ) in itertools.product(
+        demand_cases,
+        gas_cases,
+        solar_cases,
+        carbon_cases,
+    ):
+
+        scenario = load_scenario(
+            demand_case=demand_case,
+            gas_case=gas_case,
+            solar_case=solar_case,
+            carbon_case=carbon_case,
+            start_year=start_year,
+            end_year=end_year,
+        )
+
+        output = run_deterministic_model(scenario)
+
+        results.append({
+            "demand_case": demand_case,
+            "gas_case": gas_case,
+            "solar_case": solar_case,
+            "carbon_case": carbon_case,
+            "total_cost": output["costs"]["total"],
+            "gas_cost": output["costs"]["gas"],
+            "solar_cost": output["costs"]["solar"],
+            "carbon_cost": output["costs"]["carbon"],
+            "unserved_cost": output["costs"]["unserved"],
+            "total_unserved_energy": np.sum(output["unserved"]),
+        })
+
+    return pd.DataFrame(results)
