@@ -18,8 +18,7 @@ System-level energy dispatch and balance
 """
 
 import numpy as np
-from src.utils import validate_non_negative
-
+from src.utils import assert_non_negative
 
 def dispatch_energy(
     years,
@@ -59,9 +58,9 @@ def dispatch_energy(
     gas_generation = np.array(gas_generation)
     solar_generation = np.array(solar_generation)
 
-    validate_non_negative(demand, "demand")
-    validate_non_negative(gas_generation, "gas_generation")
-    validate_non_negative(solar_generation, "solar_generation")
+    assert_non_negative(demand, "demand")
+    assert_non_negative(gas_generation, "gas_generation")
+    assert_non_negative(solar_generation, "solar_generation")
 
     n = len(years)
 

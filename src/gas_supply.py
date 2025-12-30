@@ -17,10 +17,10 @@ Gas-fired electricity supply under decline constraints
 """
 
 import numpy as np
-from src.utils import validate_non_negative
+from src.utils import assert_non_negative
 
-#from utils import validate_non_negative
 
+#from utils import assert_non_negative
 
 def arps_exponential_decline(
     q0,
@@ -45,12 +45,12 @@ def arps_exponential_decline(
         Gas generation per year (TWh)
     """
 
-    validate_non_negative([q0], "q0")
+    assert_non_negative([q0], "q0")
 
     t = np.array(years)
     generation = q0 * np.exp(-decline_rate * t)
 
-    validate_non_negative(generation, "gas generation")
+    assert_non_negative(generation, "gas generation")
 
     return generation
 

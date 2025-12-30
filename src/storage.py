@@ -14,8 +14,7 @@ Battery energy storage model (energy-level abstraction)
 """
 
 import numpy as np
-from src.utils import validate_non_negative
-
+from src.utils import assert_non_negative
 
 class BatteryStorage:
     """
@@ -42,7 +41,7 @@ class BatteryStorage:
             Initial state of charge (MWh)
         """
 
-        validate_non_negative(
+        assert_non_negative(
             [energy_capacity_mwh, power_capacity_mw, initial_soc],
             "storage parameters"
         )
@@ -74,7 +73,7 @@ class BatteryStorage:
             Energy actually stored (MWh)
         """
 
-        validate_non_negative([energy_mwh], "charge energy")
+        assert_non_negative([energy_mwh], "charge energy")
 
         max_charge = self.power_capacity * 8760
         charge_energy = min(energy_mwh, max_charge)
@@ -102,7 +101,7 @@ class BatteryStorage:
             Energy actually delivered (MWh)
         """
 
-        validate_non_negative([energy_mwh], "discharge energy")
+        assert_non_negative([energy_mwh], "discharge energy")
 
         max_discharge = self.power_capacity * 8760
         discharge_energy = min(energy_mwh, max_discharge)

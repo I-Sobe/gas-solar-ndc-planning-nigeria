@@ -17,8 +17,7 @@ Carbon price stochastic modeling
 
 import numpy as np
 import pandas as pd
-from src.utils import validate_non_negative
-
+from src.utils import assert_non_negative
 
 """
 stochastic.py
@@ -28,7 +27,7 @@ Monte Carlo simulation and risk analysis wrapper
 import numpy as np
 import pandas as pd
 
-from src.optimize import run_deterministic_model
+from optimize_model import run_deterministic_model
 
 
 # -------------------------------------------------

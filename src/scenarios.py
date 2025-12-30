@@ -20,7 +20,7 @@ import pandas as pd
 import numpy as np
 
 
-from src.optimize import run_deterministic_model
+from optimize_model import run_deterministic_model
 
 
 # ----------------------------

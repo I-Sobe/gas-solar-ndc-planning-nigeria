@@ -16,8 +16,7 @@ Solar photovoltaic electricity generation model
 """
 
 import numpy as np
-from src.utils import validate_non_negative
-
+from src.utils import assert_non_negative
 
 HOURS_PER_YEAR = 8760
 
@@ -45,8 +44,8 @@ def solar_generation(
     capacity_mw = np.array(capacity_mw)
     capacity_factor = np.array(capacity_factor)
 
-    validate_non_negative(capacity_mw, "capacity_mw")
-    validate_non_negative(capacity_factor, "capacity_factor")
+    assert_non_negative(capacity_mw, "capacity_mw")
+    assert_non_negative(capacity_factor, "capacity_factor")
 
     generation_mwh = capacity_mw * capacity_factor * HOURS_PER_YEAR
     generation_twh = generation_mwh / 1e6
@@ -81,15 +80,15 @@ def solar_capacity_trajectory(
         }
     """
 
-    validate_non_negative([initial_capacity_mw], "initial_capacity_mw")
-    validate_non_negative([annual_addition_mw], "annual_addition_mw")
+    assert_non_negative([initial_capacity_mw], "initial_capacity_mw")
+    assert_non_negative([annual_addition_mw], "annual_addition_mw")
 
     years = np.arange(start_year, end_year + 1)
     t = years - start_year
 
     capacity = initial_capacity_mw + annual_addition_mw * t
 
-    validate_non_negative(capacity, "capacity")
+    assert_non_negative(capacity, "capacity")
 
     return {
         "years": years,

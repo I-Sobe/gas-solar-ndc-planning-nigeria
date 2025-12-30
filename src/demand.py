@@ -16,7 +16,8 @@ Electricity demand projection model
 """
 
 import numpy as np
-from src.utils import validate_non_negative
+from src.utils import assert_non_negative
+
 
 
 def project_baseline_demand(
@@ -46,14 +47,14 @@ def project_baseline_demand(
         }
     """
 
-    validate_non_negative([base_demand], "base_demand")
+    assert_non_negative([base_demand], "base_demand")
 
     years = np.arange(start_year, end_year + 1)
     t = years - start_year
 
     demand = base_demand * (1 + growth_rate) ** t
 
-    validate_non_negative(demand, "demand")
+    assert_non_negative(demand, "demand")
 
     return {
         "years": years,
@@ -84,8 +85,8 @@ def apply_access_adjustment(
         Access-adjusted demand (TWh)
     """
 
-    validate_non_negative(demand, "demand")
-    validate_non_negative(access_series, "access_series")
+    assert_non_negative(demand, "demand")
+    assert_non_negative(access_series, "access_series")
 
     adjustment_factor = np.array(access_series) / base_access
 
