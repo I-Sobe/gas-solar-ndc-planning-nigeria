@@ -52,3 +52,21 @@ def demand_growth_scenarios():
     }
 
 
+# ----------------------------
+# GAS SUPPLY SCENARIOS
+# ----------------------------
+def gas_decline_scenarios():
+    """
+    Gas-field decline rate assumptions.
+
+    Returns
+    -------
+    dict
+    """
+    return {
+        "low_decline": 0.03,
+        "baseline": 0.06,
+        "high_decline": 0.09,
+    }
+
+
