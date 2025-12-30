@@ -30,25 +30,26 @@ Energy-as-a-Service business models are incorporated as demand-modifying and res
 ```
 thesis-repo/
 │
-├── data/                    # Clean and processed datasets
-│   ├── demand/              # Demand projections, load profiles
-│   ├── gas/                 # Reservoir decline inputs, analogs
-│   ├── solar/               # PV irradiance datasets
-│   ├── cost/                # CAPEX/OPEX tables
-│   ├── stochastic/          # Probability distributions & samples
-│   └── README.md            # Data provenance and licenses
+├── data/                           # Clean and processed datasets
+│   ├── demand/                     # Demand projections, load profiles
+│   ├── gas/                        # Reservoir decline inputs, analogs
+│   ├── solar/                      # PV irradiance datasets
+│   ├── cost/                       # CAPEX/OPEX tables
+│   ├── stochastic/                 # Probability distributions & samples
+│   └── README.md                   # Data provenance and licenses
 │
-├── src/                     # Core modeling modules
-│   ├── gas_supply.py        # Decline curve model (Arps)
-│   ├── demand.py            # Baseline + EaaS-adjusted demand
-│   ├── solar.py             # PV generation + capacity factors
-│   ├── storage.py           # Battery SOC formulation
-│   ├── dispatch.py          # System dispatch & constraints
-│   ├── optimize.py          # Multi-objective optimization
-│   ├── stochastic.py        # Monte Carlo wrapper
-│   ├── scenarios.py         # Scenario configuration
-│   ├── economics.py         # Economic Evaluation Utilities 
-│   └── utils.py             # Shared utilities / helpers
+├── src/                            # Core modeling modules
+│   ├── gas_supply.py               # Decline curve model (Arps)
+│   ├── demand.py                   # Baseline + EaaS-adjusted demand
+│   ├── solar.py                    # PV generation + capacity factors
+│   ├── storage.py                  # Battery SOC formulation
+│   ├── dispatch.py                 # System dispatch & constraints
+│   ├── optimize_model.py           # model construction + solve only
+│   ├── optimize_experiments.py     # model construction + solve only
+│   ├── stochastic.py               # Monte Carlo wrapper
+│   ├── scenarios.py                # Scenario configuration
+│   ├── economics.py                # Economic Evaluation Utilities 
+│   └── utils.py                    # Shared utilities / helpers
 |   
 │
 ├── notebooks/               # Reproducible analysis notebooks
