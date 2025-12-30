@@ -1,49 +1,43 @@
 """
-Scenario Manager
+Scenario Definitions Module (Configuration Only)
 
-Defines scenario dictionaries and automates execution of deterministic
-scenario matrices (e.g., decline levels, carbon prices, EaaS cases).
+Scope
+-----
+Defines deterministic planning scenarios as structured parameter
+dictionaries for use in system evaluation and optimization studies.
 
-Functions:
-    load_scenario(name)
-    run_all_scenarios()
-"""
-"""
-scenarios.py
-Scenario Manager
-Defines scenario dictionaries and automates execution of deterministic
-scenario matrices (decline levels, carbon policies, solar build-out cases).
+This module provides scenario DEFINITIONS ONLY.
+It does NOT execute models, run experiments, or aggregate results.
+
 """
 
-import itertools
-import pandas as pd
 import numpy as np
 
 
-from optimize_model import run_deterministic_model
+# ============================================================
+# PLANNING HORIZON
+# ============================================================
 
-
-# ----------------------------
-# BASE SCENARIO DEFINITIONS
-# ----------------------------
 def planning_horizon(start_year=2025, end_year=2045):
     """
-    Define planning horizon.
+    Define the planning horizon.
+
     Returns
     -------
     np.ndarray
-        Array of simulation years
+        Array of simulation years (annual resolution)
     """
+    if end_year < start_year:
+        raise ValueError("end_year must be >= start_year")
     return np.arange(start_year, end_year + 1)
 
 
+# ============================================================
+# SCENARIO REGISTRIES
+# ============================================================
+
 def demand_growth_scenarios():
-    """
-    Annual electricity demand growth assumptions.
-    Returns
-    -------
-    dict
-    """
+    """Annual electricity demand growth assumptions."""
     return {
         "low": 0.025,
         "baseline": 0.04,
@@ -52,12 +46,7 @@ def demand_growth_scenarios():
 
 
 def gas_decline_scenarios():
-    """
-    Gas-field decline rate assumptions.
-    Returns
-    -------
-    dict
-    """
+    """Gas-field decline rate assumptions (physical depletion only)."""
     return {
         "low_decline": 0.03,
         "baseline": 0.06,
@@ -66,55 +55,49 @@ def gas_decline_scenarios():
 
 
 def solar_capacity_scenarios():
-    """
-    Solar PV capacity expansion assumptions.
-    Returns
-    -------
-    dict
-        initial_capacity_mw, annual_addition_mw
-    """
+    """Solar PV capacity expansion assumptions."""
     return {
         "slow": {
-            "initial_capacity_mw": 500,
-            "annual_addition_mw": 200,
+            "solar_baseline_mw": 500,
+            "solar_addition_mw": 200,
         },
         "baseline": {
-            "initial_capacity_mw": 500,
-            "annual_addition_mw": 400,
+            "solar_baseline_mw": 500,
+            "solar_addition_mw": 400,
         },
         "accelerated": {
-            "initial_capacity_mw": 500,
-            "annual_addition_mw": 700,
+            "solar_baseline_mw": 500,
+            "solar_addition_mw": 700,
         },
     }
 
 
-def carbon_price_cases():
+def carbon_policy_scenarios():
     """
-    Carbon policy stance definitions.
-    These map to stochastic distributions later.
-    Returns
-    -------
-    dict
+    Carbon policy stances (deterministic).
+
+    Carbon price anchor is applied elsewhere via economics.
     """
     return {
         "no_policy": {
-            "active": False,
+            "carbon_active": False,
+            "carbon_price": 0.0,
         },
         "moderate_policy": {
-            "active": True,
-            "multiplier": 1.0,
+            "carbon_active": True,
+            "carbon_price": 50.0,
         },
         "stringent_policy": {
-            "active": True,
-            "multiplier": 1.5,
+            "carbon_active": True,
+            "carbon_price": 75.0,
         },
     }
 
 
-# ----------------------------
-# SCENARIO BUILDER / LOADER
-# ----------------------------
+# ============================================================
+# SCENARIO CONSTRUCTOR
+# ============================================================
+
 def load_scenario(
     demand_case="baseline",
     gas_case="baseline",
@@ -124,17 +107,52 @@ def load_scenario(
     end_year=2045,
 ):
     """
-    Load a single deterministic scenario configuration.
+    Construct a deterministic planning scenario.
+
+    Returns
+    -------
+    dict
+        Scenario parameter dictionary consumed by downstream
+        evaluation and optimization modules.
     """
+
+    # ---- Validate labels
+    if demand_case not in demand_growth_scenarios():
+        raise ValueError(f"Unknown demand_case: {demand_case}")
+    if gas_case not in gas_decline_scenarios():
+        raise ValueError(f"Unknown gas_case: {gas_case}")
+    if solar_case not in solar_capacity_scenarios():
+        raise ValueError(f"Unknown solar_case: {solar_case}")
+    if carbon_case not in carbon_policy_scenarios():
+        raise ValueError(f"Unknown carbon_case: {carbon_case}")
 
     years = planning_horizon(start_year, end_year)
 
     scenario = {
+        # ---- Temporal
         "years": years,
+
+        # ---- Demand
+        "base_demand_twh": 30.0,
         "demand_growth": demand_growth_scenarios()[demand_case],
+
+        # ---- Gas supply
+        "gas_q0_twh": 40.0,
         "gas_decline": gas_decline_scenarios()[gas_case],
-        "solar": solar_capacity_scenarios()[solar_case],
-        "carbon_policy": carbon_price_cases()[carbon_case],
+
+        # ---- Solar
+        "solar_cf": 0.22,
+        **solar_capacity_scenarios()[solar_case],
+
+        # ---- Storage (operational diagnostics)
+        "storage_mwh": 20_000,
+        "storage_mw": 2_000,
+        "storage_eff": 0.9,
+
+        # ---- Carbon policy
+        **carbon_policy_scenarios()[carbon_case],
+
+        # ---- Labels (for reporting)
         "labels": {
             "demand": demand_case,
             "gas": gas_case,
@@ -144,66 +162,3 @@ def load_scenario(
     }
 
     return scenario
-
-
-
-# -------------------------------------------------
-# SCENARIO MATRIX EXECUTION
-# -------------------------------------------------
-def run_all_scenarios(
-    start_year=2025,
-    end_year=2045,
-):
-    """
-    Execute deterministic model across all scenario combinations.
-
-    Returns
-    -------
-    pd.DataFrame
-        Summary results for all scenarios
-    """
-
-    results = []
-
-    demand_cases = demand_growth_scenarios().keys()
-    gas_cases = gas_decline_scenarios().keys()
-    solar_cases = solar_capacity_scenarios().keys()
-    carbon_cases = carbon_price_cases().keys()
-
-    for (
-        demand_case,
-        gas_case,
-        solar_case,
-        carbon_case,
-    ) in itertools.product(
-        demand_cases,
-        gas_cases,
-        solar_cases,
-        carbon_cases,
-    ):
-
-        scenario = load_scenario(
-            demand_case=demand_case,
-            gas_case=gas_case,
-            solar_case=solar_case,
-            carbon_case=carbon_case,
-            start_year=start_year,
-            end_year=end_year,
-        )
-
-        output = run_deterministic_model(scenario)
-
-        results.append({
-            "demand_case": demand_case,
-            "gas_case": gas_case,
-            "solar_case": solar_case,
-            "carbon_case": carbon_case,
-            "total_cost": output["costs"]["total"],
-            "gas_cost": output["costs"]["gas"],
-            "solar_cost": output["costs"]["solar"],
-            "carbon_cost": output["costs"]["carbon"],
-            "unserved_cost": output["costs"]["unserved"],
-            "total_unserved_energy": np.sum(output["unserved"]),
-        })
-
-    return pd.DataFrame(results)
