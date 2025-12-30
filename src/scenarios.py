@@ -34,3 +34,21 @@ def planning_horizon(
     return np.arange(start_year, end_year + 1)
 
 
+# ----------------------------
+# DEMAND SCENARIOS
+# ----------------------------
+def demand_growth_scenarios():
+    """
+    Annual electricity demand growth assumptions.
+
+    Returns
+    -------
+    dict
+    """
+    return {
+        "low": 0.025,
+        "baseline": 0.04,
+        "high": 0.06,
+    }
+
+
