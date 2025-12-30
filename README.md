@@ -47,7 +47,9 @@ thesis-repo/
 │   ├── optimize.py          # Multi-objective optimization
 │   ├── stochastic.py        # Monte Carlo wrapper
 │   ├── scenarios.py         # Scenario configuration
+│   ├── economics.py         # Economic Evaluation Utilities 
 │   └── utils.py             # Shared utilities / helpers
+|   
 │
 ├── notebooks/               # Reproducible analysis notebooks
 │   ├── 01_data_exploration.ipynb
