@@ -126,3 +126,33 @@ def carbon_price_cases():
     }
 
 
+# ----------------------------
+# MASTER SCENARIO BUILDER
+# ----------------------------
+def build_scenario(
+    demand_case="baseline",
+    gas_case="baseline",
+    solar_case="baseline",
+    carbon_case="moderate_policy",
+    start_year=2025,
+    end_year=2045,
+):
+    """
+    Build a unified scenario dictionary.
+
+    Returns
+    -------
+    dict
+    """
+
+    years = planning_horizon(start_year, end_year)
+
+    scenario = {
+        "years": years,
+        "demand_growth": demand_growth_scenarios()[demand_case],
+        "gas_decline": gas_decline_scenarios()[gas_case],
+        "solar": solar_capacity_scenarios()[solar_case],
+        "carbon_policy": carbon_price_cases()[carbon_case],
+    }
+
+    return scenario
