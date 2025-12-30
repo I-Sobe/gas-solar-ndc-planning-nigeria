@@ -115,7 +115,7 @@ def carbon_price_cases():
 # ----------------------------
 # SCENARIO BUILDER / LOADER
 # ----------------------------
-def build_scenario(
+def load_scenario(
     demand_case="baseline",
     gas_case="baseline",
     solar_case="baseline",
