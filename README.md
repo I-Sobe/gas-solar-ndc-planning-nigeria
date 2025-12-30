@@ -49,6 +49,7 @@ thesis-repo/
 │   ├── stochastic.py               # Monte Carlo wrapper
 │   ├── scenarios.py                # Scenario configuration
 │   ├── economics.py                # Economic Evaluation Utilities 
+│   ├── EaaS.py                     # transforms system parameters
 │   └── utils.py                    # Shared utilities / helpers
 |   
 │

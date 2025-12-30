@@ -1,38 +1,46 @@
 """
-Stochastic Simulation Module
+Stochastic Sensitivity Analysis Module (Exploratory)
 
-Implements Monte Carlo sampling for uncertain variables including
-gas price, carbon price, solar CAPEX, and demand growth. Wraps the
-deterministic optimization model to generate risk-adjusted metrics.
+Scope
+-----
+Implements exploratory Monte Carlo sensitivity analysis for a
+limited set of exogenous uncertainties in the national gas–solar
+planning model.
 
-Functions:
-    sample_uncertainties(N, distributions)
-    run_stochastic_optimization(base_model, samples)
-    compute_risk_metrics(results)
-"""
-"""
-stochastic.py
-Carbon price stochastic modeling
+This module perturbs selected scenario parameters and repeatedly
+runs the deterministic system evaluation to assess robustness of
+aggregate outcomes (e.g. total system cost).
+
+Modeled uncertainties
+---------------------
+- Electricity demand growth rate
+- Gas supply decline rate
+- Carbon price level (exogenous)
+
+Non-scope
+---------
+- Stochastic optimization or chance constraints
+- Decision-variable distributions
+- Endogenous policy response
+- Correlated uncertainties
+- Energy-as-a-Service (EaaS) logic
+
+Important
+---------
+Results are intended as robustness and risk diagnostics, not as
+probabilistic forecasts or optimal stochastic decisions.
 """
 
+import copy
 import numpy as np
-import pandas as pd
-from src.utils import assert_non_negative
 
-"""
-stochastic.py
-Monte Carlo simulation and risk analysis wrapper
-"""
-
-import numpy as np
-import pandas as pd
-
-from optimize_model import run_deterministic_model
+from src.optimize_experiments import run_deterministic_scenario
 
 
-# -------------------------------------------------
+# ============================================================
 # UNCERTAINTY SAMPLING
-# -------------------------------------------------
+# ============================================================
+
 def sample_uncertainties(
     N,
     base_scenario,
@@ -43,7 +51,28 @@ def sample_uncertainties(
     seed=None,
 ):
     """
-    Sample uncertain parameters for Monte Carlo simulation.
+    Generate Monte Carlo samples of exogenous uncertainties.
+
+    Parameters
+    ----------
+    N : int
+        Number of Monte Carlo samples
+    base_scenario : dict
+        Deterministic scenario dictionary
+    carbon_mu : float
+        Mean of lognormal carbon price distribution (log-space)
+    carbon_sigma : float
+        Standard deviation of lognormal carbon price distribution
+    demand_sigma : float, optional
+        Standard deviation of demand growth perturbation
+    gas_sigma : float, optional
+        Standard deviation of gas decline perturbation
+    seed : int or None
+
+    Returns
+    -------
+    list of dict
+        Independent scenario realizations
     """
 
     if seed is not None:
@@ -52,9 +81,10 @@ def sample_uncertainties(
     samples = []
 
     for _ in range(N):
-        scenario = base_scenario.copy()
+        # ---- Deep copy to avoid cross-sample contamination
+        scenario = copy.deepcopy(base_scenario)
 
-        # Demand growth uncertainty
+        # ---- Demand growth uncertainty (truncated normal)
         scenario["demand_growth"] = max(
             0.0,
             np.random.normal(
@@ -63,7 +93,7 @@ def sample_uncertainties(
             ),
         )
 
-        # Gas decline uncertainty
+        # ---- Gas decline uncertainty (truncated normal)
         scenario["gas_decline"] = max(
             0.0,
             np.random.normal(
@@ -72,9 +102,8 @@ def sample_uncertainties(
             ),
         )
 
-        # Carbon price uncertainty
+        # ---- Carbon price uncertainty (lognormal, exogenous)
         if scenario["carbon_policy"]["active"]:
-            scenario["carbon_policy"] = scenario["carbon_policy"].copy()
             scenario["carbon_policy"]["price"] = np.random.lognormal(
                 mean=carbon_mu,
                 sigma=carbon_sigma,
@@ -87,18 +116,37 @@ def sample_uncertainties(
     return samples
 
 
-# -------------------------------------------------
-# STOCHASTIC EXECUTION
-# -------------------------------------------------
+# ============================================================
+# STOCHASTIC EXECUTION (DETERMINISTIC WRAPPER)
+# ============================================================
+
 def run_stochastic_simulation(
     base_scenario,
+    econ,
     carbon_mu,
     carbon_sigma,
-    N=1000,
+    N=500,
     seed=None,
 ):
     """
-    Run Monte Carlo simulation over deterministic model.
+    Run Monte Carlo sensitivity analysis using deterministic evaluation.
+
+    Parameters
+    ----------
+    base_scenario : dict
+        Baseline deterministic scenario
+    econ : dict
+        Economic parameters passed through unchanged
+    carbon_mu : float
+    carbon_sigma : float
+    N : int
+        Number of Monte Carlo samples
+    seed : int or None
+
+    Returns
+    -------
+    np.ndarray
+        Total system cost outcomes (USD)
     """
 
     samples = sample_uncertainties(
@@ -109,27 +157,45 @@ def run_stochastic_simulation(
         seed=seed,
     )
 
-    results = []
+    outcomes = np.zeros(N)
 
-    for scenario in samples:
-        output = run_deterministic_model(scenario)
-        results.append(output["costs"]["total"])
+    for i, scenario in enumerate(samples):
+        output = run_deterministic_scenario(
+            scenario=scenario,
+            econ=econ,
+        )
+        outcomes[i] = output["costs"]["total"]
 
-    return np.array(results)
+    return outcomes
 
 
-# -------------------------------------------------
+# ============================================================
 # RISK METRICS
-# -------------------------------------------------
-def compute_risk_metrics(
-    values,
-    alpha=0.95,
-):
+# ============================================================
+
+def compute_risk_metrics(values, alpha=0.95):
     """
-    Compute risk metrics from Monte Carlo outputs.
+    Compute basic risk metrics from Monte Carlo outcomes.
+
+    Parameters
+    ----------
+    values : array-like
+        Scalar outcomes (e.g. total cost)
+    alpha : float
+        Confidence level for VaR / CVaR
+
+    Returns
+    -------
+    dict
+        {
+            "expected": float,
+            "variance": float,
+            "VaR": float,
+            "CVaR": float
+        }
     """
 
-    values = np.array(values)
+    values = np.asarray(values, dtype=float)
 
     expected = np.mean(values)
     variance = np.var(values)
@@ -137,7 +203,7 @@ def compute_risk_metrics(
     cvar = values[values >= var].mean()
 
     return {
-        "expected_cost": expected,
+        "expected": expected,
         "variance": variance,
         "VaR": var,
         "CVaR": cvar,
