@@ -40,6 +40,41 @@ def load_yaml(filepath):
         return yaml.safe_load(f)
 
 
+def interpolate_series(series, method="linear"):
+    """
+    Interpolate missing values in a 1D numeric series.
+
+    Parameters
+    ----------
+    series : array-like
+        Input data with possible NaNs
+    method : str
+        Interpolation method ('linear' only supported)
+
+    Returns
+    -------
+    np.ndarray
+        Interpolated series
+    """
+    series = np.asarray(series, dtype=float)
+
+    if method != "linear":
+        raise NotImplementedError(
+            "Only linear interpolation is supported for thesis scope"
+        )
+
+    if np.all(np.isfinite(series)):
+        return series
+
+    x = np.arange(len(series))
+    mask = np.isfinite(series)
+
+    if mask.sum() < 2:
+        raise ValueError("Insufficient data points for interpolation")
+
+    return np.interp(x, x[mask], series[mask])
+
+
 def discount_factor(rate, year):
     """
     Compute discount factor for a given year.
