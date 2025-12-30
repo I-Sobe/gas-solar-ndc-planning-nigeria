@@ -119,3 +119,27 @@ def run_stochastic_simulation(
     return np.array(results)
 
 
+# -------------------------------------------------
+# RISK METRICS
+# -------------------------------------------------
+def compute_risk_metrics(
+    values,
+    alpha=0.95,
+):
+    """
+    Compute risk metrics from Monte Carlo outputs.
+    """
+
+    values = np.array(values)
+
+    expected = np.mean(values)
+    variance = np.var(values)
+    var = np.quantile(values, alpha)
+    cvar = values[values >= var].mean()
+
+    return {
+        "expected_cost": expected,
+        "variance": variance,
+        "VaR": var,
+        "CVaR": cvar,
+    }
