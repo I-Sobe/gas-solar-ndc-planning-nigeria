@@ -38,4 +38,27 @@ def load_carbon_price_data(filepath):
     return df
 
 
+def fit_lognormal(carbon_prices):
+    """
+    Fit lognormal distribution parameters.
+
+    Parameters
+    ----------
+    carbon_prices : array-like
+
+    Returns
+    -------
+    tuple
+        (mu, sigma)
+    """
+    prices = np.array(carbon_prices)
+    validate_non_negative(prices, "carbon_prices")
+
+    log_prices = np.log(prices)
+    mu = np.mean(log_prices)
+    sigma = np.std(log_prices)
+
+    return mu, sigma
+
+
 
