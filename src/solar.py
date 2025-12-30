@@ -54,3 +54,44 @@ def solar_generation(
     return generation_twh
 
 
+def solar_capacity_trajectory(
+    initial_capacity_mw,
+    annual_addition_mw,
+    start_year,
+    end_year
+):
+    """
+    Construct a linear solar capacity build-out trajectory.
+
+    Parameters
+    ----------
+    initial_capacity_mw : float
+        Installed capacity in start_year (MW)
+    annual_addition_mw : float
+        New capacity added per year (MW/year)
+    start_year : int
+    end_year : int
+
+    Returns
+    -------
+    dict
+        {
+            "years": np.ndarray,
+            "capacity_mw": np.ndarray
+        }
+    """
+
+    validate_non_negative([initial_capacity_mw], "initial_capacity_mw")
+    validate_non_negative([annual_addition_mw], "annual_addition_mw")
+
+    years = np.arange(start_year, end_year + 1)
+    t = years - start_year
+
+    capacity = initial_capacity_mw + annual_addition_mw * t
+
+    validate_non_negative(capacity, "capacity")
+
+    return {
+        "years": years,
+        "capacity_mw": capacity
+    }
