@@ -61,4 +61,46 @@ def fit_lognormal(carbon_prices):
     return mu, sigma
 
 
+def simulate_carbon_prices(
+    mu,
+    sigma,
+    years,
+    n_sims=1000,
+    seed=None
+):
+    """
+    Generate Monte Carlo carbon price paths.
+
+    Parameters
+    ----------
+    mu : float
+        Mean of log prices
+    sigma : float
+        Std dev of log prices
+    years : array-like
+        Simulation years
+    n_sims : int
+        Number of Monte Carlo simulations
+    seed : int or None
+
+    Returns
+    -------
+    np.ndarray
+        Shape (n_sims, n_years)
+    """
+
+    if seed is not None:
+        np.random.seed(seed)
+
+    n_years = len(years)
+
+    prices = np.random.lognormal(
+        mean=mu,
+        sigma=sigma,
+        size=(n_sims, n_years)
+    )
+
+    return prices
+
+
 
