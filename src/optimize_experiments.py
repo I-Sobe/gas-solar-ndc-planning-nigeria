@@ -6,12 +6,6 @@ Scope
 - Deterministic operational scenario evaluation
 - Pareto frontier generation (weighted-sum, ε-constraint)
 
-Non-scope
----------
-- Optimization model construction
-- Solver configuration
-- Economic logic (delegated to economics.py)
-
 Notes
 -----
 This module orchestrates experiments only.
@@ -36,8 +30,13 @@ from src.storage import BatteryStorage
 from src.dispatch import dispatch_energy
 from src.demand import project_baseline_demand
 from src.gas_supply import gas_generation_cap
-
-
+from src.scenarios import (
+    load_scenario,
+    demand_growth_scenarios,
+    gas_decline_scenarios,
+    solar_capacity_scenarios,
+    carbon_policy_scenarios,
+)
 # ============================================================
 # DETERMINISTIC OPERATIONAL SCENARIO
 # ============================================================
@@ -45,14 +44,13 @@ from src.gas_supply import gas_generation_cap
 def run_deterministic_scenario(scenario, econ):
     """
     Run a deterministic operational simulation (no optimization).
-
     Important
     ---------
     - Storage is modeled explicitly using BatteryStorage
       (power + energy + efficiency).
+    - A fresh storage instance is created per run.
     - Results are operational diagnostics and are NOT directly
-      comparable to planning optimization outputs, which use an
-      annualized energy-buffer abstraction.
+      comparable to planning optimization outputs.
     """
 
     years = scenario["years"]
@@ -72,6 +70,7 @@ def run_deterministic_scenario(scenario, econ):
         end_year=years[-1],
     )["generation"]
 
+    # Planning-level solar capacity trajectory (deterministic, exogenous)
     solar_cap = solar_capacity_trajectory(
         initial_capacity_mw=scenario["solar_baseline_mw"],
         annual_addition_mw=scenario["solar_addition_mw"],
@@ -84,6 +83,7 @@ def run_deterministic_scenario(scenario, econ):
         capacity_factor=scenario["solar_cf"],
     )
 
+    # Fresh storage instance per scenario run (stateful)
     storage = BatteryStorage(
         energy_capacity_mwh=scenario["storage_mwh"],
         power_capacity_mw=scenario["storage_mw"],
@@ -124,16 +124,15 @@ def run_deterministic_scenario(scenario, econ):
     costs["total"] = total_system_cost(costs)
 
     return {
-        "served": dispatch["served"],
-        "unserved": dispatch["unserved"],
+        "served": dispatch["served"],            # TWh/year
+        "unserved": dispatch["unserved"],        # TWh/year
         "costs": costs,
         "units": {
-            "energy": "TWh",
+            "annual_energy": "TWh/year",
+            "cumulative_energy": "TWh",
             "cost": "USD",
         },
     }
-
-
 # ============================================================
 # PARETO FRONT GENERATION
 # ============================================================
@@ -228,3 +227,62 @@ def generate_epsilon_pareto(scenario, econ, emissions_caps):
             "emissions_tco2": "tCO2",
         },
     }
+# ============================================================
+# DETERMINISTIC BATCH EXECUTION (SCENARIO MATRIX)
+# ============================================================
+
+def run_all_deterministic_scenarios(
+    econ,
+    start_year=2025,
+    end_year=2045,
+):
+    """
+    Execute deterministic operational simulations across all
+    combinations of predefined planning scenarios.
+
+    Notes
+    -----
+    - Results are OPERATIONAL diagnostics.
+    - Energy values aggregated over time represent cumulative
+      energy over the planning horizon (TWh), not annual rates.
+    """
+
+    results = []
+
+    for demand_case in demand_growth_scenarios():
+        for gas_case in gas_decline_scenarios():
+            for solar_case in solar_capacity_scenarios():
+                for carbon_case in carbon_policy_scenarios():
+
+                    scenario = load_scenario(
+                        demand_case=demand_case,
+                        gas_case=gas_case,
+                        solar_case=solar_case,
+                        carbon_case=carbon_case,
+                        start_year=start_year,
+                        end_year=end_year,
+                    )
+
+                    output = run_deterministic_scenario(
+                        scenario=scenario,
+                        econ=econ,
+                    )
+
+                    results.append({
+                        "scenario_labels": {
+                            "demand": demand_case,
+                            "gas": gas_case,
+                            "solar": solar_case,
+                            "carbon": carbon_case,
+                        },
+                        "total_cost_usd": output["costs"]["total"],
+                        "gas_cost_usd": output["costs"]["gas"],
+                        "solar_cost_usd": output["costs"]["solar"],
+                        "carbon_cost_usd": output["costs"]["carbon"],
+                        "unserved_cost_usd": output["costs"]["unserved"],
+                        "total_unserved_energy_twh": float(
+                            np.sum(output["unserved"])
+                        ),
+                    })
+
+    return results
