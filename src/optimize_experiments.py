@@ -32,11 +32,13 @@ from src.demand import project_baseline_demand
 from src.gas_supply import gas_generation_cap
 from src.scenarios import (
     load_scenario,
+    demand_level_scenarios,
     demand_growth_scenarios,
     gas_decline_scenarios,
     solar_capacity_scenarios,
     carbon_policy_scenarios,
 )
+
 # ============================================================
 # DETERMINISTIC OPERATIONAL SCENARIO
 # ============================================================
@@ -44,6 +46,7 @@ from src.scenarios import (
 def run_deterministic_scenario(scenario, econ):
     """
     Run a deterministic operational simulation (no optimization).
+
     Important
     ---------
     - Storage is modeled explicitly using BatteryStorage
@@ -124,8 +127,8 @@ def run_deterministic_scenario(scenario, econ):
     costs["total"] = total_system_cost(costs)
 
     return {
-        "served": dispatch["served"],            # TWh/year
-        "unserved": dispatch["unserved"],        # TWh/year
+        "served": dispatch["served"],      # TWh/year
+        "unserved": dispatch["unserved"],  # TWh/year
         "costs": costs,
         "units": {
             "annual_energy": "TWh/year",
@@ -133,6 +136,8 @@ def run_deterministic_scenario(scenario, econ):
             "cost": "USD",
         },
     }
+
+
 # ============================================================
 # PARETO FRONT GENERATION
 # ============================================================
@@ -146,9 +151,7 @@ def generate_weighted_pareto(scenario, econ, weight_grid):
 
     for w_cost, w_em in weight_grid:
         if w_cost == 0.0 and w_em == 0.0:
-            raise ValueError(
-                "Invalid weight pair (0,0): objective is undefined."
-            )
+            raise ValueError("Invalid weight pair (0,0): objective is undefined.")
 
         m = build_model(
             scenario,
@@ -161,15 +164,11 @@ def generate_weighted_pareto(scenario, econ, weight_grid):
 
         if not status["optimal"]:
             raise RuntimeError(
-                f"Optimization failed for weights "
-                f"(cost={w_cost}, emissions={w_em})"
+                f"Optimization failed for weights (cost={w_cost}, emissions={w_em})"
             )
 
         results.append({
-            "weights": {
-                "cost": w_cost,
-                "emissions": w_em,
-            },
+            "weights": {"cost": w_cost, "emissions": w_em},
             "decision_variables": {
                 "solar_addition_mw_per_year": pyo.value(m.solar_addition),
                 "storage_capacity_mwh": pyo.value(m.storage_capacity),
@@ -206,9 +205,7 @@ def generate_epsilon_pareto(scenario, econ, emissions_caps):
         status = solve_model(m)
 
         if not status["optimal"]:
-            raise RuntimeError(
-                f"Optimization failed for emissions cap {eps}"
-            )
+            raise RuntimeError(f"Optimization failed for emissions cap {eps}")
 
         results.append({
             "emissions_cap_tco2": eps,
@@ -227,6 +224,8 @@ def generate_epsilon_pareto(scenario, econ, emissions_caps):
             "emissions_tco2": "tCO2",
         },
     }
+
+
 # ============================================================
 # DETERMINISTIC BATCH EXECUTION (SCENARIO MATRIX)
 # ============================================================
@@ -249,40 +248,41 @@ def run_all_deterministic_scenarios(
 
     results = []
 
-    for demand_case in demand_growth_scenarios():
-        for gas_case in gas_decline_scenarios():
-            for solar_case in solar_capacity_scenarios():
-                for carbon_case in carbon_policy_scenarios():
+    for demand_level_case in demand_level_scenarios():
+        for demand_case in demand_growth_scenarios():
+            for gas_case in gas_decline_scenarios():
+                for solar_case in solar_capacity_scenarios():
+                    for carbon_case in carbon_policy_scenarios():
 
-                    scenario = load_scenario(
-                        demand_case=demand_case,
-                        gas_case=gas_case,
-                        solar_case=solar_case,
-                        carbon_case=carbon_case,
-                        start_year=start_year,
-                        end_year=end_year,
-                    )
+                        scenario = load_scenario(
+                            demand_level_case=demand_level_case,
+                            demand_case=demand_case,
+                            gas_case=gas_case,
+                            solar_case=solar_case,
+                            carbon_case=carbon_case,
+                            start_year=start_year,
+                            end_year=end_year,
+                        )
 
-                    output = run_deterministic_scenario(
-                        scenario=scenario,
-                        econ=econ,
-                    )
+                        output = run_deterministic_scenario(
+                            scenario=scenario,
+                            econ=econ,
+                        )
 
-                    results.append({
-                        "scenario_labels": {
-                            "demand": demand_case,
-                            "gas": gas_case,
-                            "solar": solar_case,
-                            "carbon": carbon_case,
-                        },
-                        "total_cost_usd": output["costs"]["total"],
-                        "gas_cost_usd": output["costs"]["gas"],
-                        "solar_cost_usd": output["costs"]["solar"],
-                        "carbon_cost_usd": output["costs"]["carbon"],
-                        "unserved_cost_usd": output["costs"]["unserved"],
-                        "total_unserved_energy_twh": float(
-                            np.sum(output["unserved"])
-                        ),
-                    })
+                        results.append({
+                            "scenario_labels": {
+                                "demand_level": demand_level_case,
+                                "demand": demand_case,
+                                "gas": gas_case,
+                                "solar": solar_case,
+                                "carbon": carbon_case,
+                            },
+                            "total_cost_usd": output["costs"]["total"],
+                            "gas_cost_usd": output["costs"]["gas"],
+                            "solar_cost_usd": output["costs"]["solar"],
+                            "carbon_cost_usd": output["costs"]["carbon"],
+                            "unserved_cost_usd": output["costs"]["unserved"],
+                            "total_unserved_energy_twh": float(np.sum(output["unserved"])),
+                        })
 
     return results

@@ -17,6 +17,7 @@ Modeling assumptions
 - Storage modeled as a stateful energy buffer with internal SOC
 - No ramping, reserve, or power-flow constraints
 - Intended for ex post feasibility and reliability assessment
+- Energy-balance is annual; storage operations represent simplified intertemporal shifting and are not chronological dispatch.
 
 Boundary discipline
 -------------------

@@ -17,6 +17,8 @@ Modeling assumptions
 - Constant exponential growth for baseline demand
 - Electricity demand scales linearly with access percentage
 - No price elasticity or sectoral disaggregation
+- Base-year demand is scenario input and may represent served demand or reconstructed latent demand; 
+    this module does not infer demand from historical time series.
 
 Non-scope
 ---------
@@ -40,7 +42,8 @@ def project_baseline_demand(
         Parameters
     ----------
     base_demand : float
-        Electricity demand in start_year (TWh/year)
+        Base-year demand input (TWh/year). 
+            This may be served demand (lower bound) or reconstructed latent demand, depending on the selected demand scenario.
     growth_rate : float
         Annual demand growth rate (fraction, e.g. 0.04).
         Must be >= -1.0.
