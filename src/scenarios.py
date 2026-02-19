@@ -3,8 +3,8 @@ Scenario Definitions Module (Configuration Only)
 
 Scope
 -----
-Defines deterministic planning scenarios as structured parameter
-dictionaries for use in system evaluation and optimization studies.
+Defines deterministic planning scenarios as structured parameter dictionaries
+for use in system evaluation and optimization studies.
 
 This module provides scenario DEFINITIONS ONLY.
 It does NOT execute models, run experiments, or aggregate results.
@@ -49,6 +49,7 @@ def planning_horizon(start_year: int = 2025, end_year: int = 2045) -> np.ndarray
     """
     if end_year < start_year:
         raise ValueError("end_year must be >= start_year")
+
     return np.arange(start_year, end_year + 1)
 
 
@@ -95,7 +96,9 @@ def demand_growth_scenarios() -> dict[str, float]:
 
 
 def gas_decline_scenarios() -> dict[str, float]:
-    """Gas-field decline rate assumptions (physical depletion only)."""
+    """
+    Gas-field decline rate assumptions (physical depletion only).
+    """
     return {
         "low_decline": 0.03,
         "baseline": 0.06,
@@ -104,7 +107,9 @@ def gas_decline_scenarios() -> dict[str, float]:
 
 
 def solar_capacity_scenarios() -> dict[str, dict[str, float]]:
-    """Solar PV capacity expansion assumptions."""
+    """
+    Solar PV capacity expansion assumptions.
+    """
     return {
         "slow": {
             "solar_baseline_mw": 500,
@@ -143,6 +148,21 @@ def carbon_policy_scenarios() -> dict[str, dict[str, float | bool]]:
     }
 
 
+def gas_deliverability_scenarios() -> dict[str, str]:
+    """
+    Gas deliverability-to-power scenario labels.
+
+    These labels must match the 'scenario' column in:
+    data/gas/processed/gas_available_power_annual_twh_th.csv
+    """
+    return {
+        "downside": "downside",
+        "baseline": "baseline",
+        "upside": "upside",
+        "shock_recovery": "shock_recovery",
+    }
+
+
 # ============================================================
 # SCENARIO CONSTRUCTOR
 # ============================================================
@@ -151,8 +171,9 @@ def load_scenario(
     demand_level_case: str = "served",
     demand_case: str = "baseline",
     gas_case: str = "baseline",
+    gas_deliverability_case: str = "baseline",
     solar_case: str = "baseline",
-    carbon_case: str = "moderate_policy",
+    carbon_case: str = "no_policy",
     start_year: int = 2025,
     end_year: int = 2045,
 ) -> dict:
@@ -168,6 +189,8 @@ def load_scenario(
         Demand growth label. One of demand_growth_scenarios() keys.
     gas_case : str
         Gas decline label. One of gas_decline_scenarios() keys.
+    gas_deliverability_case : str
+        Gas deliverability label. One of gas_deliverability_scenarios() keys.
     solar_case : str
         Solar capacity pathway label. One of solar_capacity_scenarios() keys.
     carbon_case : str
@@ -193,6 +216,8 @@ def load_scenario(
         raise ValueError(f"Unknown solar_case: {solar_case}")
     if carbon_case not in carbon_policy_scenarios():
         raise ValueError(f"Unknown carbon_case: {carbon_case}")
+    if gas_deliverability_case not in gas_deliverability_scenarios():
+        raise ValueError(f"Unknown gas_deliverability_case: {gas_deliverability_case}")
 
     years = planning_horizon(start_year, end_year)
 
@@ -204,18 +229,31 @@ def load_scenario(
         "base_demand_twh": demand_level_scenarios()[demand_level_case],
         "demand_growth": demand_growth_scenarios()[demand_case],
 
-        # ---- Gas supply
+        # ---- Gas supply (dispatch diagnostics: electricity-equivalent)
         "gas_q0_twh": 40.0,
         "gas_decline": gas_decline_scenarios()[gas_case],
 
+        # ---- Gas deliverability to power (optimization Phase 1: thermal energy)
+        "gas_scenario": gas_deliverability_scenarios()[gas_deliverability_case],
+        "gas_eta": 0.43,
+
         # ---- Solar
-        "solar_cf": 0.22,
+        "solar_cf": 0.27,
         **solar_capacity_scenarios()[solar_case],
 
         # ---- Storage (operational diagnostics)
         "storage_mwh": 20_000,
         "storage_mw": 2_000,
         "storage_eff": 0.9,
+
+        # ---- Storage reduced-form (optimization; annual, energy-neutral)
+        # Equivalent full cycles/year (dimensionless). Typical planning proxy: 150–350.
+        "storage_cycles_per_year": 250.0,
+        # Fraction of annual solar energy that is "surplus" and can be shifted by storage.
+        # Conservative: 0.10, baseline: 0.20, optimistic: 0.30
+        "storage_solar_surplus_frac": 0.20,
+        # Round-trip efficiency used as a limiter on usable discharge in reduced-form constraint.
+        "storage_round_trip_eff": 0.90,
 
         # ---- Carbon policy
         **carbon_policy_scenarios()[carbon_case],
@@ -227,6 +265,7 @@ def load_scenario(
             "gas": gas_case,
             "solar": solar_case,
             "carbon": carbon_case,
+            "gas_deliverability": gas_deliverability_case,
         },
     }
 
