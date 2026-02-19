@@ -267,7 +267,7 @@ def build_model(
         )
 
         m.objective = pyo.Objective(
-            expr=system_cost,
+            expr=system_cost_npv,
             sense=pyo.minimize,
         )
 
@@ -278,14 +278,14 @@ def build_model(
         )
 
         m.objective = pyo.Objective(
-            expr=system_cost,
+            expr=system_cost_npv,
             sense=pyo.minimize,
         )
 
     else:
 
         m.objective = pyo.Objective(
-            expr=weight_cost * system_cost
+            expr=weight_cost * system_cost_npv
             + weight_emissions * m.emissions,
             sense=pyo.minimize,
         )

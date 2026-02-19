@@ -204,6 +204,21 @@ def extract_gas_shadow_prices_usd_per_twh_th(m, years):
     return out
 
 
+def extract_carbon_shadow_prices_usd_per_tco2(m, years):
+    out = {}
+    # Works only if emissions_constraint exists
+    if not hasattr(m, "emissions_constraint"):
+        return {int(y): None for y in years}
+
+    for t, y in enumerate(years):
+        dual = m.dual.get(m.emissions_constraint[t], None)
+        # Sign convention:
+        # For minimization with constraint (emissions <= cap), Pyomo dual often comes as
+        # non-positive for binding constraints depending on solver; use -dual to make it positive.
+        out[int(y)] = None if dual is None else float(-dual)
+    return out
+
+
 def extract_planning_diagnostics(m, scenario):
 
     years = scenario["years"]
@@ -214,10 +229,13 @@ def extract_planning_diagnostics(m, scenario):
         scenario_name=scenario["gas_scenario"],
     )["available_twh_th"]
 
+    carbon_shadow = extract_carbon_shadow_prices_usd_per_tco2(m, years)
+    
     return {
         "gas_shadow_price_usd_per_twh_th_by_year":
             extract_gas_shadow_prices_usd_per_twh_th(m, years),
 
+        "carbon_shadow_price_usd_per_tco2_by_year": carbon_shadow, 
         "gas_avail_twh_th_by_year":
             _series_dict_by_year(gas_avail, years),
 
