@@ -52,6 +52,14 @@ def build_model(
     years = scenario["years"]
     T = range(len(years))
 
+    # --------------------------
+    # Discounting 
+    # --------------------------
+    r = float(scenario.get("discount_rate", 0.10))
+    # t=0 at start year
+    df = {t: 1.0 / ((1.0 + r) ** t) for t in T}
+    m.DF = pyo.Param(T, initialize=df, within=pyo.PositiveReals)
+
     # ------------------------------------------------------------
     # Gas parameters
     # ------------------------------------------------------------
@@ -77,15 +85,18 @@ def build_model(
     # ------------------------------------------------------------
     # Decision Variables
     # ------------------------------------------------------------
-    m.solar_addition = pyo.Var(domain=pyo.NonNegativeReals)
+    # Solar additions (MW built each year)
+    m.solar_add = pyo.Var(T, domain=pyo.NonNegativeReals)
+    # Storage: keep as one-shot capacity decision (built in 2025) for simplicity
     m.storage_capacity = pyo.Var(domain=pyo.NonNegativeReals)
+    
     m.unserved = pyo.Var(T, domain=pyo.NonNegativeReals)
-
     m.gas_to_power = pyo.Var(T, domain=pyo.NonNegativeReals)
     m.gas_curtail = pyo.Var(T, domain=pyo.NonNegativeReals)
-
     m.storage_discharge = pyo.Var(T, domain=pyo.NonNegativeReals)
 
+    # storage power proxy unchanged
+    storage_duration_hours = scenario.get("storage_duration_hours", 4.0)
     m.storage_power_mw = pyo.Expression(
         expr=m.storage_capacity / storage_duration_hours
     )
@@ -122,10 +133,15 @@ def build_model(
     solar_energy_per_mw = scenario["solar_cf"] * 8760 / 1e6
     baseline_mw = scenario["solar_baseline_mw"]
 
-    def solar_rule(m, t):
-        return (baseline_mw + m.solar_addition * t) * solar_energy_per_mw
+    # Solar capacity = baseline + cumulative sum of annual additions
+    def solar_cap_rule(m, t):
+        return baseline_mw + sum(m.solar_add[k] for k in range(0, t + 1))
 
-    m.solar_generation = pyo.Expression(T, rule=solar_rule)
+    m.solar_capacity_mw = pyo.Expression(T, rule=solar_cap_rule)
+
+    # Solar generation
+    m.solar_generation = pyo.Expression(
+        T, rule=lambda m, t: m.solar_capacity_mw[t] * solar_energy_per_mw)
 
     # ------------------------------------------------------------
     # Storage Constraints
@@ -161,6 +177,15 @@ def build_model(
             m.storage_discharge[t]
             <= (m.storage_power_mw * storage_critical_hours) / 1e6,
     )
+
+    #------------------------------
+    # Deployment Constraint
+    #------------------------------
+    max_build = scenario.get("solar_max_build_mw_per_year", None)
+    if max_build is not None:
+        m.solar_build_cap = pyo.Constraint(
+            T, rule=lambda m, t: m.solar_add[t] <= max_build
+        )
 
     # ------------------------------------------------------------
     # Electricity Balance
