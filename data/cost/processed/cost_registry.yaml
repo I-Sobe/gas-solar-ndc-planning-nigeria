@@ -1,0 +1,27 @@
+currency: USD
+base_year: 2025
+
+scenarios:
+  baseline_costs:
+    gas_fuel_cost: gas_mid
+    solar_capex: solar_mid
+    storage_capex: storage_mid
+    unserved_penalty: uep_mid
+    carbon_policy: no_policy
+    discount_rate: dr_mid
+
+  high_gas:
+    gas_fuel_cost: gas_high
+    solar_capex: solar_mid
+    storage_capex: storage_mid
+    unserved_penalty: uep_mid
+    carbon_policy: no_policy
+    discount_rate: dr_mid
+
+  strict_carbon:
+    gas_fuel_cost: gas_mid
+    solar_capex: solar_mid
+    storage_capex: storage_mid
+    unserved_penalty: uep_mid
+    carbon_policy: stringent
+    discount_rate: dr_mid

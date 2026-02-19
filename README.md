@@ -1,12 +1,12 @@
 # README.md
-National-Scale Techno-Economic Optimization of Hybrid Gas–Solar Systems Under Reservoir Decline and Energy-as-a-Service (EaaS) Deployment Scenarios — A Stochastic Multi-Objective Modeling Framework
+National-Scale Techno-Economic Optimization of Hybrid Gas–Solar Systems Under Delivered Gas-to-Power Constraints and Energy-as-a-Service (EaaS) Deployment Scenarios — A Stochastic Multi-Objective Modeling Framework.
 
 ## 🔍 Project Overview
 This repository contains the full modeling framework, datasets, scripts, and reproducibility instructions for the MSc thesis:
 
 “Techno-Economic Optimization of Gas–Solar Power Systems Under Reservoir Decline and Energy-as-a-Service Deployment: A Stochastic Multi-Objective Framework for Nigeria’s Energy Transition.”
 
-The project combines reservoir-constrained gas supply modeling, utility-scale solar and storage simulation, energy system optimization, and EaaS demand-side interventions into a unified national planning tool.
+The project combines delivered gas-to-power availability modeling (informed by upstream decline, infrastructure, and policy constraints), utility-scale solar and storage simulation, energy system optimization, and Energy-as-a-Service (EaaS) deployment and financing mechanisms into a unified national planning tool.
 It is designed to evaluate long-term energy security risks associated with declining gas fields while exploring the role of distributed and utility-scale solar in supporting Nigeria’s reliability, cost, and carbon reduction objectives.
 This work supports insights for:
 * National planners and regulators (MoP/NERC)
@@ -131,7 +131,7 @@ A Python-based optimization framework (implemented using Pyomo) evaluates trade-
 Key uncertainties—gas prices, carbon prices, and technology costs—are incorporated through Monte Carlo sampling and structured scenario analysis. The framework produces risk-aware planning insights, including probability-weighted outcomes for cost, emissions, and supply adequacy.
 
 ### Deployment and Financing Pathway Analysis via Energy-as-a-Service
-Energy-as-a-Service (EaaS) models are incorporated as deployment and financing mechanisms, affecting cost of capital, feasible deployment rates, and investment constraints for solar and storage. This enables assessment of how alternative ownership and financing structures influence scalability and system adequacy, without requiring detailed contract or demand-side simulation.
+Energy-as-a-Service (EaaS) models are incorporated strictly as deployment and financing mechanisms, affecting cost of capital, feasible deployment rates, and investment constraints for solar and storage. This enables assessment of how alternative ownership and financing structures influence scalability and system adequacy, without modeling customer behavior, demand-side efficiency, or contract-level dynamics.
 
 ## 🏗 Repository Structure
 ```
