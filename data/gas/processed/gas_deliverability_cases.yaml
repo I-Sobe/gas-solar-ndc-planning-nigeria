@@ -1,0 +1,29 @@
+anchor:
+  year: 2025
+  gas_available_twh_th: 40.66
+
+cases:
+  downside:
+    type: exponential_decline
+    decline_rate: 0.03
+
+  baseline:
+    type: drift
+    annual_drift: 0.0
+
+  upside:
+    type: lag_ramp_uplift
+    lag_years: 5
+    ramp_years: 5
+    uplift_fraction: 0.20
+  
+  shock_recovery:
+    type: shock_recovery
+    baseline_end_year: 2029
+    shock_start_year: 2030
+    shock_end_year: 2033
+    shock_decline_rate: 0.03
+    recovery_start_year: 2034
+    recovery_ramp_years: 5
+    recovery_uplift_fraction: 0.20
+
