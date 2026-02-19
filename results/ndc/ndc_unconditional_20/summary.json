@@ -1,0 +1,8 @@
+{
+  "cap_scenario": "ndc_unconditional_20",
+  "decision_variables": {
+    "solar_addition_mw_per_year": 1604.2182,
+    "storage_capacity_mwh": 6315.2595
+  },
+  "actual_emissions_tco2_total": 33723100.667322
+}
