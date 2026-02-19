@@ -200,20 +200,41 @@ def build_model(
             >= demand[t],
     )
 
-    # ------------------------------------------------------------
-    # System Cost
-    # ------------------------------------------------------------
-    system_cost = (
-        pyo.quicksum(
-            m.gas_to_power[t] * econ["GAS_COST_PER_TWH_TH"]
+    # -------------------------
+    # System Cost (Discounted NPV)
+    # -------------------------
+    # Gas cost is in USD per TWh_th
+    gas_opex_npv = pyo.quicksum(
+        m.DF[t] * m.gas_to_power[t] * econ["GAS_COST_PER_TWH_TH"]
+        for t in T
+    )
+
+    # Solar CAPEX: pay when built (year t)
+    solar_capex_npv = pyo.quicksum(
+        m.DF[t] * m.solar_add[t] * econ["SOLAR_CAPEX_PER_MW"]
+        for t in T
+    )
+
+    # Storage CAPEX: assume built in 2025 (t=0) unless you model staged build
+    storage_capex_npv = m.DF[0] * m.storage_capacity * econ["STORAGE_COST_PER_MWH"]
+
+    # Unserved energy penalty (VoLL in USD/TWh)
+    unserved_npv = pyo.quicksum(
+        m.DF[t] * m.unserved[t] * econ["UNSERVED_ENERGY_PENALTY"]
+        for t in T
+    )
+
+    # Carbon price cost (only when carbon_active is True and you're treating it as a price, not a cap)
+    carbon_cost_npv = 0.0
+    if scenario.get("carbon_active", False):
+        carbon_price = float(scenario["carbon_price"])
+        # emissions_by_year is tCO2; multiply by USD/tCO2
+        carbon_cost_npv = pyo.quicksum(
+            m.DF[t] * m.emissions_by_year[t] * carbon_price
             for t in T
         )
-        + m.solar_addition * econ["SOLAR_CAPEX_PER_MW"] * len(T)
-        + m.storage_capacity * econ["STORAGE_COST_PER_MWH"]
-        + pyo.quicksum(
-            m.unserved[t] for t in T
-        ) * econ["UNSERVED_ENERGY_PENALTY"]
-    )
+
+    system_cost_npv = gas_opex_npv + solar_capex_npv + storage_capex_npv + unserved_npv + carbon_cost_npv
 
     # ------------------------------------------------------------
     # Emissions
