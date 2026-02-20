@@ -228,4 +228,31 @@ def main():
     plot_shadow("gas_shadow_usd_per_twh_th", "gas_shadow_by_year.png", "Gas scarcity shadow value by year")
     plot_shadow("carbon_shadow_usd_per_tco2", "carbon_shadow_by_year.png", "Carbon shadow price by year")
 
+    # ---- 8.5 Export vs Power wedge ----
+    # Compare power-sector gas scarcity value vs export netbacks
+    wedge_rows = []
+    for case, ts in ts_by_case.items():
+        gas_shadow = safe_numeric(ts["gas_shadow_usd_per_twh_th"])
+        years = ts["year"].values
+
+        for name, nb_mmbtu in NETBACK_USD_PER_MMBTU.items():
+            nb_twh = nb_mmbtu * MMBTU_PER_TWH_TH  # USD/TWh_th
+            diff = gas_shadow - nb_twh  # positive => power value exceeds export netback
+
+            share_power_preferred = float((diff.dropna() > 0).mean()) if diff.dropna().shape[0] else np.nan
+            wedge_rows.append(
+                {
+                    "case": case,
+                    "netback_regime": name,
+                    "netback_usd_per_mmbtu": nb_mmbtu,
+                    "netback_usd_per_twh_th": nb_twh,
+                    "share_years_lambda_power_gt_netback": share_power_preferred,
+                    "max_gap_usd_per_twh_th": float(diff.dropna().max()) if diff.dropna().shape[0] else np.nan,
+                    "min_gap_usd_per_twh_th": float(diff.dropna().min()) if diff.dropna().shape[0] else np.nan,
+                }
+            )
+
+    wedge = pd.DataFrame(wedge_rows)
+    wedge.to_csv(OUT_DIR / "export_vs_power_wedge.csv", index=False)
+
     
