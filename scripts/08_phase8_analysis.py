@@ -255,4 +255,31 @@ def main():
     wedge = pd.DataFrame(wedge_rows)
     wedge.to_csv(OUT_DIR / "export_vs_power_wedge.csv", index=False)
 
-    
+    # ---- 8.6 Energy security dashboard (partial: adequacy+sustainability now; reliability/resilience later) ----
+    es_rows = []
+    for case, ts in ts_by_case.items():
+        unserved = safe_numeric(ts["unserved_twh"])
+        emissions = safe_numeric(ts["emissions_tco2"])
+        carbon_shadow = safe_numeric(ts["carbon_shadow_usd_per_tco2"])
+
+        es_rows.append(
+            {
+                "case": case,
+                "adequacy_cum_unserved_twh": float(unserved.sum()),
+                "adequacy_peak_unserved_twh": float(unserved.max()) if unserved.dropna().shape[0] else np.nan,
+                "adequacy_years_with_unserved": int((unserved.dropna() > 0).sum()) if unserved.dropna().shape[0] else 0,
+                "sustainability_cum_emissions_tco2": float(emissions.sum()),
+                "sustainability_binding_years": binding_years(carbon_shadow),
+                "sustainability_avg_carbon_shadow_binding_only": float(carbon_shadow[carbon_shadow > 1e-9].mean())
+                if (carbon_shadow.dropna() > 1e-9).any()
+                else 0.0,
+            }
+        )
+    es = pd.DataFrame(es_rows)
+    es.to_csv(OUT_DIR / "energy_security_dashboard.csv", index=False)
+
+    print(f"Phase 8 outputs written to: {OUT_DIR.resolve()}")
+
+
+if __name__ == "__main__":
+    main()
