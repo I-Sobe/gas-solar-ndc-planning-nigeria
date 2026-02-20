@@ -152,4 +152,35 @@ def main():
     plt.savefig(OUT_DIR / "frontier_cost_vs_emissions.png", dpi=200)
     plt.close()
 
+    # ---- 8.3 Mechanism decomposition (from timeseries) ----
+    decomp_rows = []
+    for case, ts in ts_by_case.items():
+        # Standard columns expected from your Phase 7C exports
+        cols = ts.columns.tolist()
+        required = [
+            "gas_to_power_twh_th",
+            "gas_generation_twh_e",
+            "solar_generation_twh_e",
+            "storage_discharge_twh_e",
+            "unserved_twh",
+            "emissions_tco2",
+        ]
+        for r in required:
+            if r not in cols:
+                raise ValueError(f"Missing column '{r}' in {case} timeseries.csv")
+
+        decomp_rows.append(
+            {
+                "case": case,
+                "cum_gas_to_power_twh_th": float(safe_numeric(ts["gas_to_power_twh_th"]).sum()),
+                "cum_gas_generation_twh_e": float(safe_numeric(ts["gas_generation_twh_e"]).sum()),
+                "cum_solar_generation_twh_e": float(safe_numeric(ts["solar_generation_twh_e"]).sum()),
+                "cum_storage_discharge_twh_e": float(safe_numeric(ts["storage_discharge_twh_e"]).sum()),
+                "cum_unserved_twh": float(safe_numeric(ts["unserved_twh"]).sum()),
+                "cum_emissions_tco2_timeseries": float(safe_numeric(ts["emissions_tco2"]).sum()),
+            }
+        )
+    decomp = pd.DataFrame(decomp_rows)
+    decomp.to_csv(OUT_DIR / "decomposition_table.csv", index=False)
+
     
