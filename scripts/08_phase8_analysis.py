@@ -112,3 +112,44 @@ def main():
     master = pd.DataFrame(master_rows)
     master.to_csv(OUT_DIR / "master_results.csv", index=False)
 
+    # ---- 8.2 Frontier + MAC ----
+    frontier = master[["case", "npv_total_cost_usd", "cumulative_emissions_tco2"]].copy()
+    frontier = frontier.sort_values("cumulative_emissions_tco2", ascending=False)
+    frontier.to_csv(OUT_DIR / "frontier_points.csv", index=False)
+
+    # Compute incremental MAC between adjacent points (ordered by emissions)
+    mac_rows = []
+    for i in range(len(frontier) - 1):
+        a = frontier.iloc[i]
+        b = frontier.iloc[i + 1]
+        d_cost = float(b["npv_total_cost_usd"] - a["npv_total_cost_usd"])
+        d_em = float(a["cumulative_emissions_tco2"] - b["cumulative_emissions_tco2"])
+        mac = np.nan if d_em == 0 else d_cost / d_em
+        mac_rows.append(
+            {
+                "from_case": a["case"],
+                "to_case": b["case"],
+                "delta_cost_usd": d_cost,
+                "delta_emissions_tco2": d_em,
+                "implied_mac_usd_per_tco2": mac,
+            }
+        )
+    mac_df = pd.DataFrame(mac_rows)
+    mac_df.to_csv(OUT_DIR / "marginal_abatement_cost.csv", index=False)
+
+    # Frontier plot
+    plt.figure()
+    plt.plot(
+        frontier["cumulative_emissions_tco2"].values,
+        frontier["npv_total_cost_usd"].values,
+        marker="o",
+    )
+    for _, r in frontier.iterrows():
+        plt.annotate(r["case"], (r["cumulative_emissions_tco2"], r["npv_total_cost_usd"]))
+    plt.xlabel("Cumulative emissions (tCO2)")
+    plt.ylabel("NPV total system cost (USD)")
+    plt.tight_layout()
+    plt.savefig(OUT_DIR / "frontier_cost_vs_emissions.png", dpi=200)
+    plt.close()
+
+    
