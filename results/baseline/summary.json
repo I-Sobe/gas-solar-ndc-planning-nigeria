@@ -1,14 +1,5 @@
 {
-  "scenario": {
-    "start_year": 2025,
-    "end_year": 2045,
-    "demand_level_case": "served",
-    "demand_case": "baseline",
-    "gas_case": "baseline",
-    "gas_deliverability_case": "baseline",
-    "solar_case": "baseline",
-    "carbon_case": "no_policy"
-  },
+  "cap_scenario": "baseline_no_policy",
   "decision_variables": {
     "solar_add_mw_by_year": {
       "2025": 1866.0578,
@@ -36,6 +27,8 @@
     "storage_capacity_mwh": 0.0,
     "solar_total_built_mw": 13489.228009999999
   },
+  "npv_total_cost_usd": 11915294625.711243,
+  "cumulative_unserved_twh": 0.0,
   "actual_emissions_tco2_total": 154574275.79999998,
   "notes": "Baseline = no binding emissions cap (cap set to 1e18 tCO2)."
 }
