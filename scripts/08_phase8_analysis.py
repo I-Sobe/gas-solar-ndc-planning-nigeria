@@ -183,4 +183,49 @@ def main():
     decomp = pd.DataFrame(decomp_rows)
     decomp.to_csv(OUT_DIR / "decomposition_table.csv", index=False)
 
+    # ---- 8.4 Scarcity pricing stats ----
+    scarcity_rows = []
+    for case, ts in ts_by_case.items():
+        # gas shadow
+        if "gas_shadow_usd_per_twh_th" not in ts.columns:
+            raise ValueError(f"Missing 'gas_shadow_usd_per_twh_th' in {case} timeseries.csv")
+        g = safe_numeric(ts["gas_shadow_usd_per_twh_th"])
+        # carbon shadow (baseline may be NaN/0)
+        if "carbon_shadow_usd_per_tco2" not in ts.columns:
+            raise ValueError(f"Missing 'carbon_shadow_usd_per_tco2' in {case} timeseries.csv")
+        c = safe_numeric(ts["carbon_shadow_usd_per_tco2"])
+
+        scarcity_rows.append(
+            {
+                "case": case,
+                "gas_shadow_mean": float(g.dropna().mean()) if g.dropna().shape[0] else np.nan,
+                "gas_shadow_max": float(g.dropna().max()) if g.dropna().shape[0] else np.nan,
+                "gas_shadow_binding_years": binding_years(g),
+                **{f"gas_shadow_{k}": v for k, v in quantiles(g, qs=(0.5, 0.9)).items()},
+                "carbon_shadow_mean": float(c.dropna().mean()) if c.dropna().shape[0] else np.nan,
+                "carbon_shadow_max": float(c.dropna().max()) if c.dropna().shape[0] else np.nan,
+                "carbon_shadow_binding_years": binding_years(c),
+                **{f"carbon_shadow_{k}": v for k, v in quantiles(c, qs=(0.5, 0.9)).items()},
+            }
+        )
+    scarcity = pd.DataFrame(scarcity_rows)
+    scarcity.to_csv(OUT_DIR / "scarcity_stats.csv", index=False)
+
+    # Plot shadow prices by year
+    def plot_shadow(col, fname, title):
+        plt.figure()
+        for case, ts in ts_by_case.items():
+            if col in ts.columns:
+                plt.plot(ts["year"].values, safe_numeric(ts[col]).values, marker="o", label=case)
+        plt.xlabel("Year")
+        plt.ylabel(col)
+        plt.title(title)
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(OUT_DIR / fname, dpi=200)
+        plt.close()
+
+    plot_shadow("gas_shadow_usd_per_twh_th", "gas_shadow_by_year.png", "Gas scarcity shadow value by year")
+    plot_shadow("carbon_shadow_usd_per_tco2", "carbon_shadow_by_year.png", "Carbon shadow price by year")
+
     
