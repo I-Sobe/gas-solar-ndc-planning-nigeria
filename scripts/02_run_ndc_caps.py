@@ -122,13 +122,19 @@ def run_case(cap_scenario_name: str, scenario: dict, econ: dict) -> dict:
         raise RuntimeError(f"Optimization failed for {cap_scenario_name}: {status}")
 
     diag = extract_planning_diagnostics(m, scenario)
+    npv_total_cost_usd = float(pyo.value(m.system_cost_npv))
+    cumulative_unserved_twh = sum(diag["unserved_twh_by_year"].values())
+    solar_total_built_mw = sum(float(pyo.value(m.solar_add[t])) for t in range(len(years)))
 
     out = {
         "cap_scenario": cap_scenario_name,
         "decision_variables": {
             "solar_add_mw_by_year": {int(y): float(pyo.value(m.solar_add[t])) for t,y in enumerate(years)},
             "storage_capacity_mwh": float(pyo.value(m.storage_capacity)),
+            "solar_total_built_mw": solar_total_built_mw,
         },
+        "npv_total_cost_usd": npv_total_cost_usd,
+        "cumulative_unserved_twh": cumulative_unserved_twh,
         "actual_emissions_tco2_total": float(pyo.value(m.emissions)),
         "diagnostics": diag,
     }
@@ -174,6 +180,8 @@ def main():
                 {
                     "cap_scenario": c,
                     "decision_variables": out["decision_variables"],
+                    "npv_total_cost_usd": out["npv_total_cost_usd"],
+                    "cumulative_unserved_twh": out["cumulative_unserved_twh"],
                     "actual_emissions_tco2_total": out["actual_emissions_tco2_total"],
                 },
                 f,
@@ -192,13 +200,17 @@ def main():
         ts = pd.DataFrame(
             {
                 "year": years,
+                "demand_twh": [diag["demand_twh_by_year"][y] for y in years],
                 "gas_avail_twh_th": [diag["gas_avail_twh_th_by_year"][y] for y in years],
                 "gas_to_power_twh_th": [diag["gas_to_power_twh_th_by_year"][y] for y in years],
                 "gas_generation_twh_e": [diag["gas_generation_twh_e_by_year"][y] for y in years],
+                "solar_generation_twh_e": [diag["solar_generation_twh_e_by_year"][y] for y in years],
+                "storage_discharge_twh_e": [diag["storage_discharge_twh_e_by_year"][y] for y in years],
                 "unserved_twh": [diag["unserved_twh_by_year"][y] for y in years],
-                "gas_shadow_price_usd_per_twh_th": [
-                    diag["gas_shadow_price_usd_per_twh_th_by_year"][y] for y in years
-                ],
+                "emissions_tco2": [diag["emissions_tco2_by_year"][y] for y in years],
+                "gas_shadow_price_usd_per_twh_th": [diag["gas_shadow_price_usd_per_twh_th_by_year"][y] for y in years],
+                "carbon_shadow_usd_per_tco2": [diag["carbon_shadow_price_usd_per_tco2_by_year"][y] for y in years],
+                "discount_factor": [diag["discount_factor_by_year"][y] for y in years],
             }
         )
 

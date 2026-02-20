@@ -24,7 +24,10 @@
       "2044": 790.72967,
       "2045": 822.35885
     },
-    "storage_capacity_mwh": 0.0
+    "storage_capacity_mwh": 0.0,
+    "solar_total_built_mw": 16527.59367
   },
+  "npv_total_cost_usd": 14436412747.237984,
+  "cumulative_unserved_twh": 0.0,
   "actual_emissions_tco2_total": 100121866.00636004
 }
