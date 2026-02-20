@@ -80,3 +80,35 @@ def binding_years(series: pd.Series, tol=1e-9) -> int:
     return int((s > tol).sum())
 
 
+# =========================
+# PHASE 8 PIPELINE
+# =========================
+def main():
+    # ---- 8.1 Master Results Table ----
+    master_rows = []
+    ts_by_case = {}
+    summary_by_case = {}
+
+    for c in CASES:
+        case = c["case"]
+        summ = load_summary(c["summary_path"])
+        ts = load_timeseries(c["timeseries_path"])
+
+        summary_by_case[case] = summ
+        ts_by_case[case] = ts
+
+        dv = summ.get("decision_variables", {})
+        master_rows.append(
+            {
+                "case": case,
+                "npv_total_cost_usd": summ.get("npv_total_cost_usd", np.nan),
+                "cumulative_emissions_tco2": summ.get("actual_emissions_tco2_total", np.nan),
+                "cumulative_unserved_twh": summ.get("cumulative_unserved_twh", np.nan),
+                "solar_total_built_mw": dv.get("solar_total_built_mw", np.nan),
+                "storage_capacity_mwh": dv.get("storage_capacity_mwh", np.nan),
+            }
+        )
+
+    master = pd.DataFrame(master_rows)
+    master.to_csv(OUT_DIR / "master_results.csv", index=False)
+
