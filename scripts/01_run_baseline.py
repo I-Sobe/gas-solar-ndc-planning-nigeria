@@ -166,7 +166,7 @@ def main():
     print("Saved diagnostics:", RESULTS_DIR / "diagnostics.json")
     print("Saved summary:", RESULTS_DIR / "summary.json")
     print("Saved timeseries:", RESULTS_DIR / "timeseries.csv")
-    print("Solar addition (MW/year):", dv["solar_addition_mw_per_year"])
+    print("Solar addition (MW/year):", dv["solar_add_mw_by_year"])
     print("Storage capacity (MWh):", dv["storage_capacity_mwh"])
 
 
