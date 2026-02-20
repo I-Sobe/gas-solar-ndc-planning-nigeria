@@ -200,6 +200,20 @@ def build_model(
             >= demand[t],
     )
 
+    # ------------------------------------------------------------
+    # Emissions
+    # ------------------------------------------------------------
+    m.emissions_by_year = pyo.Expression(
+        T,
+        rule=lambda m, t:
+            m.gas_generation[t] * 1e6
+            * econ["CARBON_EMISSION_FACTOR"],
+    )
+
+    m.emissions = pyo.Expression(
+        expr=pyo.quicksum(m.emissions_by_year[t] for t in T)
+    )
+
     # -------------------------
     # System Cost (Discounted NPV)
     # -------------------------
@@ -236,20 +250,8 @@ def build_model(
 
     system_cost_npv = gas_opex_npv + solar_capex_npv + storage_capex_npv + unserved_npv + carbon_cost_npv
 
-    # ------------------------------------------------------------
-    # Emissions
-    # ------------------------------------------------------------
-    m.emissions_by_year = pyo.Expression(
-        T,
-        rule=lambda m, t:
-            m.gas_generation[t] * 1e6
-            * econ["CARBON_EMISSION_FACTOR"],
-    )
-
-    m.emissions = pyo.Expression(
-        expr=pyo.quicksum(m.emissions_by_year[t] for t in T)
-    )
-
+    m.system_cost_npv = pyo.Expression(expr=system_cost_npv)
+    
     # ------------------------------------------------------------
     # Objective & Emissions Constraints
     # ------------------------------------------------------------

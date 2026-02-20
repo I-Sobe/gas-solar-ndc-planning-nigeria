@@ -126,7 +126,7 @@ def run_case(cap_scenario_name: str, scenario: dict, econ: dict) -> dict:
     out = {
         "cap_scenario": cap_scenario_name,
         "decision_variables": {
-            "solar_addition_mw_per_year": float(pyo.value(m.solar_addition)),
+            "solar_add_mw_by_year": {int(y): float(pyo.value(m.solar_add[t])) for t,y in enumerate(years)},
             "storage_capacity_mwh": float(pyo.value(m.storage_capacity)),
         },
         "actual_emissions_tco2_total": float(pyo.value(m.emissions)),
@@ -205,7 +205,7 @@ def main():
         ts.to_csv(case_dir / "timeseries.csv", index=False)
 
         print(f"--- {c} saved ---")
-        print("Solar addition (MW/year):", out["decision_variables"]["solar_addition_mw_per_year"])
+        print("Solar addition (MW/year):", out["decision_variables"]["solar_add_mw_by_year"])
         print("Storage capacity (MWh):", out["decision_variables"]["storage_capacity_mwh"])
         print("Total emissions (MtCO2):", out["actual_emissions_tco2_total"] / 1e6)
         print("Unserved 2025 (TWh):", out["diagnostics"]["unserved_twh_by_year"][2025])
