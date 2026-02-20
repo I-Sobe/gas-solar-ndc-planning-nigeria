@@ -20,9 +20,9 @@ CASES = [
         "timeseries_path": PROJECT_ROOT / "results/baseline/timeseries.csv",
     },
     {
-        "case": "ndc_conditional_20",
-        "summary_path": PROJECT_ROOT / "results/ndc/ndc_conditional_20/summary.json",
-        "timeseries_path": PROJECT_ROOT / "results/ndc/ndc_conditional_20/timeseries.csv",
+        "case": "ndc_unconditional_20",
+        "summary_path": PROJECT_ROOT / "results/ndc/ndc_unconditional_20/summary.json",
+        "timeseries_path": PROJECT_ROOT / "results/ndc/ndc_unconditional_20/timeseries.csv",
     },
     {
         "case": "ndc_conditional_47",
@@ -51,6 +51,11 @@ def load_summary(path: Path) -> dict:
     with open(path, "r") as f:
         return json.load(f)
 
+def pick(df: pd.DataFrame, names: list[str], case: str) -> str:
+    for n in names:
+        if n in df.columns:
+            return n
+    raise KeyError(f"{case}: none of {names} found. Available: {df.columns.tolist()}")
 
 def load_timeseries(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
@@ -187,9 +192,12 @@ def main():
     scarcity_rows = []
     for case, ts in ts_by_case.items():
         # gas shadow
-        if "gas_shadow_usd_per_twh_th" not in ts.columns:
-            raise ValueError(f"Missing 'gas_shadow_usd_per_twh_th' in {case} timeseries.csv")
-        g = safe_numeric(ts["gas_shadow_usd_per_twh_th"])
+        gas_col = pick(
+            ts,
+            ["gas_shadow_usd_per_twh_th", "gas_shadow_price_usd_per_twh_th"],
+            case,
+        )
+        g = safe_numeric(ts[gas_col])
         # carbon shadow (baseline may be NaN/0)
         if "carbon_shadow_usd_per_tco2" not in ts.columns:
             raise ValueError(f"Missing 'carbon_shadow_usd_per_tco2' in {case} timeseries.csv")
@@ -245,7 +253,12 @@ def main():
 
     wedge_rows = []
     for case, ts in ts_by_case.items():
-        gas_shadow = safe_numeric(ts["gas_shadow_usd_per_twh_th"])
+        gas_col = pick(
+            ts,
+            ["gas_shadow_usd_per_twh_th", "gas_shadow_price_usd_per_twh_th"],
+            case,
+        )
+        gas_shadow = safe_numeric(ts[gas_col])
 
         # Build one iterable of (family, regime_name, usd_per_mmbtu)
         regimes = []
