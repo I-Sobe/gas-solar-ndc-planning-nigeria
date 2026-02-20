@@ -1,0 +1,4 @@
+case,npv_total_cost_usd,cumulative_emissions_tco2,cumulative_unserved_twh,solar_total_built_mw,storage_capacity_mwh
+baseline_no_policy,11915294625.711243,154574275.79999998,0.0,13489.228009999999,0.0
+ndc_unconditional_20,14436412747.237984,100121866.00636004,0.0,16527.59367,0.0
+ndc_conditional_47,15655864504.395489,73785345.53560999,0.0,17996.97982,0.0

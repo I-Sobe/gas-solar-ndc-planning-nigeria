@@ -1,0 +1,4 @@
+case,cum_gas_to_power_twh_th,cum_gas_generation_twh_e,cum_solar_generation_twh_e,cum_storage_discharge_twh_e,cum_unserved_twh,cum_emissions_tco2_timeseries
+baseline_no_policy,853.8599999999998,367.15979999999985,370.68937427966404,0.0,0.0,154574275.8
+ndc_unconditional_20,553.0678120000001,237.81915916000005,500.03001745070407,0.0,0.0,100121866.00636004
+ndc_conditional_47,407.5862870000001,175.26210341,562.5870758828642,0.0,0.0,73785345.53561

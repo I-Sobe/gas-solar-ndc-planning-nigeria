@@ -1,0 +1,4 @@
+case,gas_shadow_mean,gas_shadow_max,gas_shadow_binding_years,gas_shadow_q50,gas_shadow_q90,carbon_shadow_mean,carbon_shadow_max,carbon_shadow_binding_years,carbon_shadow_q50,carbon_shadow_q90
+baseline_no_policy,9312458.285714285,38266374.0,21,7123236.5,15269290.0,0.0,0.0,0,0.0,0.0
+ndc_unconditional_20,799819.9523809524,16796219.0,1,0.0,0.0,47.023356476190486,211.38139,20,35.771251,76.678853
+ndc_conditional_47,799819.9523809524,16796219.0,1,0.0,0.0,47.023356476190486,211.38139,20,35.771251,76.678853

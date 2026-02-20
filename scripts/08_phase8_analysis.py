@@ -219,23 +219,58 @@ def main():
     scarcity = pd.DataFrame(scarcity_rows)
     scarcity.to_csv(OUT_DIR / "scarcity_stats.csv", index=False)
 
-    # Plot shadow prices by year
-    def plot_shadow(col, fname, title):
+    # ---- Plot shadow prices by year ----
+    def plot_shadow_gas():
         plt.figure()
         for case, ts in ts_by_case.items():
-            if col in ts.columns:
-                plt.plot(ts["year"].values, safe_numeric(ts[col]).values, marker="o", label=case)
+            gas_col = None
+            for candidate in [
+                "gas_shadow_usd_per_twh_th",
+                "gas_shadow_price_usd_per_twh_th",
+            ]:
+                if candidate in ts.columns:
+                    gas_col = candidate
+                    break
+
+            if gas_col is not None:
+                plt.plot(
+                    ts["year"].values,
+                    safe_numeric(ts[gas_col]).values,
+                    marker="o",
+                    label=case,
+                )
+
         plt.xlabel("Year")
-        plt.ylabel(col)
-        plt.title(title)
+        plt.ylabel("USD per TWh_th")
+        plt.title("Gas scarcity shadow value by year")
         plt.legend()
         plt.tight_layout()
-        plt.savefig(OUT_DIR / fname, dpi=200)
+        plt.savefig(OUT_DIR / "gas_shadow_by_year.png", dpi=200)
         plt.close()
 
-    plot_shadow("gas_shadow_usd_per_twh_th", "gas_shadow_by_year.png", "Gas scarcity shadow value by year")
-    plot_shadow("carbon_shadow_usd_per_tco2", "carbon_shadow_by_year.png", "Carbon shadow price by year")
 
+    def plot_shadow_carbon():
+        plt.figure()
+        for case, ts in ts_by_case.items():
+            if "carbon_shadow_usd_per_tco2" in ts.columns:
+                plt.plot(
+                    ts["year"].values,
+                    safe_numeric(ts["carbon_shadow_usd_per_tco2"]).values,
+                    marker="o",
+                    label=case,
+                )
+
+        plt.xlabel("Year")
+        plt.ylabel("USD per tCO2")
+        plt.title("Carbon shadow price by year")
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(OUT_DIR / "carbon_shadow_by_year.png", dpi=200)
+        plt.close()
+
+
+    plot_shadow_gas()
+    plot_shadow_carbon()
     # ---- 8.5 Export vs Power wedge ----
     # Compare power-sector gas scarcity value vs (i) domestic regulated benchmarks and (ii) stylised opportunity regimes
 
