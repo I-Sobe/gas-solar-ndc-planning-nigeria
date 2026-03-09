@@ -95,17 +95,12 @@ def demand_growth_scenarios() -> dict[str, float]:
     }
 
 
-def gas_decline_scenarios() -> dict[str, float]:
-    """
-    Gas-field decline rate assumptions (physical depletion only).
-    """
+def solar_build_scenarios():
     return {
-        "low_decline": 0.03,
-        "baseline": 0.06,
-        "high_decline": 0.09,
+        "conservative": 500,
+        "baseline": 1000,
+        "aggressive": 2000,
     }
-
-
 def solar_capacity_scenarios() -> dict[str, dict[str, float]]:
     """
     Solar PV capacity expansion assumptions.
@@ -113,15 +108,12 @@ def solar_capacity_scenarios() -> dict[str, dict[str, float]]:
     return {
         "slow": {
             "solar_baseline_mw": 500,
-            "solar_addition_mw": 200,
         },
         "baseline": {
             "solar_baseline_mw": 500,
-            "solar_addition_mw": 400,
         },
         "accelerated": {
             "solar_baseline_mw": 500,
-            "solar_addition_mw": 700,
         },
     }
 
@@ -162,7 +154,37 @@ def gas_deliverability_scenarios() -> dict[str, str]:
         "shock_recovery": "shock_recovery",
     }
 
+def land_scenarios():
+    return {
+        "tight": 1000,
+        "moderate": 3000,
+        "loose": 6000,
+    }
 
+def capital_envelope_scenarios():
+    """
+    Public capital envelopes (NPV over full planning horizon).
+
+    Calibrated from unconstrained adequacy requirement:
+    B* ≈ 6.13B USD
+    """
+    B_star = 6_130_600_000
+
+    return {
+        "tight": int(0.50 * B_star),
+        "moderate": int(0.85 * B_star),
+        "adequacy": int(1.00 * B_star),
+        "expansion": int(1.20 * B_star),
+        "unconstrained": None,
+    }
+
+def solar_tariff_scenarios():
+
+    return {
+        "low": 45_000_000,
+        "baseline": 65_000_000,
+        "high": 85_000_000,
+    }
 # ============================================================
 # SCENARIO CONSTRUCTOR
 # ============================================================
@@ -170,9 +192,12 @@ def gas_deliverability_scenarios() -> dict[str, str]:
 def load_scenario(
     demand_level_case: str = "served",
     demand_case: str = "baseline",
-    gas_case: str = "baseline",
+    land_case: str = "moderate",
+    capital_case: str = "moderate", 
     gas_deliverability_case: str = "baseline",
     solar_case: str = "baseline",
+    solar_build_case: str = "baseline",
+    solar_tariff_case= "baseline",
     carbon_case: str = "no_policy",
     start_year: int = 2025,
     end_year: int = 2045,
@@ -210,15 +235,19 @@ def load_scenario(
         raise ValueError(f"Unknown demand_level_case: {demand_level_case}")
     if demand_case not in demand_growth_scenarios():
         raise ValueError(f"Unknown demand_case: {demand_case}")
-    if gas_case not in gas_decline_scenarios():
-        raise ValueError(f"Unknown gas_case: {gas_case}")
     if solar_case not in solar_capacity_scenarios():
         raise ValueError(f"Unknown solar_case: {solar_case}")
     if carbon_case not in carbon_policy_scenarios():
         raise ValueError(f"Unknown carbon_case: {carbon_case}")
     if gas_deliverability_case not in gas_deliverability_scenarios():
         raise ValueError(f"Unknown gas_deliverability_case: {gas_deliverability_case}")
-
+    if land_case not in land_scenarios():
+        raise ValueError(f"Unknown land_case: {land_case}")
+    if capital_case not in capital_envelope_scenarios():
+        raise ValueError(f"Unknown capital_case: {capital_case}")
+    if solar_build_case not in solar_build_scenarios():
+        raise ValueError(f"Unknown solar_build_case: {solar_build_case}")
+    
     years = planning_horizon(start_year, end_year)
 
     scenario = {
@@ -228,24 +257,29 @@ def load_scenario(
         # ---- Demand (planning-level, annual)
         "base_demand_twh": demand_level_scenarios()[demand_level_case],
         "demand_growth": demand_growth_scenarios()[demand_case],
-
-        # ---- Gas supply (dispatch diagnostics: electricity-equivalent)
-        "gas_q0_twh": 40.0,
-        "gas_decline": gas_decline_scenarios()[gas_case],
-
+    
         # ---- Gas deliverability to power (optimization Phase 1: thermal energy)
         "gas_scenario": gas_deliverability_scenarios()[gas_deliverability_case],
         "gas_eta": 0.43,
+        
+        # ---- Gas capacity baseline
+        "gas_baseline_mw": 13600,
+        
+        # ---- Gas CAPEX
+        "gas_capex_per_mw": 900000,
 
+        # ---- Land policy
+        "land_available_km2": land_scenarios()[land_case],
+        "land_intensity_solar_km2_per_mw": 0.025,
+        "land_intensity_gas_km2_per_mw": 0.001,
+        "land_intensity_storage_km2_per_mwh": 0.00001,
         # ---- Solar
         "solar_cf": 0.27,
         **solar_capacity_scenarios()[solar_case],
-
-        # ---- Storage (operational diagnostics)
-        "storage_mwh": 20_000,
-        "storage_mw": 2_000,
-        "storage_eff": 0.9,
-
+        "solar_max_build_mw_per_year": solar_build_scenarios()[solar_build_case],
+        # ---- Public capital constraint (NPV, USD)
+        "public_solar_budget_npv": capital_envelope_scenarios()[capital_case],
+        
         # ---- Storage reduced-form (optimization; annual, energy-neutral)
         # Equivalent full cycles/year (dimensionless). Typical planning proxy: 150–350.
         "storage_cycles_per_year": 250.0,
@@ -255,6 +289,16 @@ def load_scenario(
         # Round-trip efficiency used as a limiter on usable discharge in reduced-form constraint.
         "storage_round_trip_eff": 0.90,
 
+        # Financing regime
+        "financing_regime": "traditional",  # or "eaas"
+
+        # Tariff (USD per TWh)
+        "solar_service_tariff_usd_per_twh":
+            solar_tariff_scenarios()[solar_tariff_case],
+
+        # Required NPV margin
+        "required_margin": 1.10,
+
         # ---- Carbon policy
         **carbon_policy_scenarios()[carbon_case],
 
@@ -262,10 +306,11 @@ def load_scenario(
         "labels": {
             "demand_level": demand_level_case,
             "demand": demand_case,
-            "gas": gas_case,
             "solar": solar_case,
             "carbon": carbon_case,
             "gas_deliverability": gas_deliverability_case,
+            "land": land_case,
+            "solar_build": solar_build_case,
         },
     }
 

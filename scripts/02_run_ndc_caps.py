@@ -1,4 +1,5 @@
 import json
+import numpy as np
 import sys
 from pathlib import Path
 
@@ -32,7 +33,7 @@ def to_float(x) -> float:
     return float(str(x).replace(",", "").replace("$", "").strip())
 
 
-def load_econ() -> dict:
+def load_econ(voll_case: str) -> dict:
     econ = {}
 
     gas_cost_df = pd.read_csv(
@@ -64,13 +65,16 @@ def load_econ() -> dict:
         ROOT / "data" / "cost" / "processed" / "unserved_energy_penalty.csv",
         thousands=",",
     )
-    voll_row = voll_df[
-        (voll_df["scenario"] == "voll_low") & (voll_df["year"] == 2025)
-    ].iloc[0]
-    econ["UNSERVED_ENERGY_PENALTY"] = to_float(voll_row["voll_usd_per_twh"])
 
-    # Emissions accounting ON
-    econ["CARBON_EMISSION_FACTOR"] = 0.421  # tCO2/MWh_e
+    voll_row = voll_df[
+        (voll_df["scenario"] == voll_case) & (voll_df["year"] == 2025)
+    ].iloc[0]
+
+    econ["UNSERVED_ENERGY_PENALTY"] = to_float(
+        voll_row["voll_usd_per_twh"]
+    )
+
+    econ["CARBON_EMISSION_FACTOR"] = 0.421
 
     return econ
 
@@ -124,20 +128,36 @@ def run_case(cap_scenario_name: str, scenario: dict, econ: dict) -> dict:
     diag = extract_planning_diagnostics(m, scenario)
     npv_total_cost_usd = float(pyo.value(m.system_cost_npv))
     cumulative_unserved_twh = sum(diag["unserved_twh_by_year"].values())
-    solar_total_built_mw = sum(float(pyo.value(m.solar_add[t])) for t in range(len(years)))
+    solar_total_built_mw = sum(float(pyo.value(m.solar_public_add[t])) + float(pyo.value(m.solar_eaas_add[t])))
+    avg_gas_shadow = np.mean(
+        [v for v in diag["gas_shadow_price_usd_per_twh_th_by_year"].values()
+         if v is not None]
+    )
+    solar_total_built_mw = sum(
+        float(pyo.value(m.solar_public_add[t]))
+        + float(pyo.value(m.solar_eaas_add[t]))
+        for t in range(len(years))
+    )
 
     out = {
         "cap_scenario": cap_scenario_name,
         "decision_variables": {
-            "solar_add_mw_by_year": {int(y): float(pyo.value(m.solar_add[t])) for t,y in enumerate(years)},
-            "storage_capacity_mwh": float(pyo.value(m.storage_capacity)),
-            "solar_total_built_mw": solar_total_built_mw,
-        },
-        "npv_total_cost_usd": npv_total_cost_usd,
-        "cumulative_unserved_twh": cumulative_unserved_twh,
-        "actual_emissions_tco2_total": float(pyo.value(m.emissions)),
-        "diagnostics": diag,
-    }
+            "solar_add_mw_by_year": {
+                int(y):
+                    float(pyo.value(m.solar_public_add[t]))
+                    + float(pyo.value(m.solar_eaas_add[t]))
+                for t, y in enumerate(years)
+                },
+                "storage_capacity_mwh":
+                    float(pyo.value(m.storage_capacity_mwh[len(years)-1])),
+                "solar_total_built_mw": solar_total_built_mw,
+            },
+            "npv_total_cost_usd": npv_total_cost_usd,
+            "cumulative_unserved_twh": cumulative_unserved_twh,
+            "actual_emissions_tco2_total": float(pyo.value(m.emissions)),
+            "avg_gas_shadow_usd_per_twh_th": avg_gas_shadow,
+            "diagnostics": diag,
+        }
 
     print("Storage discharge (TWh by year):", diag["storage_discharge_twh_e_by_year"])
     print("Storage binding constraint by year:", diag["storage_binding_by_year"])
@@ -154,7 +174,6 @@ def main():
     scenario = load_scenario(
         demand_level_case="served",
         demand_case="baseline",
-        gas_case="baseline",
         gas_deliverability_case="baseline",
         solar_case="baseline",
         carbon_case="no_policy",
@@ -162,34 +181,37 @@ def main():
         end_year=2045,
     )
 
-    econ = load_econ()
-
     cases = ["ndc_unconditional_20", "ndc_conditional_47"]
+    voll_cases = ["voll_low", "voll_mid", "voll_high"]
 
     for c in cases:
-        out = run_case(c, scenario, econ)
+        for voll_case in voll_cases:
 
-        # ------------------------------------------------------------
-        # Save outputs
-        # ------------------------------------------------------------
-        case_dir = RESULTS_DIR / c
-        case_dir.mkdir(parents=True, exist_ok=True)
+            print(f"\nRunning {c} with {voll_case}")
+            econ = load_econ(voll_case)
+            out = run_case(c, scenario, econ)
 
-        with open(case_dir / "summary.json", "w") as f:
-            json.dump(
-                {
-                    "cap_scenario": c,
-                    "decision_variables": out["decision_variables"],
-                    "npv_total_cost_usd": out["npv_total_cost_usd"],
-                    "cumulative_unserved_twh": out["cumulative_unserved_twh"],
-                    "actual_emissions_tco2_total": out["actual_emissions_tco2_total"],
-                },
-                f,
-                indent=2,
-            )
+            # Save outputs
+            case_dir = RESULTS_DIR / f"{c}_{voll_case}"
+            case_dir.mkdir(parents=True, exist_ok=True)
 
-        with open(case_dir / "diagnostics.json", "w") as f:
-            json.dump(out["diagnostics"], f, indent=2)
+            with open(case_dir / "summary.json", "w") as f:
+                json.dump(
+                    {
+                        "cap_scenario": c,
+                        "voll_case": voll_case,
+                        "voll_value_usd_per_twh": econ["UNSERVED_ENERGY_PENALTY"],
+                        "decision_variables": out["decision_variables"],
+                        "npv_total_cost_usd": out["npv_total_cost_usd"],
+                        "cumulative_unserved_twh": out["cumulative_unserved_twh"],
+                        "actual_emissions_tco2_total": out["actual_emissions_tco2_total"],
+                    },
+                    f,
+                    indent=2,
+                )
+
+            with open(case_dir / "diagnostics.json", "w") as f:
+                json.dump(out["diagnostics"], f, indent=2)
 
         # ------------------------------------------------------------
         # Save timeseries (csv)

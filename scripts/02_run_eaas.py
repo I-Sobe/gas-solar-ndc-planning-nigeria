@@ -9,8 +9,8 @@ sys.path.append(str(ROOT))
 from src.scenarios import load_scenario
 import pyomo.environ as pyo
 from src.optimize_model import build_model, solve_model
-from src.optimize_experiments import extract_planning_diagnostics
-from src.optimize_experiments import run_deterministic_scenario
+from src.optimize_experiments import run_deterministic_scenario, run_tariff_public_capital_frontier ,extract_planning_diagnostics
+
 
 # ============================================================
 # PATH SETUP
@@ -19,7 +19,7 @@ from src.optimize_experiments import run_deterministic_scenario
 #ROOT = Path(__file__).resolve().parents[1]  # repo root
 #sys.path.append(str(ROOT))
 
-RESULTS_DIR = ROOT / "results" / "baseline"
+RESULTS_DIR = ROOT / "results" / "eaas"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -93,10 +93,14 @@ def main():
         end_year=2045,
     )
 
+    scenario["financing_regime"] = "eaas"
+    scenario["solar_service_tariff_usd_per_twh"] = 95_000_000.0
+    scenario["required_margin"] = 1.10
+    scenario["discount_rate"] = 0.04
+
     econ = load_econ()
 
     years = scenario["years"]
-       
 
     # Build and solve baseline model with an effectively non-binding cumulative cap
     m = build_model(
@@ -136,10 +140,10 @@ def main():
     # Decision variables
     dv = {
         "solar_add_mw_by_year":
-            {int(y):
-                float(pyo.value(m.solar_public_add[t]))
-                + float(pyo.value(m.solar_eaas_add[t]))
-            for t,y in enumerate(years)
+        {int(y):
+            float(pyo.value(m.solar_public_add[t]))
+            + float(pyo.value(m.solar_eaas_add[t]))
+        for t,y in enumerate(years)
         },
         "gas_add_mw_by_year": {
             int(y): float(pyo.value(m.gas_add[t]))
@@ -174,15 +178,6 @@ def main():
     with open(RESULTS_DIR / "diagnostics.json", "w") as f:
         json.dump(diag, f, indent=2)
 
-    # Compute actual discounted public solar CAPEX used
-    solar_public_npv_spend = sum(
-        float(pyo.value(m.DF[t]))
-        * float(pyo.value(m.solar_public_add[t]))
-        * econ["SOLAR_CAPEX_PER_MW"]
-        for t in range(len(years))
-    )
-
-    print("Discounted public solar CAPEX used (USD):", solar_public_npv_spend)
     # ------------------------------------------------------------
     # Save summary (json)
     # ------------------------------------------------------------
@@ -192,7 +187,6 @@ def main():
         "npv_total_cost_usd": npv_total_cost_usd,
         "cumulative_unserved_twh": cumulative_unserved_twh,
         "actual_emissions_tco2_total": actual_emissions_tco2_total,
-        "solar_public_npv_spend": solar_public_npv_spend,
         "notes": "Baseline = no binding emissions cap (cap set to 1e18 tCO2).",
     }
 
@@ -227,7 +221,26 @@ def main():
 
     ts.to_csv(RESULTS_DIR / "timeseries.csv", index=False)
 
-    print("--- Baseline run saved ---")
+    tariff_grid = [
+        60_000_000,
+        70_000_000,
+        80_000_000,
+        90_000_000,
+        100_000_000,
+        110_000_000,
+    ]
+
+    frontier = run_tariff_public_capital_frontier(
+        scenario,
+        econ,
+        tariffs=tariff_grid
+    )
+
+    print("Tariff–capital frontier:")
+    for row in frontier:
+        print(row)
+
+    print("--- EaaS run saved ---")
     print("Saved diagnostics:", RESULTS_DIR / "diagnostics.json")
     print("Saved summary:", RESULTS_DIR / "summary.json")
     print("Saved timeseries:", RESULTS_DIR / "timeseries.csv")
@@ -236,3 +249,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
