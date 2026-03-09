@@ -956,15 +956,15 @@ def run_financing_vs_resource_test(econ):
                 solar_build_case=build_case
             )
 
-        scenario["financing_regime"] = "eaas"
+            scenario["financing_regime"] = "eaas"
 
-        m = build_model(
-            scenario=scenario,
-            econ=econ,
-            emissions_cap=1e18
-        )
+            m = build_model(
+                scenario=scenario,
+                econ=econ,
+                emissions_cap=1e18
+            )
 
-        solve_model(m)
+            solve_model(m)
 
         diagnostics = extract_planning_diagnostics(m, scenario, econ)
         summary = summarize_run(m, diagnostics, scenario)
