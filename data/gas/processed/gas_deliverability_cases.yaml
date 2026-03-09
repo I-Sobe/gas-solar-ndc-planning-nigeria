@@ -5,7 +5,10 @@ anchor:
 cases:
   downside:
     type: exponential_decline
-    decline_rate: 0.03
+    decline_rate: 0.03          # 3% annual decline reflects mature gas basin depletion
+                                # consistent with Niger Delta post-plateau production trends.
+                                # Literature on mature gas reservoirs commonly reports
+                                # 3–8% aggregate decline absent major reinvestment.
 
   baseline:
     type: drift
@@ -13,17 +16,22 @@ cases:
 
   upside:
     type: lag_ramp_uplift
-    lag_years: 5
-    ramp_years: 5
-    uplift_fraction: 0.20
+    lag_years: 5                # Development and infrastructure lag typical of upstream projects
+                                # (FID to first gas often 4-6 years in NIgeria)
+    ramp_years: 5               # Gradual ramp-up reflecting phased compression,
+                                # gathering system expansion, and well tie-ins.
+    uplift_fraction: 0.20       # 20% uplift approximates incremental capacity from:
+                                # - Associated gas capture improvements
+                                # - DGDO enforcement
+                                # - Pipeline rehabilitation
   
   shock_recovery:
     type: shock_recovery
     baseline_end_year: 2029
     shock_start_year: 2030
     shock_end_year: 2033
-    shock_decline_rate: 0.03
+    shock_decline_rate: 0.03        # Reflects disruption from vandalism, outages, or pipeline failure.
     recovery_start_year: 2034
-    recovery_ramp_years: 5
-    recovery_uplift_fraction: 0.20
+    recovery_ramp_years: 5          # Historical repair + stabilization perios often span 3-5 years.
+    recovery_uplift_fraction: 0.20  # Recovery capped at moderate improvement, not structural doubling
 

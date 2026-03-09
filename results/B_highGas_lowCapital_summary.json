@@ -1,0 +1,13 @@
+{
+  "gas_binding_share": 0.09523809523809523,
+  "gas_shadow_avg_usd_per_twh_th": 4287431283.4,
+  "gas_shadow_max_usd_per_twh_th": 8565000000.0,
+  "npv_total_cost_usd": 49861119422.580475,
+  "cumulative_unserved_twh": 1.409796,
+  "cumulative_emissions_tco2": 92539060.439,
+  "solar_total_built_mw": 11740.807605,
+  "final_storage_capacity_mwh": 2554.416,
+  "solar_public_total_mw": 3230.791905,
+  "gas_shadow_last_year": 9862566.8,
+  "solar_eaas_total_mw": 8510.0157
+}

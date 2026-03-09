@@ -42,7 +42,13 @@ dv = out0["decision_variables"]
 diag = out0["diagnostics"]
 
 print("Solved baseline.")
-print("Solar addition (MW/year):", dv["solar_add_mw_by_year"])
+print("Solar addition (MW/year):", dv[""solar_add_mw_by_year":
+    {
+        int(y):
+            float(pyo.value(m.solar_public_add[t]))
+            + float(pyo.value(m.solar_eaas_add[t]))
+        for t,y in enumerate(years)
+    },_by_year"])
 print("Storage capacity (MWh):", dv["storage_capacity_mwh"])
 print("Unserved 2025 (TWh):", diag["unserved_twh_by_year"][2025])
 print("Gas to power 2025 (TWh_th):", diag["gas_to_power_twh_th_by_year"][2025])
