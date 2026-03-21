@@ -13,21 +13,37 @@ PROJECT_ROOT = Path(".")
 OUT_DIR = PROJECT_ROOT / "results_phase8"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
+# Single VoLL used across ALL cases. Change here to switch all five cases at once.
+# voll_mid (10 USD/kWh) is the canonical choice: midpoint of the defensible
+# Nigerian range (5–30 USD/kWh), prevents unserved-energy penalty from
+# dominating total system cost, and makes cross-case comparisons valid.
+CANONICAL_VOLL = "voll_mid"
+
 CASES = [
     {
         "case": "baseline_no_policy",
-        "summary_path": PROJECT_ROOT / "results/baseline/summary.json",
+        "summary_path":    PROJECT_ROOT / "results/baseline/summary.json",
         "timeseries_path": PROJECT_ROOT / "results/baseline/timeseries.csv",
     },
     {
-        "case": "ndc_unconditional_20",
-        "summary_path": PROJECT_ROOT / "results/ndc/ndc_unconditional_20/summary.json",
-        "timeseries_path": PROJECT_ROOT / "results/ndc/ndc_unconditional_20/timeseries.csv",
+        "case": "ndc3_unconditional",
+        "summary_path":    PROJECT_ROOT / f"results/ndc/ndc3_unconditional_{CANONICAL_VOLL}/summary.json",
+        "timeseries_path": PROJECT_ROOT / f"results/ndc/ndc3_unconditional_{CANONICAL_VOLL}/timeseries.csv",
     },
     {
-        "case": "ndc_conditional_47",
-        "summary_path": PROJECT_ROOT / "results/ndc/ndc_conditional_47/summary.json",
-        "timeseries_path": PROJECT_ROOT / "results/ndc/ndc_conditional_47/timeseries.csv",
+        "case": "ndc3_conditional",
+        "summary_path":    PROJECT_ROOT / f"results/ndc/ndc3_conditional_{CANONICAL_VOLL}/summary.json",
+        "timeseries_path": PROJECT_ROOT / f"results/ndc/ndc3_conditional_{CANONICAL_VOLL}/timeseries.csv",
+    },
+    {
+        "case": "ndc3_unconditional_eaas",
+        "summary_path":    PROJECT_ROOT / f"results/ndc_eaas/ndc3_unconditional_{CANONICAL_VOLL}/summary.json",
+        "timeseries_path": PROJECT_ROOT / f"results/ndc_eaas/ndc3_unconditional_{CANONICAL_VOLL}/timeseries.csv",
+    },
+    {
+        "case": "ndc3_conditional_eaas",
+        "summary_path":    PROJECT_ROOT / f"results/ndc_eaas/ndc3_conditional_{CANONICAL_VOLL}/summary.json",
+        "timeseries_path": PROJECT_ROOT / f"results/ndc_eaas/ndc3_conditional_{CANONICAL_VOLL}/timeseries.csv",
     },
 ]
 
@@ -122,25 +138,43 @@ def main():
     frontier = frontier.sort_values("cumulative_emissions_tco2", ascending=False)
     frontier.to_csv(OUT_DIR / "frontier_points.csv", index=False)
 
-    # Compute incremental MAC between adjacent points (ordered by emissions)
+    # Compute incremental MAC between adjacent points (ordered by emissions).
+    # Pairs with delta_emissions ≈ 0 are EaaS-vs-non-EaaS financing comparisons,
+    # not abatement steps. MAC is undefined for zero emissions change.
+    # They are written to a separate file to keep the MAC table clean.
     mac_rows = []
+    financing_comparison_rows = []
+
     for i in range(len(frontier) - 1):
         a = frontier.iloc[i]
         b = frontier.iloc[i + 1]
         d_cost = float(b["npv_total_cost_usd"] - a["npv_total_cost_usd"])
-        d_em = float(a["cumulative_emissions_tco2"] - b["cumulative_emissions_tco2"])
-        mac = np.nan if d_em == 0 else d_cost / d_em
-        mac_rows.append(
-            {
-                "from_case": a["case"],
-                "to_case": b["case"],
+        d_em   = float(a["cumulative_emissions_tco2"] - b["cumulative_emissions_tco2"])
+
+        if abs(d_em) < 1e3:
+            # Same emissions level: EaaS vs non-EaaS financing comparison.
+            # MAC is not defined — this is a cost-of-financing gap, not abatement cost.
+            financing_comparison_rows.append({
+                "from_case":      a["case"],
+                "to_case":        b["case"],
                 "delta_cost_usd": d_cost,
-                "delta_emissions_tco2": d_em,
-                "implied_mac_usd_per_tco2": mac,
-            }
-        )
-    mac_df = pd.DataFrame(mac_rows)
-    mac_df.to_csv(OUT_DIR / "marginal_abatement_cost.csv", index=False)
+                "note": (
+                    "Same emissions level — EaaS vs non-EaaS financing comparison. "
+                    "MAC undefined. This represents the cost difference from switching "
+                    "financing regime, not from abating emissions."
+                ),
+            })
+        else:
+            mac_rows.append({
+                "from_case":                a["case"],
+                "to_case":                  b["case"],
+                "delta_cost_usd":           d_cost,
+                "delta_emissions_tco2":     d_em,
+                "implied_mac_usd_per_tco2": d_cost / d_em,
+            })
+
+    pd.DataFrame(mac_rows).to_csv(OUT_DIR / "marginal_abatement_cost.csv", index=False)
+    pd.DataFrame(financing_comparison_rows).to_csv(OUT_DIR / "eaas_financing_gap.csv", index=False)
 
     # Frontier plot
     plt.figure()
@@ -345,6 +379,44 @@ def main():
         )
     es = pd.DataFrame(es_rows)
     es.to_csv(OUT_DIR / "energy_security_dashboard.csv", index=False)
+
+    
+    # ---- 8.7 EaaS Deployment vs Carbon Shadow Price ----
+    # Note: financing gap is zero at the modelled tariff level (tariff revenue
+    # exceeds CAPEX), so subsidy_per_mw_usd is mechanically zero. The
+    # analytically meaningful series is EaaS deployment volume alongside the
+    # carbon shadow price, which captures when scarcity conditions trigger
+    # private EaaS investment without fiscal support.
+    subsidy_carbon_rows = []
+
+    for c in CASES:
+        case = c["case"]
+        ts = ts_by_case[case]
+
+        if "carbon_shadow_usd_per_tco2" not in ts.columns:
+            continue
+
+        for _, row in ts.iterrows():
+            subsidy_val = pd.to_numeric(
+                row.get("subsidy_per_mw_usd", 0), errors="coerce"
+            )
+            carbon_val = pd.to_numeric(
+                row["carbon_shadow_usd_per_tco2"], errors="coerce"
+            )
+            eaas_val = pd.to_numeric(
+                row.get("solar_eaas_add_mw", 0), errors="coerce"
+            )
+
+            subsidy_carbon_rows.append({
+                "case": case,
+                "year": int(row["year"]),
+                "subsidy_per_mw_usd": subsidy_val,
+                "carbon_shadow_usd_per_tco2": carbon_val,
+                "solar_eaas_add_mw": eaas_val,
+            })
+
+    subsidy_carbon_df = pd.DataFrame(subsidy_carbon_rows)
+    subsidy_carbon_df.to_csv(OUT_DIR / "subsidy_vs_carbon.csv", index=False)
 
     print(f"Phase 8 outputs written to: {OUT_DIR.resolve()}")
 

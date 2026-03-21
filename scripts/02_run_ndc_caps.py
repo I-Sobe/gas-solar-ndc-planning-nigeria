@@ -8,7 +8,7 @@ import pyomo.environ as pyo
 ROOT = Path(__file__).resolve().parents[1]  # repo root
 sys.path.append(str(ROOT))
 
-
+from src.io import load_econ
 from src.scenarios import load_scenario
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
@@ -28,56 +28,6 @@ CAP_PATH = ROOT / "data" / "cost" / "processed" / "emissions_cap.csv"
 # ============================================================
 # HELPERS
 # ============================================================
-
-def to_float(x) -> float:
-    return float(str(x).replace(",", "").replace("$", "").strip())
-
-
-def load_econ(voll_case: str) -> dict:
-    econ = {}
-
-    gas_cost_df = pd.read_csv(
-        ROOT / "data" / "cost" / "processed" / "gas_cost.csv",
-        thousands=",",
-    )
-    gas_low_row = gas_cost_df[gas_cost_df["Scenario"] == "gas_low"].iloc[0]
-    econ["GAS_COST_PER_TWH_TH"] = to_float(gas_low_row["total_usd_per_twh_th"])
-
-    solar_df = pd.read_csv(
-        ROOT / "data" / "cost" / "processed" / "solar_capex.csv",
-        thousands=",",
-    )
-    solar_row = solar_df[
-        (solar_df["Scenario"] == "solar_low") & (solar_df["Year"] == 2025)
-    ].iloc[0]
-    econ["SOLAR_CAPEX_PER_MW"] = to_float(solar_row["Solar_capex_usd_per_mw"])
-
-    storage_df = pd.read_csv(
-        ROOT / "data" / "cost" / "processed" / "storage_capex.csv",
-        thousands=",",
-    )
-    storage_row = storage_df[
-        (storage_df["Scenario"] == "Storage_low") & (storage_df["Year"] == 2025)
-    ].iloc[0]
-    econ["STORAGE_COST_PER_MWH"] = to_float(storage_row["Storage_capex_usd_per_mwh"])
-
-    voll_df = pd.read_csv(
-        ROOT / "data" / "cost" / "processed" / "unserved_energy_penalty.csv",
-        thousands=",",
-    )
-
-    voll_row = voll_df[
-        (voll_df["scenario"] == voll_case) & (voll_df["year"] == 2025)
-    ].iloc[0]
-
-    econ["UNSERVED_ENERGY_PENALTY"] = to_float(
-        voll_row["voll_usd_per_twh"]
-    )
-
-    econ["CARBON_EMISSION_FACTOR"] = 0.421
-
-    return econ
-
 
 def load_annual_caps(scenario_name: str, years: list[int]) -> list[float]:
     """
@@ -125,10 +75,10 @@ def run_case(cap_scenario_name: str, scenario: dict, econ: dict) -> dict:
     if not status["optimal"]:
         raise RuntimeError(f"Optimization failed for {cap_scenario_name}: {status}")
 
-    diag = extract_planning_diagnostics(m, scenario)
+    diag = extract_planning_diagnostics(m, scenario, econ)
     npv_total_cost_usd = float(pyo.value(m.system_cost_npv))
     cumulative_unserved_twh = sum(diag["unserved_twh_by_year"].values())
-    solar_total_built_mw = sum(float(pyo.value(m.solar_public_add[t])) + float(pyo.value(m.solar_eaas_add[t])))
+    
     avg_gas_shadow = np.mean(
         [v for v in diag["gas_shadow_price_usd_per_twh_th_by_year"].values()
          if v is not None]
@@ -152,15 +102,15 @@ def run_case(cap_scenario_name: str, scenario: dict, econ: dict) -> dict:
                     float(pyo.value(m.storage_capacity_mwh[len(years)-1])),
                 "solar_total_built_mw": solar_total_built_mw,
             },
-            "npv_total_cost_usd": npv_total_cost_usd,
-            "cumulative_unserved_twh": cumulative_unserved_twh,
-            "actual_emissions_tco2_total": float(pyo.value(m.emissions)),
-            "avg_gas_shadow_usd_per_twh_th": avg_gas_shadow,
-            "diagnostics": diag,
+        "npv_total_cost_usd": npv_total_cost_usd,
+        "cumulative_unserved_twh": cumulative_unserved_twh,
+        "actual_emissions_tco2_total": float(pyo.value(m.emissions)),
+        "avg_gas_shadow_usd_per_twh_th": avg_gas_shadow,
+        "diagnostics": diag,
         }
 
     print("Storage discharge (TWh by year):", diag["storage_discharge_twh_e_by_year"])
-    print("Storage binding constraint by year:", diag["storage_binding_by_year"])
+    # binding constraint by year:", diag["storage_binding_by_year"])
 
     return out
 
@@ -175,14 +125,19 @@ def main():
         demand_level_case="served",
         demand_case="baseline",
         gas_deliverability_case="baseline",
-        solar_case="baseline",
+        #solar_case="baseline",
         carbon_case="no_policy",
         start_year=2025,
         end_year=2045,
     )
 
-    cases = ["ndc_unconditional_20", "ndc_conditional_47"]
-    voll_cases = ["voll_low", "voll_mid", "voll_high"]
+    # NDC 3.0 scenario names — must match scenario column written by
+    # 00_build_emissions_cap.py (NDC 3.0 edition).
+    CANONICAL_VOLL = "voll_mid"
+    cases = ["ndc3_unconditional", "ndc3_conditional"]
+    # Single canonical VoLL — midpoint of defensible Nigerian range (5-30 USD/kWh).
+    # Keeps cross-case comparisons valid. Add entries here for VoLL sensitivity.
+    voll_cases = [CANONICAL_VOLL]
 
     for c in cases:
         for voll_case in voll_cases:
@@ -213,36 +168,37 @@ def main():
             with open(case_dir / "diagnostics.json", "w") as f:
                 json.dump(out["diagnostics"], f, indent=2)
 
-        # ------------------------------------------------------------
-        # Save timeseries (csv)
-        # ------------------------------------------------------------
-        years = [int(y) for y in scenario["years"]]
-        diag = out["diagnostics"]
+            # ------------------------------------------------------------
+            # Save timeseries (csv)
+            # ------------------------------------------------------------
+            years = [int(y) for y in scenario["years"]]
+            diag = out["diagnostics"]
 
-        ts = pd.DataFrame(
-            {
-                "year": years,
-                "demand_twh": [diag["demand_twh_by_year"][y] for y in years],
-                "gas_avail_twh_th": [diag["gas_avail_twh_th_by_year"][y] for y in years],
-                "gas_to_power_twh_th": [diag["gas_to_power_twh_th_by_year"][y] for y in years],
-                "gas_generation_twh_e": [diag["gas_generation_twh_e_by_year"][y] for y in years],
-                "solar_generation_twh_e": [diag["solar_generation_twh_e_by_year"][y] for y in years],
-                "storage_discharge_twh_e": [diag["storage_discharge_twh_e_by_year"][y] for y in years],
-                "unserved_twh": [diag["unserved_twh_by_year"][y] for y in years],
-                "emissions_tco2": [diag["emissions_tco2_by_year"][y] for y in years],
-                "gas_shadow_price_usd_per_twh_th": [diag["gas_shadow_price_usd_per_twh_th_by_year"][y] for y in years],
-                "carbon_shadow_usd_per_tco2": [diag["carbon_shadow_price_usd_per_tco2_by_year"][y] for y in years],
-                "discount_factor": [diag["discount_factor_by_year"][y] for y in years],
-            }
-        )
+            ts = pd.DataFrame(
+                {
+                    "year": years,
+                    "demand_twh": [diag["demand_twh_by_year"][y] for y in years],
+                    "gas_avail_twh_th": [diag["gas_avail_twh_th_by_year"][y] for y in years],
+                    "gas_to_power_twh_th": [diag["gas_to_power_twh_th_by_year"][y] for y in years],
+                    "gas_generation_twh_e": [diag["gas_generation_twh_e_by_year"][y] for y in years],
+                    "solar_generation_twh_e": [diag["solar_generation_twh_e_by_year"][y] for y in years],
+                    "storage_discharge_twh_e": [diag["storage_discharge_twh_e_by_year"][y] for y in years],
+                    "unserved_twh": [diag["unserved_twh_by_year"][y] for y in years],
+                    "emissions_tco2": [diag["emissions_tco2_by_year"][y] for y in years],
+                    "gas_shadow_price_usd_per_twh_th": [diag["gas_shadow_price_usd_per_twh_th_by_year"][y] for y in years],
+                    "carbon_shadow_usd_per_tco2": [diag["carbon_shadow_price_usd_per_tco2_by_year"][y] for y in years],
+                    "discount_factor": [diag["discount_factor_by_year"][y] for y in years],
+                    "subsidy_per_mw_usd": [diag["subsidy_per_mw_usd_by_year"][y] for y in years],
+                }
+            )
 
-        ts.to_csv(case_dir / "timeseries.csv", index=False)
+            ts.to_csv(case_dir / "timeseries.csv", index=False)
 
-        print(f"--- {c} saved ---")
-        print("Solar addition (MW/year):", out["decision_variables"]["solar_add_mw_by_year"])
-        print("Storage capacity (MWh):", out["decision_variables"]["storage_capacity_mwh"])
-        print("Total emissions (MtCO2):", out["actual_emissions_tco2_total"] / 1e6)
-        print("Unserved 2025 (TWh):", out["diagnostics"]["unserved_twh_by_year"][2025])
+            print(f"--- {c} saved ---")
+            print("Solar addition (MW/year):", out["decision_variables"]["solar_add_mw_by_year"])
+            print("Storage capacity (MWh):", out["decision_variables"]["storage_capacity_mwh"])
+            print("Total emissions (MtCO2):", out["actual_emissions_tco2_total"] / 1e6)
+            print("Unserved 2025 (TWh):", out["diagnostics"]["unserved_twh_by_year"][2025])
 
 
 if __name__ == "__main__":

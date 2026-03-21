@@ -1,4 +1,6 @@
 case,adequacy_cum_unserved_twh,adequacy_peak_unserved_twh,adequacy_years_with_unserved,sustainability_cum_emissions_tco2,sustainability_binding_years,sustainability_avg_carbon_shadow_binding_only
-baseline_no_policy,0.0,0.0,0,154574275.8,0,0.0
-ndc_unconditional_20,0.0,0.0,0,100121866.00636004,20,49.374524300000004
-ndc_conditional_47,0.0,0.0,0,73785345.53561,20,49.374524300000004
+baseline_no_policy,22.203812120000002,5.6135787,6,154574275.8,0,0.0
+ndc_unconditional_20,52.23072601999999,7.342715,12,128122506.74343996,20,8451.744025
+ndc_conditional_47,97.8469896,10.270957,16,92335770.41314001,20,9307.98545
+ndc_unconditional_20_eaas,4.09757738,2.5261704,3,128122506.74343996,20,2090.2949883049996
+ndc_conditional_47_eaas,12.64786384,2.5261704,7,92335770.41314001,20,5179.006028604999

@@ -8,9 +8,7 @@ def to_float(x):
 scenario = load_scenario(
     demand_level_case="served",
     demand_case="baseline",
-    gas_case="baseline",
     gas_deliverability_case="baseline",
-    solar_case="baseline",
     carbon_case="no_policy",
     start_year=2025,
     end_year=2045,
@@ -41,14 +39,8 @@ out0 = results["results"][0]
 dv = out0["decision_variables"]
 diag = out0["diagnostics"]
 
-print("Solved baseline.")
-print("Solar addition (MW/year):", dv[""solar_add_mw_by_year":
-    {
-        int(y):
-            float(pyo.value(m.solar_public_add[t]))
-            + float(pyo.value(m.solar_eaas_add[t]))
-        for t,y in enumerate(years)
-    },_by_year"])
+print("Solar addition (MW/year):", dv["solar_add_mw_by_year"])
+print("Storage capacity (MWh):", dv["final_storage_capacity_mwh"])
 print("Storage capacity (MWh):", dv["storage_capacity_mwh"])
 print("Unserved 2025 (TWh):", diag["unserved_twh_by_year"][2025])
 print("Gas to power 2025 (TWh_th):", diag["gas_to_power_twh_th_by_year"][2025])

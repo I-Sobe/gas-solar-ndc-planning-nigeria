@@ -18,9 +18,11 @@ import itertools
 import numpy as np
 import pandas as pd
 import pyomo.environ as pyo
+import copy
 
 from src.gas_supply import gas_available_power
 from src.optimize_model import build_model, solve_model
+from src.io import load_solar_capex_by_year # Load time-varying solar CAPEX 
 from src.economics import (
     gas_cost,
     solar_capex,
@@ -37,7 +39,6 @@ from src.scenarios import (
     demand_level_scenarios,
     demand_growth_scenarios,
     gas_deliverability_scenarios,
-    solar_capacity_scenarios,
     solar_build_scenarios,
     carbon_policy_scenarios,
 )
@@ -60,6 +61,7 @@ def write_run_outputs(run_id, diagnostics, summary):
     with open(js_path, "w") as f:
         json.dump(summary, f, indent=2)
 
+
 def assert_duals_present(m, scenario, require_gas_duals=True, require_carbon_duals=False):
     """
     Fail fast if expected duals are missing.
@@ -79,7 +81,7 @@ def assert_duals_present(m, scenario, require_gas_duals=True, require_carbon_dua
             )
 
     if require_carbon_duals and hasattr(m, "emissions_constraint"):
-    # Annual caps (indexed) vs single cap (scalar)
+        # Annual caps (indexed) vs single cap (scalar)
         if m.emissions_constraint.is_indexed():
             missing = []
             for t, y in enumerate(years):
@@ -97,6 +99,7 @@ def assert_duals_present(m, scenario, require_gas_duals=True, require_carbon_dua
                     "Missing scalar emissions_constraint dual. Cannot report carbon shadow price."
                 )
     return None
+
 
 def diagnostics_to_timeseries_df(diagnostics):
     """
@@ -121,6 +124,7 @@ def diagnostics_to_timeseries_df(diagnostics):
         })
 
     return pd.DataFrame(rows)
+
 
 def summarize_run(m, diagnostics, scenario):
     years = scenario["years"]
@@ -202,7 +206,7 @@ def run_annual_cap_case(
 
     assert_duals_present(m, scenario,require_gas_duals=True, require_carbon_duals=True)
 
-    diagnostics = extract_planning_diagnostics(m, scenario)
+    diagnostics = extract_planning_diagnostics(m, scenario, econ)
     summary = summarize_run(m, diagnostics, scenario)
 
     run_id = f"annualcap_{cap_scenario_name}"
@@ -253,7 +257,8 @@ def run_deterministic_scenario(scenario, econ, capacity_paths):
         scenario_name=scenario["gas_scenario"],
     )
 
-    gas_gen = gas_profile["available_twh_th"]
+    eta =scenario.get("gas_eta", 0.43)
+    gas_gen = gas_profile["available_twh_th"] * eta
 
     solar_gen = solar_generation(
         capacity_mw=capacity_paths["solar_mw"],
@@ -311,6 +316,217 @@ def run_deterministic_scenario(scenario, econ, capacity_paths):
         },
     }
 
+# ------------------------------------------------------------
+# Reliability Constraint Extraction
+# ------------------------------------------------------------
+def reliability_levels_log():
+    """
+    Log-tightening reliability levels (fraction of unserved energy allowed).
+    """
+    return [0.20, 0.15, 0.10, 0.08, 0.06, 0.05]
+
+
+def extract_reliability_dual(m):
+    """
+    Returns marginal cost of tightening reliability (USD per TWh).
+    Only valid if constraint exists and is binding.
+    """
+
+    if not hasattr(m, "reliability_constraint"):
+        return None
+
+    # Case 1: scalar constraint (total mode)
+    if not m.reliability_constraint.is_indexed():
+        dual = m.dual.get(m.reliability_constraint, None)
+        if dual is None:
+            return None
+        return max(0.0, float(-dual))  # sign convention
+
+    # Case 2: indexed (annual mode)
+    vals = []
+    for k in m.reliability_constraint:
+        dual = m.dual.get(m.reliability_constraint[k], None)
+        if dual is not None:
+            vals.append(max(0.0, float(-dual)))
+
+    return sum(vals)/len(vals) if vals else None
+
+
+def run_reliability_sweep(scenario, econ):
+    """
+    Runs:
+    - Baseline (VoLL only)
+    - Constrained reliability cases
+
+    Returns comparable outputs
+    """
+    eps_levels = reliability_levels_log()
+    results = []
+
+    # -----------------------------
+    # 1. Baseline (VoLL only)
+    # -----------------------------
+    m_base = build_model(
+        scenario=scenario,
+        econ=econ,
+        reliability_max_unserved_fraction=None
+    )
+        
+    solve_model(m_base)
+    diag_base = extract_planning_diagnostics(m_base, scenario, econ)
+    print("\n=== BASELINE DIAGNOSTICS ===")
+    print("Baseline reliability:", diag_base["horizon_reliability"])
+    print("Total unserved (TWh):", sum(diag_base["unserved_twh_by_year"].values()))
+
+    results.append({
+        "case": "voll_only",
+        "eps": None,
+        "npv_cost": float(pyo.value(m_base.system_cost_npv)),
+        "unserved_total": sum(diag_base["unserved_twh_by_year"].values()),
+        "diagnostics": diag_base,
+        "dual_reliability": None,
+        "status": "feasible"
+    })
+
+    # -----------------------------
+    # 2. Reliability-constrained runs
+    # -----------------------------
+    for eps in eps_levels:
+
+        m = build_model(
+            scenario=scenario,
+            econ=econ,
+            reliability_max_unserved_fraction=eps,
+            reliability_mode="total"
+        )
+
+        try:
+            solve_model(m)
+
+            diag = extract_planning_diagnostics(m, scenario, econ)
+
+            if eps == 0.10:
+                print("\n=== BOTTLENECK DIAGNOSTICS (eps=0.10) ===")
+
+                print("\nGas shadow prices:")
+                print(diag["gas_shadow_price_usd_per_twh_th_by_year"])
+
+                print("\nLand shadow prices:")
+                print(diag["land_shadow_price_by_year"])
+
+                print("\nStorage binding:")
+                print(diag["storage_binding_by_year"])
+
+                bottleneck = identify_bottleneck(diag)
+                print("\n>>> IDENTIFIED BOTTLENECK:", bottleneck)
+
+            dual_rel = extract_reliability_dual(m)
+
+            results.append({
+                "case": "reliability_constrained",
+                "eps": eps,
+                "npv_cost": float(pyo.value(m.system_cost_npv)),
+                "unserved_total": sum(diag["unserved_twh_by_year"].values()),
+                "diagnostics": diag,
+                "dual_reliability": dual_rel,
+                "status": "feasible"
+            })
+
+        except RuntimeError:
+            results.append({
+                "case": "reliability_constrained",
+                "eps": eps,
+                "npv_cost": None,
+                "unserved_total": None,
+                "diagnostics": None,
+                "dual_reliability": None,
+                "status": "infeasible"
+            })
+    
+    return results
+
+
+def identify_bottleneck(diag):
+
+    gas_shadow = diag["gas_shadow_price_usd_per_twh_th_by_year"]
+    land_shadow = diag["land_shadow_price_by_year"]
+    
+    gas_binding_years = sum(1 for v in gas_shadow.values() if v and v > 1e-6)
+    land_binding_years = sum(1 for v in land_shadow.values() if v and v > 1e-6)
+    
+    
+    if gas_binding_years > 0.3 * len(gas_shadow):
+        return "gas_constraint"
+
+    if land_binding_years > 0.3 * len(land_shadow):
+        return "land_constraint"
+
+    return "none"
+
+
+def run_bottleneck_sensitivity(scenario, econ):
+
+    gas_cases = ["baseline", "upside", "downside", "shock_recovery"]
+
+    results = []
+
+    for g in gas_cases:
+
+        scenario_mod = load_scenario(
+            demand_level_case="served",
+            demand_case="baseline",
+            gas_deliverability_case=g,
+            carbon_case="no_policy",
+            start_year=int(scenario["years"][0]),
+            end_year=int(scenario["years"][-1]),
+        )
+
+        m = build_model(
+            scenario=scenario_mod,
+            econ=econ,
+            reliability_max_unserved_fraction=0.10,
+            reliability_mode="total"
+        )
+
+        try:
+            solve_model(m)
+            diag = extract_planning_diagnostics(m, scenario_mod, econ)
+
+            results.append({
+                "gas_case": g,
+                "reliability": diag["horizon_reliability"],
+                "unserved": sum(diag["unserved_twh_by_year"].values())
+            })
+
+        except:
+            results.append({
+                "gas_case": g,
+                "reliability": None,
+                "unserved": None
+            })
+
+    return results
+
+def reliability_results_to_df(results):
+    """
+    Convert reliability sweep results into a flat dataframe
+    for plotting and export.
+    """
+
+    rows = []
+
+    for r in results:
+        rows.append({
+            "eps": r["eps"],
+            "reliability": None if r["eps"] is None else 1 - r["eps"],
+            "npv_cost": r["npv_cost"],
+            "unserved_total": r["unserved_total"],
+            "dual_reliability": r["dual_reliability"],
+            "case": r["case"],
+            "status": r.get("status", "feasible")
+        })
+
+    return pd.DataFrame(rows)
 
 # ============================================================
 # DIAGNOSTICS EXTRACTION
@@ -356,6 +572,7 @@ def extract_carbon_shadow_prices_usd_per_tco2(m, years):
     val = None if val is None else max(0.0, val)
     return {int(y): val for y in years}
 
+
 def compute_reliability_metrics(demand_by_year, unserved_by_year):
 
     years = sorted(demand_by_year.keys())
@@ -395,7 +612,8 @@ def compute_reliability_metrics(demand_by_year, unserved_by_year):
         "expected_unserved_energy_twh": expected_unserved_energy,
     }
 
-def extract_planning_diagnostics(m, scenario, econ=None):
+
+def extract_planning_diagnostics(m, scenario, econ=None, solar_capex_series=None):
 
     years = scenario["years"]
     T = range(len(years))
@@ -489,14 +707,38 @@ def extract_planning_diagnostics(m, scenario, econ=None):
         for t in range(len(years))
     )
 
-    solar_lcoe = econ["SOLAR_CAPEX_PER_MW"] / npv_energy
+    solar_lcoe = econ["SOLAR_CAPEX_PER_MW"] / npv_energy if npv_energy > 0 else None
+    # Solar LCOE: annualized over remaining horizon from each year t
+    # Using a "remaining horizon" LCOE — CAPEX recovered over years remaining
+    # from t onwards. This reflects the effective cost of a MW built in year t.
+    gas_mc = econ["GAS_COST_PER_TWH_TH"] / scenario["gas_eta"]  # USD/TWh_e
 
-    gas_mc = econ["GAS_COST_PER_TWH_TH"] / scenario["gas_eta"]
+    
+    if solar_capex_series is None:
+        # Infer CAPEX scenario from econ or scenario dict; default to solar_low
+        capex_scenario = scenario.get("solar_capex_scenario", "solar_low")
+        solar_capex_by_year = load_solar_capex_by_year(
+            scenario_name=capex_scenario,
+            start_year=int(years[0]),
+            end_year=int(years[-1])
+        )
+    else:
+        solar_capex_by_year = solar_capex_series
+        
 
     solar_beats_gas_year = None
-
-    if solar_lcoe < gas_mc:
-        solar_beats_gas_year = int(years[0])
+    for t, y in enumerate(years):
+        capex_at_t = solar_capex_by_year.get(int(y), econ["SOLAR_CAPEX_PER_MW"])
+        remaining_energy_npv = sum(
+            pyo.value(m.DF[k]) * solar_energy_per_mw
+            for k in range(t, len(years))
+        )
+        if remaining_energy_npv <= 0:
+            continue
+        lcoe_at_t = capex_at_t / remaining_energy_npv
+        if lcoe_at_t < gas_mc:
+            solar_beats_gas_year = int(y)
+            break
     
     # ------------------------------------------------------------
     # Public capital multiplier of EaaS
@@ -534,16 +776,92 @@ def extract_planning_diagnostics(m, scenario, econ=None):
         unserved_dict
     )
 
+    storage_binding = {}
+
+    subsidy_per_mw_by_year = {}
+    for t, y in enumerate(years):
+        solar_add = pyo.value(m.solar_eaas_add[t])
+        if solar_add > 1e-6:
+            subsidy_per_mw_by_year[int(y)] = pyo.value(m.eaas_subsidy[t]) / solar_add
+        else:
+            subsidy_per_mw_by_year[int(y)] = 0.0
+
+    for t, y in enumerate(years):
+        power_bind = abs(
+            pyo.value(m.storage_discharge[t])
+            - (pyo.value(m.storage_power_mw[t]) * scenario.get("storage_deployable_hours_per_year", 700.0)) / 1e6
+        ) <= 1e-6
+
+        energy_bind = abs(
+            pyo.value(m.storage_discharge[t])
+            - scenario["storage_round_trip_eff"] * pyo.value(m.storage_charge[t])
+        ) <= 1e-6
+        # Note: binding is checked by primal slack < 1e-6 TWh (≈ 1 MWh).
+        # This is a primal check, not a dual check. For LP post-processing,
+        # this is for diagnostic purposes.
+        charge_bind = abs(
+            pyo.value(m.storage_charge[t])
+            - scenario["storage_solar_surplus_frac"] * pyo.value(m.solar_generation[t])
+        ) <= 1e-6
+
+        if power_bind:
+            storage_binding[int(y)] = "power_limit"
+        elif energy_bind:
+            storage_binding[int(y)] = "energy_limit"
+        elif charge_bind:
+            storage_binding[int(y)] = "charge_limit"
+        else:
+            storage_binding[int(y)] = "none"
+
+    # ---- Peak adequacy heuristic (must be computed before return dict)
+    peak_demand_multiple = scenario.get("peak_demand_multiple", 2.5)
+    peak_adequacy_by_year = {}
+    for t, y in enumerate(years):
+        avg_demand_twh = demand[t]
+        avg_mw = avg_demand_twh * 1e6 / 8760
+        peak_mw = avg_mw * peak_demand_multiple
+        firm_capacity_mw = (
+            pyo.value(m.gas_capacity_mw[t])
+            + pyo.value(m.storage_power_mw[t])
+        )
+        peak_adequacy_by_year[int(y)] = {
+            "peak_demand_mw": round(peak_mw, 1),
+            "firm_capacity_mw": round(firm_capacity_mw, 1),
+            "reserve_margin": round((firm_capacity_mw - peak_mw) / peak_mw, 4),
+        }
+
+    # ---- Land shadow price (must be computed before return dict)
+    land_shadow = {}
+    for t, y in enumerate(years):
+        raw = m.dual.get(m.land_constraint[t], None)
+        if raw is None:
+            slack = (
+                scenario["land_available_km2"]
+                - pyo.value(m.solar_capacity_mw[t]) * scenario["land_intensity_solar_km2_per_mw"]
+                - pyo.value(m.gas_capacity_mw[t]) * scenario["land_intensity_gas_km2_per_mw"]
+                - pyo.value(m.storage_capacity_mwh[t]) * scenario["land_intensity_storage_km2_per_mwh"]
+            )
+            if slack < -1e-4:
+                raise RuntimeError(
+                    f"Land constraint binding in year {int(y)} but dual is missing. "
+                    "Solver did not return dual. Cannot report land shadow price."
+                )
+            land_shadow[int(y)] = 0.0
+        else:
+            land_shadow[int(y)] = max(0.0, float(-raw))
+
     return {
+        "peak_adequacy_by_year": peak_adequacy_by_year,
+        "storage_binding_by_year": storage_binding,
+        "subsidy_per_mw_usd_by_year": subsidy_per_mw_by_year,
         "solar_lcoe_usd_per_twh": solar_lcoe,
-
-        "solar_capex_usd_per_mw":
-            econ["SOLAR_CAPEX_PER_MW"],
-
-        "solar_tariff_usd_per_twh":
-            scenario["solar_service_tariff_usd_per_twh"],
+        "solar_capex_usd_per_mw": econ["SOLAR_CAPEX_PER_MW"],
+        "solar_tariff_usd_per_twh": scenario["solar_service_tariff_usd_per_twh"],
         "solar_beats_gas_year": solar_beats_gas_year,
         "value_of_gas_to_power_usd_per_twh_e_by_year": gas_value_electricity,
+        "storage_charge_twh_e_by_year":
+            {int(y): float(pyo.value(m.storage_charge[t]))
+             for t, y in enumerate(years)},
         "bankability_threshold":
             scenario["required_margin"] *
             (
@@ -559,79 +877,37 @@ def extract_planning_diagnostics(m, scenario, econ=None):
         "max_unserved_year": max_unserved_year,
         "gas_shadow_price_usd_per_twh_th_by_year":
             extract_gas_shadow_prices_usd_per_twh_th(m, years),
-        "land_shadow_price_by_year": {int(y): float(-m.dual.get(m.land_constraint[t], 0.0))for t, y in enumerate(years)},
-        
-        "solar_capacity_mw_by_year": {int(y): float(pyo.value(m.solar_capacity_mw[t])) for t, y in enumerate(years)},
-        "solar_generation_twh_e_by_year": {int(y): float(pyo.value(m.solar_generation[t])) for t, y in enumerate(years)},
-        "discount_factor_by_year": {int(y): float(pyo.value(m.DF[t])) for t, y in enumerate(years)},
-        "emissions_tco2_by_year": {
-            int(y): float(pyo.value(m.emissions_by_year[t])) for t, y in enumerate(years)
-        },
-        "carbon_shadow_price_usd_per_tco2_by_year": carbon_shadow, 
-        
-        "gas_avail_twh_th_by_year":
-            _series_dict_by_year(gas_avail, years),
-
+        "land_shadow_price_by_year": land_shadow,
+        "solar_capacity_mw_by_year":
+            {int(y): float(pyo.value(m.solar_capacity_mw[t])) for t, y in enumerate(years)},
+        "solar_generation_twh_e_by_year":
+            {int(y): float(pyo.value(m.solar_generation[t])) for t, y in enumerate(years)},
+        "discount_factor_by_year":
+            {int(y): float(pyo.value(m.DF[t])) for t, y in enumerate(years)},
+        "emissions_tco2_by_year":
+            {int(y): float(pyo.value(m.emissions_by_year[t])) for t, y in enumerate(years)},
+        "carbon_shadow_price_usd_per_tco2_by_year": carbon_shadow,
+        "gas_avail_twh_th_by_year": _series_dict_by_year(gas_avail, years),
         "bankable_capex_per_mw":
             scenario["solar_service_tariff_usd_per_twh"] *
             npv_energy
             / scenario["required_margin"],
-
         "gas_to_power_twh_th_by_year":
-            {int(y): float(pyo.value(m.gas_to_power[t]))
-             for t, y in enumerate(years)},
-
+            {int(y): float(pyo.value(m.gas_to_power[t])) for t, y in enumerate(years)},
         "gas_generation_twh_e_by_year":
-            {int(y): float(pyo.value(m.gas_generation[t]))
-             for t, y in enumerate(years)},
+            {int(y): float(pyo.value(m.gas_generation[t])) for t, y in enumerate(years)},
         "demand_twh_by_year": demand_dict,
         "unserved_twh_by_year": unserved_dict,
-        
         "storage_discharge_twh_e_by_year":
-            {int(y): float(pyo.value(m.storage_discharge[t]))
-             for t, y in enumerate(years)},
-
+            {int(y): float(pyo.value(m.storage_discharge[t])) for t, y in enumerate(years)},
         "solar_public_add_mw_by_year":
-            {int(y): float(pyo.value(m.solar_public_add[t]))
-            for t, y in enumerate(years)},
-
+            {int(y): float(pyo.value(m.solar_public_add[t])) for t, y in enumerate(years)},
         "solar_eaas_add_mw_by_year":
-            {int(y): float(pyo.value(m.solar_eaas_add[t]))
-            for t, y in enumerate(years)},
-        
-        "storage_binding_by_year":
-            {
-                int(y):
-                    "cycle_limit"
-                    if abs(
-                        pyo.value(m.storage_cycle_limit[t].body)
-                        - pyo.value(m.storage_cycle_limit[t].upper)
-                    ) <= 1e-6
-                    else "solar_limit"
-                    if abs(
-                        pyo.value(m.storage_solar_limit[t].body)
-                        - pyo.value(m.storage_solar_limit[t].upper)
-                    ) <= 1e-6
-                    else "power_limit"
-                    if abs(
-                        pyo.value(m.storage_power_limit[t].body)
-                        - pyo.value(m.storage_power_limit[t].upper)
-                    ) <= 1e-6
-                    else "none"
-                for t, y in enumerate(years)
-            },
-        # reliability diagnostics
-        "annual_reliability_by_year":
-            reliability_metrics["annual_reliability_by_year"],
-
-        "worst_year_reliability":
-            reliability_metrics["worst_year_reliability"],
-
-        "horizon_reliability":
-            reliability_metrics["horizon_reliability"],
-
-        "expected_unserved_energy_twh":
-            reliability_metrics["expected_unserved_energy_twh"],
+            {int(y): float(pyo.value(m.solar_eaas_add[t])) for t, y in enumerate(years)},
+        "annual_reliability_by_year": reliability_metrics["annual_reliability_by_year"],
+        "worst_year_reliability": reliability_metrics["worst_year_reliability"],
+        "horizon_reliability": reliability_metrics["horizon_reliability"],
+        "expected_unserved_energy_twh": reliability_metrics["expected_unserved_energy_twh"],
     }
 
 # ============================================================
@@ -662,7 +938,7 @@ def generate_weighted_pareto(scenario, econ, weight_grid):
 
         assert_duals_present(m, scenario, require_gas_duals=True, require_carbon_duals=False)
         
-        diagnostics = extract_planning_diagnostics(m, scenario)
+        diagnostics = extract_planning_diagnostics(m, scenario, econ)
         summary = summarize_run(m, diagnostics, scenario)
 
         run_id = f"pareto_wcost{w_cost:.3f}_wem{w_em:.3f}"
@@ -717,7 +993,7 @@ def generate_epsilon_pareto(scenario, econ, emissions_caps):
         require_carbon = float(eps) < 1e15  # threshold: anything huge is treated as "no cap"
         assert_duals_present(m, scenario, require_gas_duals=True, require_carbon_duals=require_carbon)
         
-        diagnostics = extract_planning_diagnostics(m, scenario)
+        diagnostics = extract_planning_diagnostics(m, scenario, econ)
         summary = summarize_run(m, diagnostics, scenario)
         run_id = f"pareto_eps{float(eps):.3e}"
         write_run_outputs(run_id, diagnostics, summary)
@@ -750,15 +1026,16 @@ def generate_epsilon_pareto(scenario, econ, emissions_caps):
 # ===========================================================
 def run_sensitivity_matrix(base_scenario, econ_sets, storage_sets, cap_sets, out_csv):
     rows = []
-
+    
     for econ_case in econ_sets:      # gas price + VoLL combos (controlled)
         for storage_case in storage_sets:
             for cap_case in cap_sets:
                 scenario = dict(base_scenario)
+                years = base_scenario["years"]
+
 
                 # Apply storage proxy settings
-                scenario["storage_cycles_per_year"] = storage_case["cycles"]
-                scenario["storage_critical_hours_per_year"] = storage_case["critical_hours"]
+                scenario["storage_deployable_hours_per_year"] = storage_case["deployable_hours"]
 
                 # Cap settings handled by passing emissions_cap_by_year to build_model (if any)
                 emissions_caps = cap_case.get("emissions_cap_by_year", None)
@@ -777,8 +1054,12 @@ def run_sensitivity_matrix(base_scenario, econ_sets, storage_sets, cap_sets, out
                     require_gas_duals=True,
                     require_carbon_duals=cap_case.get("emissions_cap_by_year") is not None
                 )
-                diag = extract_planning_diagnostics(m, scenario)
-                reliability = compute_reliability_metrics(diag)
+                diag = extract_planning_diagnostics(m, scenario, econ=econ_case["econ"])
+                reliability = compute_reliability_metrics(
+                    diag["demand_twh_by_year"],
+                    diag["unserved_twh_by_year"]
+                )
+                # reliability = compute_reliability_metrics(diag)
                 summary = summarize_run(m, diag, scenario)
                 run_id = f"sens_{econ_case['name']}_{storage_case['name']}_{cap_case['name']}"
                 write_run_outputs(run_id, diag, summary)
@@ -820,46 +1101,43 @@ def run_all_deterministic_scenarios(
     for demand_level_case in demand_level_scenarios():
         for demand_case in demand_growth_scenarios():
             for gas_case in gas_deliverability_scenarios():
-                for solar_case in solar_capacity_scenarios():
-                    for carbon_case in carbon_policy_scenarios():
+                for carbon_case in carbon_policy_scenarios():
 
-                        scenario = load_scenario(
-                            demand_level_case=demand_level_case,
-                            demand_case=demand_case,
-                            gas_deliverability_case=gas_case,
-                            solar_case=solar_case,
-                            carbon_case=carbon_case,
-                            start_year=start_year,
-                            end_year=end_year,
-                        )
-
-                        output = run_deterministic_scenario(
-                            scenario=scenario,
-                            econ=econ,
-                            capacity_paths={
-                                "solar_mw": [scenario["solar_baseline_mw"]] * len(scenario["years"]),
-                                "storage_mwh": [0.0] * len(scenario["years"]),
-                            }
-                        )
+                    scenario = load_scenario(
+                        demand_level_case=demand_level_case,
+                        demand_case=demand_case,
+                        gas_deliverability_case=gas_case,
+                        carbon_case=carbon_case,
+                        start_year=start_year,
+                        end_year=end_year,
+                    )
+                    output = run_deterministic_scenario(
+                        scenario=scenario,
+                        econ=econ,
+                        capacity_paths={
+                            "solar_mw": [scenario["solar_baseline_mw"]] * len(scenario["years"]),
+                            "storage_mwh": [0.0] * len(scenario["years"]),
+                        }
+                    )
                         
-                        results.append({
-                            "scenario_labels": {
-                                "demand_level": demand_level_case,
-                                "demand": demand_case,
-                                "gas": gas_case,
-                                "solar": solar_case,
-                                "carbon": carbon_case,
-                            },
-                            "total_cost_usd": output["costs"]["total"],
-                            "gas_cost_usd": output["costs"]["gas"],
-                            "solar_cost_usd": output["costs"]["solar"],
-                            "carbon_cost_usd": output["costs"]["carbon"],
-                            "unserved_cost_usd": output["costs"]["unserved"],
-                            "total_unserved_energy_twh":
-                                float(np.sum(output["unserved"])),
-                        })
+                    results.append({
+                        "scenario_labels": {
+                            "demand_level": demand_level_case,
+                            "demand": demand_case,
+                            "gas": gas_case,
+                            "carbon": carbon_case,
+                        },
+                        "total_cost_usd": output["costs"]["total"],
+                        "gas_cost_usd": output["costs"]["gas"],
+                        "solar_cost_usd": output["costs"]["solar"],
+                        "carbon_cost_usd": output["costs"]["carbon"],
+                        "unserved_cost_usd": output["costs"]["unserved"],
+                        "total_unserved_energy_twh":
+                            float(np.sum(output["unserved"])),
+                    })
 
     return results
+
 
 # frontier Experiment
 def run_tariff_public_capital_frontier(
@@ -885,7 +1163,7 @@ def run_tariff_public_capital_frontier(
 
     for tariff in tariffs:
 
-        scenario_copy = scenario.copy()
+        scenario_copy = copy.deepcopy(scenario)
         scenario_copy["solar_service_tariff_usd_per_twh"] = tariff
         scenario_copy["financing_regime"] = "eaas"
 
@@ -921,6 +1199,7 @@ def run_tariff_public_capital_frontier(
         })
 
     return frontier
+
 
 def run_financing_vs_resource_test(econ):
 
@@ -966,24 +1245,24 @@ def run_financing_vs_resource_test(econ):
 
             solve_model(m)
 
-        diagnostics = extract_planning_diagnostics(m, scenario, econ)
-        summary = summarize_run(m, diagnostics, scenario)
+            diagnostics = extract_planning_diagnostics(m, scenario, econ)
+            summary = summarize_run(m, diagnostics, scenario)
 
-        run_id = f'{case["name"]}_{build_case}'
-        write_run_outputs(run_id, diagnostics, summary)
+            run_id = f'{case["name"]}_{build_case}'
+            write_run_outputs(run_id, diagnostics, summary)
 
-        results.append({
-            "case": case["name"],
-            "solar_build_case": build_case,
-            "gas_scenario": case["gas"],
-            "capital_scenario": case["capital"],
+            results.append({
+                "case": case["name"],
+                "solar_build_case": build_case,
+                "gas_scenario": case["gas"],
+                "capital_scenario": case["capital"],
 
-            "horizon_reliability": diagnostics["horizon_reliability"],
-            "worst_year_reliability": diagnostics["worst_year_reliability"],
-            "expected_unserved_energy_twh": diagnostics["expected_unserved_energy_twh"],
+                "horizon_reliability": diagnostics["horizon_reliability"],
+                "worst_year_reliability": diagnostics["worst_year_reliability"],
+                "expected_unserved_energy_twh": diagnostics["expected_unserved_energy_twh"],
 
-            "solar_total_mw": summary["solar_total_built_mw"],
-            "gas_shadow_avg": summary["gas_shadow_avg_usd_per_twh_th"],
-        })
+                "solar_total_mw": summary["solar_total_built_mw"],
+                "gas_shadow_avg": summary["gas_shadow_avg_usd_per_twh_th"],
+            })
 
     return results

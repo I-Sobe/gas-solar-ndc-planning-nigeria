@@ -9,7 +9,7 @@ for use in system evaluation and optimization studies.
 This module provides scenario DEFINITIONS ONLY.
 It does NOT execute models, run experiments, or aggregate results.
 
-Demand framing (examiner-safe)
+Demand framing 
 ------------------------------
 - Demand is treated as an EXOGENOUS planning input, not statistically forecast
   from historical time series.
@@ -101,21 +101,6 @@ def solar_build_scenarios():
         "baseline": 1000,
         "aggressive": 2000,
     }
-def solar_capacity_scenarios() -> dict[str, dict[str, float]]:
-    """
-    Solar PV capacity expansion assumptions.
-    """
-    return {
-        "slow": {
-            "solar_baseline_mw": 500,
-        },
-        "baseline": {
-            "solar_baseline_mw": 500,
-        },
-        "accelerated": {
-            "solar_baseline_mw": 500,
-        },
-    }
 
 
 def carbon_policy_scenarios() -> dict[str, dict[str, float | bool]]:
@@ -185,6 +170,14 @@ def solar_tariff_scenarios():
         "baseline": 65_000_000,
         "high": 85_000_000,
     }
+
+def gas_probability_weights():
+    return {
+        "downside": 0.25,
+        "baseline": 0.50,
+        "upside": 0.20,
+        "shock_recovery": 0.05
+    }
 # ============================================================
 # SCENARIO CONSTRUCTOR
 # ============================================================
@@ -195,7 +188,6 @@ def load_scenario(
     land_case: str = "moderate",
     capital_case: str = "moderate", 
     gas_deliverability_case: str = "baseline",
-    solar_case: str = "baseline",
     solar_build_case: str = "baseline",
     solar_tariff_case= "baseline",
     carbon_case: str = "no_policy",
@@ -203,25 +195,29 @@ def load_scenario(
     end_year: int = 2045,
 ) -> dict:
     """
-    Construct a deterministic planning scenario.
-
     Parameters
     ----------
     demand_level_case : str
-        Base-year demand level label. One of:
-        {"served", "latent_low", "latent_high"}.
+        Base-year demand level. One of {"served", "latent_low", "latent_high"}.
+        Anchored from NBS Q1 2024 served energy (23.08 TWh/year).
     demand_case : str
-        Demand growth label. One of demand_growth_scenarios() keys.
-    gas_case : str
-        Gas decline label. One of gas_decline_scenarios() keys.
+        Annual demand growth rate. One of demand_growth_scenarios() keys.
+    land_case : str
+        Land availability constraint. One of land_scenarios() keys.
+    capital_case : str
+        Public capital budget envelope. One of capital_envelope_scenarios() keys.
     gas_deliverability_case : str
-        Gas deliverability label. One of gas_deliverability_scenarios() keys.
-    solar_case : str
-        Solar capacity pathway label. One of solar_capacity_scenarios() keys.
+        Gas deliverability-to-power scenario. One of gas_deliverability_scenarios() keys.
+    solar_build_case : str
+        Annual solar build rate cap. One of solar_build_scenarios() keys.
+    solar_tariff_case : str
+        EaaS service tariff level. One of solar_tariff_scenarios() keys.
     carbon_case : str
-        Carbon policy label. One of carbon_policy_scenarios() keys.
+        Carbon policy stance. One of carbon_policy_scenarios() keys.
     start_year : int
+        First year of planning horizon (default 2025).
     end_year : int
+        Final year of planning horizon (default 2045).
 
     Returns
     -------
@@ -235,8 +231,6 @@ def load_scenario(
         raise ValueError(f"Unknown demand_level_case: {demand_level_case}")
     if demand_case not in demand_growth_scenarios():
         raise ValueError(f"Unknown demand_case: {demand_case}")
-    if solar_case not in solar_capacity_scenarios():
-        raise ValueError(f"Unknown solar_case: {solar_case}")
     if carbon_case not in carbon_policy_scenarios():
         raise ValueError(f"Unknown carbon_case: {carbon_case}")
     if gas_deliverability_case not in gas_deliverability_scenarios():
@@ -264,7 +258,12 @@ def load_scenario(
         
         # ---- Gas capacity baseline
         "gas_baseline_mw": 13600,
-        
+        # ---- Gas fleet derating (brownfield retirement proxy)
+        # Baseline fleet avg commissioning ~2005–2015. Assume linear retirement
+        # begins 2035 (year 10 of horizon), 680 MW/yr through 2045.
+        # Set to 0.0 to disable (e.g., upside gas scenarios with new builds).
+        "gas_baseline_retirement_start_year": 2035,
+        "gas_baseline_retirement_mw_per_year": 680.0,  # ~13600/20 years remaining
         # ---- Gas CAPEX
         "gas_capex_per_mw": 900000,
 
@@ -273,18 +272,20 @@ def load_scenario(
         "land_intensity_solar_km2_per_mw": 0.025,
         "land_intensity_gas_km2_per_mw": 0.001,
         "land_intensity_storage_km2_per_mwh": 0.00001,
+        "storage_baseline_mwh": 0.0,  # No existing utility-scale BESS (brownfield baseline)
         # ---- Solar
         "solar_cf": 0.27,
-        **solar_capacity_scenarios()[solar_case],
+        "solar_baseline_mw": 100,  # 2025 installed base (MW); brownfield anchor
         "solar_max_build_mw_per_year": solar_build_scenarios()[solar_build_case],
+        "solar_capex_scenario":   "solar_low",    # NREL ATB solar CAPEX trajectory
+        "storage_capex_scenario": "Storage_low",  # NREL ATB storage CAPEX trajectory
         # ---- Public capital constraint (NPV, USD)
         "public_solar_budget_npv": capital_envelope_scenarios()[capital_case],
         
         # ---- Storage reduced-form (optimization; annual, energy-neutral)
         # Equivalent full cycles/year (dimensionless). Typical planning proxy: 150–350.
-        "storage_cycles_per_year": 250.0,
-        # Fraction of annual solar energy that is "surplus" and can be shifted by storage.
-        # Conservative: 0.10, baseline: 0.20, optimistic: 0.30
+        "storage_deployable_hours_per_year": 700.0,
+        # Fraction of solar generation available for charging storage
         "storage_solar_surplus_frac": 0.20,
         # Round-trip efficiency used as a limiter on usable discharge in reduced-form constraint.
         "storage_round_trip_eff": 0.90,
@@ -298,7 +299,17 @@ def load_scenario(
 
         # Required NPV margin
         "required_margin": 1.10,
-
+        # Social discount rate for NPV calculations.
+        # 10% is the standard rate for emerging-market power sector studies
+        # (World Bank, IEA Nigeria 2023). Used for both public investment
+        # and as the EaaS bankability reference rate.
+        "discount_rate": 0.10,
+        # EaaS contract tenor for bankability calculation.
+        # 20 years reflects standard utility-scale solar PPA tenor in
+        # sub-Saharan Africa and is consistent with NREL ATB project life.
+        # This is independent of the model planning horizon (2025–2045).
+        "eaas_contract_tenor_years": 20,
+        "peak_demand_multiple": 2.5,
         # ---- Carbon policy
         **carbon_policy_scenarios()[carbon_case],
 
@@ -306,7 +317,6 @@ def load_scenario(
         "labels": {
             "demand_level": demand_level_case,
             "demand": demand_case,
-            "solar": solar_case,
             "carbon": carbon_case,
             "gas_deliverability": gas_deliverability_case,
             "land": land_case,

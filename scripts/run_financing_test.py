@@ -1,9 +1,11 @@
 import sys
 from pathlib import Path
 
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
+from src.io import load_econ
 from src.optimize_experiments import run_financing_vs_resource_test
 
 def compute_reliability_metrics(diag):
@@ -40,14 +42,9 @@ def compute_reliability_metrics(diag):
         "expected_unserved_energy_twh": total_unserved
     }
 
-# Economics parameters (match your model inputs)
-econ = {
-    "GAS_COST_PER_TWH_TH": 35000000,
-    "SOLAR_CAPEX_PER_MW": 1456000,
-    "STORAGE_COST_PER_MWH": 350000,
-    "UNSERVED_ENERGY_PENALTY": 20000000000,
-    "CARBON_EMISSION_FACTOR": 0.35
-}
+# Economics parameters 
+CANONICAL_VOLL = "voll_mid"   
+econ = load_econ(CANONICAL_VOLL)
 
 results = run_financing_vs_resource_test(econ)
 

@@ -1,13 +1,13 @@
 {
   "gas_binding_share": 1.0,
-  "gas_shadow_avg_usd_per_twh_th": 1946085309.047619,
-  "gas_shadow_max_usd_per_twh_th": 3710524200.0,
-  "npv_total_cost_usd": 167106741692.8388,
-  "cumulative_unserved_twh": 41.135908,
-  "cumulative_emissions_tco2": 96383422.205,
-  "solar_total_built_mw": 9826.66812,
-  "final_storage_capacity_mwh": 17585.73749,
-  "solar_public_total_mw": 0.0,
-  "gas_shadow_last_year": 1273132700.0,
-  "solar_eaas_total_mw": 9826.66812
+  "gas_shadow_avg_usd_per_twh_th": 31943038.859999996,
+  "gas_shadow_max_usd_per_twh_th": 504764610.0,
+  "npv_total_cost_usd": 11893630022.317453,
+  "cumulative_unserved_twh": 0.0,
+  "cumulative_emissions_tco2": 115935487.85229999,
+  "solar_total_built_mw": 16995.489009999998,
+  "final_storage_capacity_mwh": 3995.4286,
+  "solar_public_total_mw": 7030.34011,
+  "gas_shadow_last_year": 15215047.0,
+  "solar_eaas_total_mw": 9965.1489
 }

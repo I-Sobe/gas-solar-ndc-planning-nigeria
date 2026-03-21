@@ -11,68 +11,19 @@ import pyomo.environ as pyo
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
 from src.optimize_experiments import run_deterministic_scenario
+from src.io import load_econ
+
+
+CANONICAL_VOLL = "voll_mid"
+
 
 # ============================================================
 # PATH SETUP
 # ============================================================
 
-#ROOT = Path(__file__).resolve().parents[1]  # repo root
-#sys.path.append(str(ROOT))
-
 RESULTS_DIR = ROOT / "results" / "baseline"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
-
-# ============================================================
-# HELPERS
-# ============================================================
-
-def to_float(x) -> float:
-    return float(str(x).replace(",", "").replace("$", "").strip())
-
-
-def load_econ() -> dict:
-    econ = {}
-
-    gas_cost_df = pd.read_csv(
-        ROOT / "data" / "cost" / "processed" / "gas_cost.csv",
-        thousands=",",
-    )
-    gas_low_row = gas_cost_df[gas_cost_df["Scenario"] == "gas_low"].iloc[0]
-    econ["GAS_COST_PER_TWH_TH"] = to_float(gas_low_row["total_usd_per_twh_th"])
-
-    solar_df = pd.read_csv(
-        ROOT / "data" / "cost" / "processed" / "solar_capex.csv",
-        thousands=",",
-    )
-    solar_row = solar_df[
-        (solar_df["Scenario"] == "solar_low") & (solar_df["Year"] == 2025)
-    ].iloc[0]
-    econ["SOLAR_CAPEX_PER_MW"] = to_float(solar_row["Solar_capex_usd_per_mw"])
-
-    storage_df = pd.read_csv(
-        ROOT / "data" / "cost" / "processed" / "storage_capex.csv",
-        thousands=",",
-    )
-    storage_row = storage_df[
-        (storage_df["Scenario"] == "Storage_low") & (storage_df["Year"] == 2025)
-    ].iloc[0]
-    # NOTE: ensure your header truly is Storage_capex_usd_per_mwh
-    econ["STORAGE_COST_PER_MWH"] = to_float(storage_row["Storage_capex_usd_per_mwh"])
-
-    voll_df = pd.read_csv(
-        ROOT / "data" / "cost" / "processed" / "unserved_energy_penalty.csv",
-        thousands=",",
-    )
-    voll_row = voll_df[
-        (voll_df["scenario"] == "voll_low") & (voll_df["year"] == 2025)
-    ].iloc[0]
-    econ["UNSERVED_ENERGY_PENALTY"] = to_float(voll_row["voll_usd_per_twh"])
-
-    # Emissions accounting ON (policy can still be "no_policy")
-    econ["CARBON_EMISSION_FACTOR"] = 0.421  # tCO2/MWh_e
-
-    return econ
 
 # ============================================================
 # MAIN
@@ -83,9 +34,8 @@ def main():
     scenario = load_scenario(
         demand_level_case="served",
         demand_case="baseline",
-        capital_case="tight",
+        capital_case="moderate",
         gas_deliverability_case="baseline",
-        solar_case="baseline",
         solar_build_case="aggressive",
         land_case="loose",
         carbon_case="no_policy",
@@ -93,7 +43,7 @@ def main():
         end_year=2045,
     )
 
-    econ = load_econ()
+    econ = load_econ(CANONICAL_VOLL)
 
     years = scenario["years"]
        
@@ -141,10 +91,9 @@ def main():
                 + float(pyo.value(m.solar_eaas_add[t]))
             for t,y in enumerate(years)
         },
-        "gas_add_mw_by_year": {
-            int(y): float(pyo.value(m.gas_add[t]))
-            for t, y in enumerate(years)
-        },
+        # gas_add removed (Fix 9): gas generation is fuel-constrained,
+        # new gas capacity additions are never optimal and the variable
+        # was removed from the model.
         "storage_add_mwh_by_year": {
             int(y): float(pyo.value(m.storage_add[t]))
             for t, y in enumerate(years)
@@ -153,9 +102,6 @@ def main():
             float(pyo.value(m.solar_public_add[t]))
             + float(pyo.value(m.solar_eaas_add[t]))
             for t in range(len(years))
-        ),
-        "gas_total_built_mw": sum(
-            float(pyo.value(m.gas_add[t])) for t in range(len(years))
         ),
         "final_storage_capacity_mwh":
             float(pyo.value(m.storage_capacity_mwh[len(years)-1])),
@@ -174,11 +120,13 @@ def main():
     with open(RESULTS_DIR / "diagnostics.json", "w") as f:
         json.dump(diag, f, indent=2)
 
-    # Compute actual discounted public solar CAPEX used
+    # Compute actual discounted public solar CAPEX used.
+    # Uses m.solar_capex_param[t] (time-varying NREL ATB prices) to match
+    # what the optimiser actually priced each year's addition at.
     solar_public_npv_spend = sum(
         float(pyo.value(m.DF[t]))
         * float(pyo.value(m.solar_public_add[t]))
-        * econ["SOLAR_CAPEX_PER_MW"]
+        * float(pyo.value(m.solar_capex_param[t]))
         for t in range(len(years))
     )
 
@@ -218,10 +166,11 @@ def main():
             "gas_shadow_usd_per_twh_th": [diag["gas_shadow_price_usd_per_twh_th_by_year"][int(y)] for y in years],
             "carbon_shadow_usd_per_tco2": [diag["carbon_shadow_price_usd_per_tco2_by_year"][int(y)] for y in years],
             "discount_factor": [diag["discount_factor_by_year"][int(y)] for y in years],
-            "gas_add_mw": [float(pyo.value(m.gas_add[t])) for t in range(len(years))],
+            # gas_add_mw removed (Fix 9): variable no longer exists in model
             "solar_capacity_mw": [float(pyo.value(m.solar_capacity_mw[t])) for t in range(len(years))],
             "gas_capacity_mw": [float(pyo.value(m.gas_capacity_mw[t])) for t in range(len(years))],
             "storage_capacity_mwh": [float(pyo.value(m.storage_capacity_mwh[t])) for t in range(len(years))],
+            "subsidy_per_mw_usd": [diag["subsidy_per_mw_usd_by_year"][y] for y in years],
         }
     )
 
