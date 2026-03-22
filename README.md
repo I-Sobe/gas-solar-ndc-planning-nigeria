@@ -61,7 +61,7 @@ This separation reflects the resolution of publicly available data and the scope
 Gas decline in this model **does not represent reservoir simulation or field-level forecasting**.
 
 Instead:
-- Decline analytics (e.g., Arps-style profiles) are used to inform **aggregate deliverability trends**.
+- Decline analytics are used to inform **aggregate deliverability trends**.
 - These trends contribute to **delivered gas-to-power availability envelopes**, which act as binding constraints in the electricity system optimization.
 
 The system therefore responds to **delivered gas constraints**, not to subsurface production mechanics.
@@ -97,7 +97,7 @@ Key modeling concepts map directly to repository modules:
 | Demand projection | `src/demand.py` |
 | Solar generation | `src/solar.py` |
 | Battery storage | `src/storage.py` |
-| Reliability and dispatch | `src/dispatch.py` |
+| Ex-post feasibility dispatch | `src/dispatch.py` |
 | Cost, emissions, financing | `src/economics.py` |
 | Optimization formulation | `src/optimize_model.py` |
 | Experiment orchestration | `src/optimize_experiments.py` |
@@ -128,10 +128,13 @@ The study introduces an aggregate delivered gas-to-power availability constraint
 A Python-based optimization framework (implemented using Pyomo) evaluates trade-offs between total system cost, carbon emissions, and electricity reliability. Pareto-efficient solution sets are generated using weighted-sum and ε-constraint methods, enabling transparent assessment of planning trade-offs.
 
 ### Stochastic Risk and Uncertainty Analysis for Long-Term Planning
-Key uncertainties—gas prices, carbon prices, and technology costs—are incorporated through Monte Carlo sampling and structured scenario analysis. The framework produces risk-aware planning insights, including probability-weighted outcomes for cost, emissions, and supply adequacy.
+Key uncertainties—gas prices, carbon prices, and technology costs—are incorporated through Monte Carlo sampling and structured scenario analysis. The framework produces risk-aware planning insights, including Monte Carlo outcome distributions (post-processing required for expectation or risk metrics) for cost, emissions, and supply adequacy.
 
 ### Deployment and Financing Pathway Analysis via Energy-as-a-Service
 Energy-as-a-Service (EaaS) models are incorporated strictly as deployment and financing mechanisms, affecting cost of capital, feasible deployment rates, and investment constraints for solar and storage. This enables assessment of how alternative ownership and financing structures influence scalability and system adequacy, without modeling customer behavior, demand-side efficiency, or contract-level dynamics.
+
+### Dual-Based Scarcity Valuation
+The model extracts shadow prices for gas availability, land, and carbon constraints, enabling economic interpretation of system bottlenecks and marginal resource value.
 
 ## 🏗 Repository Structure
 ```
@@ -144,41 +147,66 @@ thesis-repo/
 │   ├── cost/                       # CAPEX/OPEX tables
 │   ├── stochastic/                 # Probability distributions & samples
 │   └── README.md                   # Data provenance and licenses
-│
+|
+|
 ├── src/                            # Core modeling modules
-│   ├── gas_supply.py               # Decline curve model (Arps)
-│   ├── demand.py                   # Baseline + EaaS-adjusted demand
+│   ├── gas_supply.py               # Gas availability loading
+│   ├── demand.py                   # Baseline demand projection
 │   ├── solar.py                    # PV generation + capacity factors
-│   ├── storage.py                  # Battery SOC formulation
+│   ├── storage.py                  # Stateful SOC, dispatch simulation
 │   ├── dispatch.py                 # System dispatch & constraints
 │   ├── optimize_model.py           # model construction + solve only
-│   ├── optimize_experiments.py     # model construction + solve only
+│   ├── optimize_experiments.py     # experiment orchestration (Pareto, sweeps, diagnostics)
 │   ├── stochastic.py               # Monte Carlo wrapper
 │   ├── scenarios.py                # Scenario configuration
 │   ├── economics.py                # Economic Evaluation Utilities 
 │   ├── EaaS.py                     # transforms system parameters
+│   ├── gas_balance.py
+│   ├── io.py                       # 
+│   ├── postprocess.py              # shadow price benchmarking
+│   ├── build_gas_deliverability.py # Gas decline & deliverability construction
 │   └── utils.py                    # Shared utilities / helpers
 |   
 │
-├── notebooks/               # Reproducible analysis notebooks
-│   ├── 01_data_exploration.ipynb
-│   ├── 02_prototype_model.ipynb
-│   ├── 03_optimization_runs.ipynb
-│   ├── 04_stochastic_analysis.ipynb
-│   ├── 05_visualizations.ipynb
-│   └── 99_appendix_figures.ipynb
-│
+├── scripts/                        # Run scripts
+│   ├── 00_build_emissions_cap.py
+│   ├── 01_run_baseline.py
+│   ├── 02_run_eaas.py
+│   ├── 03_run_ndc_caps.py
+│   ├── 08_phase8_analysis.py
+│   ├── plot_storage_regime.py
+│   ├── plot_system_diagnostics
+│   ├── run_financing_test.py
+│   ├── run_reliability.py
+│   ├── run_uncertainity_comparison.py
+|
+|
+├── notebooks/
+│   ├── 01_data_validation.ipynb
+│   ├── 02_model_sanity_checks.ipynb
+│   ├── 03_baseline_results.ipynb
+│   ├── 04_pareto_analysis.ipynb
+│   ├── 05_shadow_price_analysis.ipynb
+│   ├── 06_reliability_analysis.ipynb
+│   ├── 07_eaas_analysis.ipynb
+│   ├── 08_stochastic_results.ipynb
+│   ├── 09_policy_synthesis.ipynb
+│   └── 99_appendix_figures.ipynb│
+|
+|
 ├── results/                 # Generated figures, tables, scenario outputs
 │   ├── deterministic/
 │   ├── stochastic/
 │   └── figures/
-│
+|
+|
 ├── docs/                    # Draft thesis chapters, reports, policy briefs
 │   ├── thesis/
 │   ├── policy_brief/
 │   ├── investor_note/
 │   └── presentation/
-│
+|
+|
 ├── tests/                   # Unit and integration tests
 │
 ├── environment.yml          # Full environment specification
@@ -190,12 +218,10 @@ thesis-repo/
 ## ⚙️ Software & Dependencies
 This project uses the following major packages:
 * Python 3.10+
-* Pyomo / PyPSA
+* Pyomo 
 * NumPy, Pandas
 * SciPy
 * Matplotlib / Plotly
-* Salib (global sensitivity, if used)
-* tqdm, joblib (parallel Monte Carlo)
 Full environment details:
 * requirements.txt: pip installation
 * environment.yml: Conda environment with solver support
@@ -229,7 +255,7 @@ The model produces:
 * Capacity expansion schedules
 * Cost and LCOE trajectories
 * Emissions pathways
-* Reliability metrics (LOLP / unmet load)
+* Reliability metrics (Unserved energy (TWh) and derived reliability metrics (annual and horizon-level adequacy))
 * Pareto frontiers for cost–emissions–reliability
 * Monte Carlo distributions (LCOE, reliability, solar share)
 * EaaS impact quantification (demand reduction, reserve contribution)
