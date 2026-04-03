@@ -8,7 +8,7 @@ import pyomo.environ as pyo
 ROOT = Path(__file__).resolve().parents[1]  # repo root
 sys.path.append(str(ROOT))
 
-from src.io import load_econ
+from src.io import (load_econ, load_solar_capex_by_year)
 from src.scenarios import load_scenario
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
@@ -65,10 +65,24 @@ def run_case(cap_scenario_name: str, scenario: dict, econ: dict) -> dict:
     years = [int(y) for y in scenario["years"]]
     caps = load_annual_caps(cap_scenario_name, years)
 
+    # Load time-varying solar CAPEX from NREL ATB (solar_low scenario).
+    # solar_low declines from $1,456k/MW (2025) to $603k/MW (2045).
+    solar_capex_tv = load_solar_capex_by_year(
+        scenario_name="solar_low",
+        start_year=int(years[0]),
+        end_year=int(years[-1]),
+    )
+
+    # Activate minimum build floor when time-varying CAPEX is in use.
+    # This prevents, the optimizer from delaying all solar to the cheapest years
+    # (2040-2045) creating unrealistic 2025-2030 supply gaps.
+    scenario["solar_min_build_mw_per_year"] = 100.0
+
     m = build_model(
         scenario=scenario,
         econ=econ,
         emissions_cap_by_year=caps,  # annual cap trajectory
+        solar_capex_by_year=solar_capex_tv,
     )
 
     status = solve_model(m)
@@ -121,43 +135,83 @@ def run_case(cap_scenario_name: str, scenario: dict, econ: dict) -> dict:
 
 def main():
 
-    scenario = load_scenario(
-        demand_level_case="served",
-        demand_case="baseline",
-        gas_deliverability_case="baseline",
-        #solar_case="baseline",
-        carbon_case="no_policy",
-        start_year=2025,
-        end_year=2045,
-    )
-
-    # Eaas activation to answer the question:
-    # Given an NDC constraint and EaaS financing available, does the model choose to use it?
-    scenario["financing_regime"] = "eaas"
-    scenario["solar_service_tariff_usd_per_twh"] = 95_000_000.0
-    scenario["required_margin"] = 1.10
-    # Public solar budget is unconstrained under EaaS because the tariff
-    # (95 M USD/TWh) fully covers CAPEX at solar_low prices — financing_gap = 0
-    # throughout the horizon. EaaS investment is entirely self-financing via
-    # private capital; public budget is not the binding constraint.
-    # This is a core thesis result, not a modelling oversight.
-    # Do NOT compute MAC between EaaS and non-EaaS cases — see 08_phase8_analysis.py.
-    scenario["public_solar_budget_npv"] = None
-
-    # NDC 3.0 scenario names — must match scenario column written by
-    # 00_build_emissions_cap.py (NDC 3.0 edition).
     CANONICAL_VOLL = "voll_mid"
-    cases = ["ndc3_unconditional", "ndc3_conditional"]
-    # Single canonical VoLL — midpoint of defensible Nigerian range (5-30 USD/kWh).
-    # Keeps cross-case comparisons valid. Add entries here for VoLL sensitivity.
-    voll_cases = [CANONICAL_VOLL]
 
-    for c in cases:
+    # ----------------------------------------------------------------
+    # NDC 3.0 scenario definitions (EaaS active for all cases here)
+    #
+    # Two parameters vary between unconditional and conditional:
+    #
+    #   capital_case — public capital ceiling.
+    #     unconditional: "moderate" (0.85 × B* = 5.2B USD)
+    #     conditional:   "expansion" (1.20 × B* = 7.4B USD)
+    #     Rationale: same as 02_run_ndc_caps.py — conditional
+    #     international finance expands the public capital envelope.
+    #     Source: NDC 3.0 p.21, apportioned power-sector share ~19.8B.
+    #
+    #   required_margin — private investor NPV hurdle rate proxy.
+    #     unconditional: 1.10  (commercial rate, ~10% hurdle)
+    #     conditional:   1.05  (concessional blended finance, ~5% hurdle)
+    #     Rationale: NDC 3.0 conditional finance is provided at
+    #     concessional terms (DFI/MDB rates ~3-5% vs commercial ~8-12%).
+    #     A 4-5 pp reduction in hurdle rate is consistent with typical
+    #     blended finance structures. required_margin feeds directly
+    #     into the bankability constraint:
+    #       bankable_revenue = tariff * remaining_npv_factor / required_margin
+    #     Lower required_margin → higher bankable revenue → more EaaS
+    #     solar is deployable without gap-funding → lower subsidy need.
+    #
+    #   public_solar_budget_npv: set to None (unconstrained) for EaaS
+    #   cases because at tariff=95M USD/TWh the financing_gap is zero
+    #   and EaaS investment is entirely privately funded. This is a core
+    #   result: private bankability removes the need for a public ceiling.
+    # ----------------------------------------------------------------
+    NDC_CASES = {
+        "ndc3_unconditional_eaas": {
+            "ndc_cap_scenario": "ndc3_unconditional",
+            "capital_case":    "moderate",
+            "required_margin": 1.10,  # commercial hurdle rate
+        },
+        "ndc3_conditional_eaas": {
+            "ndc_cap_scenario": "ndc3_conditional",
+            "capital_case":    "expansion",
+            "required_margin": 1.05,  # concessional blended finance hurdle
+        },
+    }
+
+    for c, cfg in NDC_CASES.items():
+        scenario = load_scenario(
+            demand_level_case="served",
+            demand_case="baseline",
+            gas_deliverability_case="baseline",
+            capital_case=cfg["capital_case"],
+            carbon_case="no_policy",
+            start_year=2025,
+            end_year=2045,
+        )
+
+        # EaaS activation — given an NDC constraint and EaaS financing
+        # available, does the model choose to use it?
+        scenario["financing_regime"] = "eaas"
+        scenario["solar_service_tariff_usd_per_twh"] = 95_000_000.0
+
+        # required_margin is scenario-specific: concessional finance
+        # under conditional lowers the private hurdle rate.
+        scenario["required_margin"] = cfg["required_margin"]
+
+        # Public solar budget is unconstrained under EaaS because the
+        # tariff (95M USD/TWh) fully covers CAPEX at solar_low prices —
+        # financing_gap = 0 throughout the horizon. EaaS investment is
+        # entirely self-financing via private capital.
+        scenario["public_solar_budget_npv"] = None
+
+        voll_cases = [CANONICAL_VOLL]
+
         for voll_case in voll_cases:
 
             print(f"\nRunning {c} with {voll_case}")
             econ = load_econ(voll_case)
-            out = run_case(c, scenario, econ)
+            out = run_case(cfg["ndc_cap_scenario"], scenario, econ)
 
             # Save outputs
             case_dir = RESULTS_DIR / f"{c}_{voll_case}"
@@ -166,7 +220,9 @@ def main():
             with open(case_dir / "summary.json", "w") as f:
                 json.dump(
                     {
-                        "cap_scenario": c,
+                        "cap_scenario": cfg["ndc_cap_scenario"],
+                        "capital_case": cfg["capital_case"],
+                        "required_margin": cfg["required_margin"],
                         "voll_case": voll_case,
                         "voll_value_usd_per_twh": econ["UNSERVED_ENERGY_PENALTY"],
                         "decision_variables": out["decision_variables"],

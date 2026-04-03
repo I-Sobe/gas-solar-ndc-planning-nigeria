@@ -8,12 +8,14 @@ This module does not perform plotting or reporting.
 """
 
 import os
+import sys
 import yaml
 import numpy as np
 import pandas as pd
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.append(str(ROOT))
 
 
 def load_yaml(filepath):
@@ -176,3 +178,4 @@ def load_econ(voll_case="voll_low", gas_price_case="gas_low"):
     econ["CARBON_EMISSION_FACTOR"] = 0.421
 
     return econ
+

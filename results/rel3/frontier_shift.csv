@@ -1,0 +1,13 @@
+gas_case,policy_label,pub_threshold_eps,eaas_threshold_eps,frontier_shift_eps,eaas_strictly_better,eaas_necessary,interpretation
+baseline,ndc3_conditional,0.15,0.15,0.0,False,False,EaaS provides no feasibility improvement at this gas/policy combination.
+baseline,ndc3_unconditional,0.2,0.15,0.05000000000000002,True,False,EaaS improves frontier by 0.05 eps units.
+baseline,no_policy,0.05,0.05,0.0,False,False,EaaS provides no feasibility improvement at this gas/policy combination.
+downside,ndc3_conditional,0.15,0.15,0.0,False,False,EaaS provides no feasibility improvement at this gas/policy combination.
+downside,ndc3_unconditional,0.2,0.15,0.05000000000000002,True,False,EaaS improves frontier by 0.05 eps units.
+downside,no_policy,0.05,0.05,0.0,False,False,EaaS provides no feasibility improvement at this gas/policy combination.
+shock_recovery,ndc3_conditional,0.15,0.15,0.0,False,False,EaaS provides no feasibility improvement at this gas/policy combination.
+shock_recovery,ndc3_unconditional,0.2,0.15,0.05000000000000002,True,False,EaaS improves frontier by 0.05 eps units.
+shock_recovery,no_policy,0.05,0.05,0.0,False,False,EaaS provides no feasibility improvement at this gas/policy combination.
+upside,ndc3_conditional,0.15,0.15,0.0,False,False,EaaS provides no feasibility improvement at this gas/policy combination.
+upside,ndc3_unconditional,0.2,0.15,0.05000000000000002,True,False,EaaS improves frontier by 0.05 eps units.
+upside,no_policy,0.05,0.05,0.0,False,False,EaaS provides no feasibility improvement at this gas/policy combination.

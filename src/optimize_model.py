@@ -16,7 +16,7 @@ import math
 import pyomo.environ as pyo
 from src.demand import project_baseline_demand
 from src.gas_supply import gas_available_power
-from src.io import load_solar_capex_by_year, load_storage_capex_by_year
+
 
 # ============================================================
 # MODEL CONSTRUCTION
@@ -30,10 +30,23 @@ def build_model(
     emissions_cap=None,
     emissions_cap_by_year=None,
     reliability_max_unserved_fraction=None,
-    reliability_mode="annual"
+    reliability_mode="annual",
+    solar_capex_by_year=None,
 ):
     """
     Build a planning optimization model.
+
+    Parameters
+    ----------
+    solar_capex_by_year : dict {year: usd_per_mw} or None
+        Time-varying solar CAPEX trajectory from NREL ATB.
+        If provided, each year's additions are priced at that year's CAPEX,
+        reflecting actual hardware cost declines (not discounting — these are
+        separate effects: discounting is time preference, CAPEX decline is
+        a real market price trajectory).
+        If None, falls back to the fixed econ["SOLAR_CAPEX_PER_MW"] scalar
+        (2025 value), which is conservative and overstates post-2030 solar cost.
+        Use load_solar_capex_by_year() from io.py to construct this dict.
     """
 
     # ------------------------------------------------------------
@@ -54,49 +67,41 @@ def build_model(
 
     years = scenario["years"]
     T = range(len(years))
-        
+    # SOLAR_UNIT_SIZE_MW = 50 # continuous capacity expansion
+    
     # --------------------------
     # Discounting 
     # --------------------------
     r = float(scenario.get("discount_rate", 0.10))
+    # t=0 at start year
     df = {t: 1.0 / ((1.0 + r) ** t) for t in T}
-    
+    # Remaining-horizon NPV factor for each year t
+    remaining_npv = {}
+    for t in T:
+        remaining_npv[t] = sum(df[k] / df[t] for k in range(t, len(T)))
+
+    m.remaining_npv_factor = pyo.Param(T, initialize=remaining_npv, within=pyo.PositiveReals)
     m.DF = pyo.Param(T, initialize=df, within=pyo.PositiveReals)
-    
-    # ----------------------------------------------------------------
-    # Time-varying CAPEX from NREL ATB (solar_low / Storage_low).
-    # The optimizer sees actual year-t costs rather than frozen 2025 prices.
-    # ----------------------------------------------------------------
-    _solar_capex_scenario   = scenario.get("solar_capex_scenario",   "solar_low")
-    _storage_capex_scenario = scenario.get("storage_capex_scenario", "Storage_low")
 
-    _solar_capex_dict = load_solar_capex_by_year(
-        scenario_name=_solar_capex_scenario,
-        start_year=int(years[0]),
-        end_year=int(years[-1]),
-    )
-    _storage_capex_dict = load_storage_capex_by_year(
-        scenario_name=_storage_capex_scenario,
-        start_year=int(years[0]),
-        end_year=int(years[-1]),
-    )
+    # ------------------------------------------------------------
+    # Solar CAPEX parameter (time-varying or fixed scalar)
+    # ------------------------------------------------------------
+    # If solar_capex_by_year is provided, build a time-indexed Pyomo Param
+    # so each year's additions are priced at that year's actual market cost.
+    # This correctly reflects NREL ATB hardware cost trajectories — which fall
+    # by ~59% from 2025 to 2045 under solar_low — without double-discounting:
+    # discounting (DF) = time preference of money; CAPEX decline = real price path.
+    # If not provided, fall back to the fixed 2025 scalar (conservative).
+    if solar_capex_by_year is not None:
+        capex_init = {
+            t: float(solar_capex_by_year[int(years[t])])
+            for t in T
+        }
+    else:
+        capex_init = {t: float(econ["SOLAR_CAPEX_PER_MW"]) for t in T}
 
-    solar_capex_t   = {t: _solar_capex_dict[int(years[t])]   for t in T}
-    storage_capex_t = {t: _storage_capex_dict[int(years[t])] for t in T}
+    m.solar_capex_param = pyo.Param(T, initialize=capex_init, within=pyo.PositiveReals)
 
-    m.solar_capex_param   = pyo.Param(T, initialize=solar_capex_t,   within=pyo.PositiveReals)
-    m.storage_capex_param = pyo.Param(T, initialize=storage_capex_t, within=pyo.PositiveReals)
-    
-    # Fixed-tenor annuity factor for EaaS bankability constraint.
-    # A fixed tenor decouples the investor's revenue horizon from the planning model's
-    # end year - a solar built in 2040 under a 20-year PPA earns revenue through 2060
-    # not just to 2045.
-    tenor = int(scenario.get("eaas_contract_tenor_years", 20))
-    fixed_tenor_npv = {
-        t: sum(1.0 / (1.0 + r) ** j for j in range(tenor))
-        for t in T
-    }
-    m.fixed_tenor_npv = pyo.Param(T, initialize=fixed_tenor_npv, within=pyo.PositiveReals)
     # ------------------------------------------------------------
     # Gas parameters
     # ------------------------------------------------------------
@@ -125,11 +130,24 @@ def build_model(
 
     # ------------------------------------------------------------
     # Decision Variables
-    # ------------------------------------------------------------ 
+    # ------------------------------------------------------------
+    # Solar additions (MW built each year)
+    # m.solar_public_units = pyo.Var(T, domain=pyo.NonNegativeReals)
+    # m.solar_eaas_units = pyo.Var(T, domain=pyo.NonNegativeReals)
+
+    # m.solar_public_add = pyo.Expression(
+    #    T, rule=lambda m,t: SOLAR_UNIT_SIZE_MW * m.solar_public_units[t]
+    # )
+
+    # m.solar_eaas_add = pyo.Expression(
+    #    T, rule=lambda m,t: SOLAR_UNIT_SIZE_MW * m.solar_eaas_units[t]
+    # )
+    
     m.solar_public_add = pyo.Var(T, domain=pyo.NonNegativeReals)
     m.solar_eaas_add = pyo.Var(T, domain=pyo.NonNegativeReals)
     m.eaas_subsidy = pyo.Var(T, domain=pyo.NonNegativeReals)
-    # Storage:     
+    # Storage: 
+    m.gas_add = pyo.Var(T, domain=pyo.NonNegativeReals)
     m.storage_add = pyo.Var(T, domain=pyo.NonNegativeReals)
     
     gas_baseline = scenario["gas_baseline_mw"]
@@ -139,15 +157,13 @@ def build_model(
 
     def gas_cap_rule(m, t):
         year_t = int(years[t])
-        # No new gas capacity additions modelled. Gas generation is fuel-
-        # constrained (gas_avail < gas_capacity) throughout the horizon,
-        # so gas_add = 0 at optimality in all scenarios.
+        # Cumulative retirement of baseline fleet
         if retirement_start is not None and year_t >= retirement_start:
             retired = retirement_rate * (year_t - retirement_start + 1)
-            retired = min(retired, gas_baseline)
+            retired = min(retired, gas_baseline)  # cannot retire more than exists
         else:
             retired = 0.0
-        return gas_baseline - retired
+        return gas_baseline - retired + sum(m.gas_add[k] for k in range(0, t + 1))
 
     m.gas_capacity_mw = pyo.Expression(T, rule=gas_cap_rule)
 
@@ -155,6 +171,8 @@ def build_model(
 
     def storage_cap_rule(m, t):
         return storage_baseline + sum(m.storage_add[k] for k in range(0, t + 1))
+    def storage_cap_rule(m, t):
+        return sum(m.storage_add[k] for k in range(0, t+1))
 
     m.storage_capacity_mwh = pyo.Expression(T, rule=storage_cap_rule)
     m.unserved = pyo.Var(T, domain=pyo.NonNegativeReals)
@@ -191,7 +209,20 @@ def build_model(
     m.gas_generation = pyo.Expression(
         T, rule=lambda m, t: eta * m.gas_to_power[t]
     )
-        
+    m.gas_capacity_constraint = pyo.Constraint(
+        T,
+        rule=lambda m, t:
+            m.gas_generation[t]
+            <= m.gas_capacity_mw[t] * 8760 / 1e6
+
+    )
+    #m.gas_utilization_constraint = pyo.Constraint(
+    #    T,
+    #    rule=lambda m, t:
+    #        m.gas_capacity_mw[t] * 8760 / 1e6
+    #        <= gas_avail[t]
+    #)
+
     m.gas_balance = pyo.Constraint(
         T,
         rule=lambda m, t:
@@ -199,20 +230,44 @@ def build_model(
     )
 
     solar_energy_per_mw = scenario["solar_cf"] * 8760 / 1_000_000
+    npv_energy_per_mw = sum(
+        pyo.value(m.DF[t]) * solar_energy_per_mw
+        for t in T
+    )
     baseline_mw = scenario["solar_baseline_mw"]
-    # Total-horizon NPV of 1 MW solar generation (used in financing gap calc).
+    # NPV of 1 MW solar generation over horizon
     npv_energy = sum(df[t] * solar_energy_per_mw for t in T)
+
+    solar_lcoe = econ["SOLAR_CAPEX_PER_MW"] / npv_energy
+    # Maximum CAPEX investors can support given tariff
+    # max_bankable_capex = tariff * npv_energy / required_margin    
+    # choose between private or public based on voll > tariff
+    if tariff is None:
+        eaas_trigger_strength = 0.0
+    else:
+        eaas_trigger_strength = max(0.0, voll - tariff)
+    # Financing Regime Adjustment (EaaS)
+    effective_solar_capex = econ["SOLAR_CAPEX_PER_MW"]
 
     if financing_regime == "eaas":
         if tariff is None:
             raise ValueError("Tariff must be defined under EaaS regime.")
+        
+    # Public solar CAPEX — priced at each year's NREL ATB value if available
     public_solar_capex_npv = pyo.quicksum(
-        m.DF[t] * m.solar_public_add[t] * m.solar_capex_param[t]
+        m.DF[t] * m.solar_public_add[t]
+        * m.solar_capex_param[t]
         for t in T
     )
 
+    # Private (EaaS) solar CAPEX with premium
+    private_capex_multiplier = 1.0
+    if financing_regime == "eaas":
+        private_capex_multiplier = required_margin
+
     eaas_solar_capex_npv = pyo.quicksum(
-        m.DF[t] * m.solar_eaas_add[t] * m.solar_capex_param[t]
+        m.DF[t] * m.solar_eaas_add[t]
+        * m.solar_capex_param[t]
         for t in T
     )
         
@@ -234,21 +289,11 @@ def build_model(
     # ============================================================
     if tariff is not None:
         def eaas_bankability_rule(m, t):
-            # Investor cost: actual year-t CAPEX (time-varying via Fix 6).
+
             capex = m.solar_capex_param[t] * m.solar_eaas_add[t]
 
             effective_private_cost = capex - m.eaas_subsidy[t]
-
-            # Bankable revenue: tariff × fixed 20-yr annuity × energy_per_mw × MW.
-            # fixed_tenor_npv[t] is the annuity factor (sum of discount factors
-            # over the contract life), the same for every build year because the
-            # contract tenor is fixed, not the remaining model horizon.
-            bankable_revenue = (
-                tariff
-                * m.fixed_tenor_npv[t]
-                * solar_energy_per_mw
-                * m.solar_eaas_add[t]
-            ) / required_margin
+            bankable_revenue = (tariff * m.remaining_npv_factor[t] * m.solar_eaas_add[t]) / required_margin
 
             return effective_private_cost <= bankable_revenue
 
@@ -258,38 +303,46 @@ def build_model(
     # RELIABILITY-TRIGGERED EAAS INVESTMENT
     # ============================================================
 
-    def eaas_regime_gate(m, t):
+    # BIG_M = 10000  # sufficiently large MW cap
+
+    def eaas_reliability_trigger(m, t):
+
         if financing_regime != "eaas":
             return m.solar_eaas_add[t] == 0
-        return pyo.Constraint.Skip
 
-    m.eaas_regime_gate = pyo.Constraint(T, rule=eaas_regime_gate)
+        #if eaas_trigger_strength <= 0:
+        #    return m.solar_eaas_add[t] == 0
+
+        if tariff >= voll:
+            return m.solar_eaas_add[t] == 0
+
+        return pyo.Constraint.Skip
+    m.eaas_reliability = pyo.Constraint(T, rule=eaas_reliability_trigger)
     
     # ============================================================
     # SUBSIDY LIMITED TO FINANCING GAP
     # ============================================================
+    # Subsidy bounded above by financing gap (optimizer chooses how much to deploy)
+    # This makes eaas_subsidy a genuine decision variable, not a derived quantity.
+    # SUBSIDY LIMITED TO FINANCING GAP
+    # The financing gap is year-specific when CAPEX varies: cheaper future solar
+    # may be fully bankable even at lower tariffs.
+    # financing_gap_per_mw[t] = max(0, CAPEX[t] - max_bankable_capex_at_t)
+    # Note: max_bankable_capex uses remaining_npv_factor[t] (horizon-from-t NPV)
+    # so the bankability test is consistent per year.
     if tariff is not None:
-        # Financing gap is year-specific because both CAPEX and the bankable
-        # revenue (fixed_tenor_npv * tariff * energy_per_mw) are time-varying.
-        # gap[t] = max(0, actual_capex[t] - bankable_capex[t])
-        financing_gap_by_year = {
-            t: max(
-                0.0,
-                solar_capex_t[t]
-                - (tariff * fixed_tenor_npv[t] * solar_energy_per_mw / required_margin)
-            )
-            for t in T
-        }
+        def subsidy_limit_rule(m, t):
+            max_bankable_at_t = tariff * m.remaining_npv_factor[t] / required_margin
+            gap_at_t = pyo.value(m.solar_capex_param[t]) - max_bankable_at_t
+            gap_at_t = max(0.0, gap_at_t)
+            return m.eaas_subsidy[t] <= gap_at_t * m.solar_eaas_add[t]
     else:
-        financing_gap_by_year = {t: 0.0 for t in T}
-
-    def subsidy_limit_rule(m, t):
-        # Subsidy cannot exceed the financing gap per MW of EaaS solar built.
-        # financing_gap_by_year is a dict {t: float}; index with [t].
-        return m.eaas_subsidy[t] <= financing_gap_by_year[t] * m.solar_eaas_add[t]
+        def subsidy_limit_rule(m, t):
+            return m.eaas_subsidy[t] <= 0.0
 
     m.eaas_subsidy_limit = pyo.Constraint(T, rule=subsidy_limit_rule)
 
+    # Subsidy non-negativity is already enforced by domain=NonNegativeReals on eaas_subsidy
     # ------------------------------------------------------------
     # Land Constraint (Baseline + Additions Count)
     # ------------------------------------------------------------
@@ -311,7 +364,9 @@ def build_model(
     # ------------------------------------------------------------
     # Storage Constraints
     # ------------------------------------------------------------
+    # ------------------------------------------------------------
     # Storage Constraints (Annual Energy-Throughput Model)
+    #
     # Interpretation: storage is an annual energy-shifting device.
     # We do not model intra-annual SOC. Instead, we impose:
     #   (i)  charging is limited to a fixed fraction of solar surplus
@@ -322,9 +377,10 @@ def build_model(
     # the battery can deliver at rated power. For a 4-hour BESS
     # dispatched during ~6 peak-deficit hours/day across the dry season
     # (approx. 180 days), H_d = 4 × 180 = 720 h/yr is a conservative
-    # anchor.
+    # anchor. Calibrate to your system context and cite it.
     # Default here: 700 h/yr (explicit, citable, conservative).
     # ------------------------------------------------------------
+
     
     # Charge limited to solar surplus fraction
     m.storage_charge_limit = pyo.Constraint(
@@ -364,8 +420,23 @@ def build_model(
     max_build = scenario.get("solar_max_build_mw_per_year", None)
     if max_build is not None:
         m.solar_build_cap = pyo.Constraint(
-            T, rule=lambda m, t: m.solar_public_add[t] + m.solar_eaas_add[t] 
+            T, rule=lambda m, t: m.solar_public_add[t] + m.solar_eaas_add[t]
             <= max_build
+        )
+
+    # Minimum annual solar build rate.
+    # Required when time-varying CAPEX is active: the optimizer sees 2040-2045
+    # solar as ~2.4x cheaper than 2025 (discounting × price decline combined),
+    # creating a strong incentive to delay all builds. A minimum floor prevents
+    # pathological all-delay solutions that leave 2025-2030 with no solar.
+    # Default 0 MW/yr preserves backward-compatibility when solar_capex_by_year
+    # is not passed. Set to 100 MW/yr when using time-varying CAPEX.
+    min_build = scenario.get("solar_min_build_mw_per_year", 0.0)
+    if min_build > 0:
+        m.solar_min_build_constraint = pyo.Constraint(
+            T,
+            rule=lambda m, t:
+                m.solar_public_add[t] + m.solar_eaas_add[t] >= min_build
         )
 
     # ------------------------------------------------------------
@@ -409,26 +480,22 @@ def build_model(
     # -------------------------
     # System Cost (Discounted NPV)
     # -------------------------
+    # Gas cost is in USD per TWh_th
+    gas_capex_npv = pyo.quicksum(
+        m.DF[t] * m.gas_add[t] * scenario["gas_capex_per_mw"]
+        for t in T
+    )
+
     gas_opex_npv = pyo.quicksum(
         m.DF[t] * m.gas_to_power[t] * econ["GAS_COST_PER_TWH_TH"]
         for t in T
     )
 
-    # Storage CAPEX: staged build, each year's addition discounted to present.
+    # Storage CAPEX: assume built in 2025 (t=0) unless you model staged build
     storage_capex_npv = pyo.quicksum(
-        m.DF[t] * m.storage_add[t] * m.storage_capex_param[t]
-        for t in T
-    )   
-    
-    # Storage annual O&M applied to cumulative installed capacity.
-    # Breaks LP degeneracy: without this, any storage capacity beyond the charge
-    # limit (~10 GWh) has zero marginal cost and the solver picks an arbitrary
-    # large value. The 2,000 USD/MWh-yr rate is intentionally conservative
-    # (see io.py for rationale).
-    storage_om_npv = pyo.quicksum(
-        m.DF[t] * m.storage_capacity_mwh[t] * econ.get("STORAGE_OM_PER_MWH_YR", 0.0)
-        for t in T
-    )
+    m.DF[t] * m.storage_add[t] * econ["STORAGE_COST_PER_MWH"]
+    for t in T
+)
 
     # Unserved energy penalty (VoLL in USD/TWh)
     unserved_npv = pyo.quicksum(
@@ -461,8 +528,8 @@ def build_model(
         gas_opex_npv
         + public_solar_capex_npv
         + eaas_solar_capex_npv
+        + gas_capex_npv
         + storage_capex_npv
-        + storage_om_npv
         + unserved_npv
         + carbon_cost_npv
     )

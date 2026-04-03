@@ -1,0 +1,22 @@
+{
+  "storage_role_by_policy": {
+    "no_policy": {
+      "dominant_role": "complement",
+      "hd_binding_fraction": 0.0,
+      "dominant_constraint": "H_d (power throughput)",
+      "interpretation": "Storage primarily COMPLEMENTS EaaS solar: both grow together as H_d increases. The dominant operational bottleneck is H_d (power throughput)."
+    },
+    "ndc3_unconditional": {
+      "dominant_role": "substitute",
+      "hd_binding_fraction": 0.0,
+      "dominant_constraint": "H_d (power throughput)",
+      "interpretation": "Storage primarily SUBSTITUTES for EaaS solar: higher H_d reduces EaaS solar requirements. Dominant bottleneck: H_d (power throughput)."
+    }
+  },
+  "parameter_sensitivity": {
+    "complement_ratio_range_across_hd": 0.0,
+    "complement_ratio_range_across_surplus_frac": 0.0,
+    "dominant_parameter": "surplus_frac",
+    "interpretation": "surplus_frac has greater influence \u2014 the solar-storage coupling intensity (integration quality) matters more than dispatch hours."
+  }
+}

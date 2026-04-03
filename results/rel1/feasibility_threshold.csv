@@ -1,0 +1,9 @@
+gas_case,solar_build_case,feasibility_threshold_eps,fully_infeasible,n_feasible_eps,n_infeasible_eps,npv_cost_at_threshold,dual_at_threshold,solar_mw_at_threshold
+baseline,aggressive,0.05,False,6,0,9527136237.188107,"{'dual_usd_per_twh': 0.0, 'binding': None, 'primal_slack_twh': None}",13489.228009999999
+baseline,conservative,0.05,False,6,0,119555663611.53654,"{'dual_usd_per_twh': 0.0, 'binding': None, 'primal_slack_twh': None}",10500.0
+downside,aggressive,0.05,False,6,0,11507693668.356066,"{'dual_usd_per_twh': 0.0, 'binding': None, 'primal_slack_twh': None}",16477.02232
+downside,conservative,0.2,False,1,5,407660979891.14276,"{'dual_usd_per_twh': 0.0, 'binding': None, 'primal_slack_twh': None}",10500.0
+shock_recovery,aggressive,0.05,False,6,0,9477572989.183296,"{'dual_usd_per_twh': 0.0, 'binding': None, 'primal_slack_twh': None}",12010.80758
+shock_recovery,conservative,0.05,False,6,0,135492666363.3317,"{'dual_usd_per_twh': 0.0, 'binding': None, 'primal_slack_twh': None}",10500.0
+upside,aggressive,0.05,False,6,0,9152171332.941607,"{'dual_usd_per_twh': 0.0, 'binding': None, 'primal_slack_twh': None}",12010.807569999999
+upside,conservative,0.05,False,6,0,99506823284.11842,"{'dual_usd_per_twh': 0.0, 'binding': None, 'primal_slack_twh': None}",10500.0

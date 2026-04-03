@@ -1,5 +1,5 @@
 """
-00_build_emissions_cap.py  —  NDC 3.0 edition (updated)
+00_build_emissions_cap.py  —  NDC 3.0 edition 
 ==========================================================
 
 WHAT CHANGED FROM NDC 2.0 VERSION
@@ -50,7 +50,9 @@ Fraction of economy-wide reduction attributable to electricity generation:
 
 NOTE: NDC 3.0 p.15 cites "Energy sector (including buildings and transport) = 22.0%
 in 2030 and 26.3% in 2035" — this is the FULL ENERGY SECTOR share, NOT just
-electricity generation. This file uses the electricity-generation-specific share derived from Table 2.
+electricity generation. Using that broader share would impose a cap approximately
+2x tighter than the NDC 3.0 actually requires for gas-fired power. This file
+uses the electricity-generation-specific share derived from Table 2.
 
 UNCONDITIONAL vs CONDITIONAL (NDC 3.0, p.14)
 ---------------------------------------------
@@ -67,15 +69,25 @@ Interpretation:
       Conditional finance required = US$270bn of the total US$337bn (NDC 3.0, p.21).
 
     - The "80% of the 29% and 32%" language means ~80% of the ADDITIONAL ambition
-      beyond the NDC 2.0 floor requires international finance.
+      beyond the NDC 2.0 floor requires international finance. It does NOT mean
+      the unconditional target is 20% × 168.2 = 33.6 MtCO2e (which would be
+      only ~5.9% of the baseline — far below the stated 20% objective).
 
 SCENARIO DEFINITIONS
 ---------------------
     ndc3_unconditional:  Domestically self-funded floor (20% of 573.5 MtCO2e baseline)
     ndc3_conditional:    Full NDC 3.0 target (requires international finance)
 
-RESEARCH QUESTIONS ADDRESSED
+NOTE ON SCENARIO NAME COMPATIBILITY
 -------------------------------------
+Downstream scripts (02_run_ndc_caps.py, 03_run_ndc_eaas.py, 08_phase8_analysis.py)
+currently reference "ndc_unconditional_20" and "ndc_conditional_47" (NDC 2.0 names).
+This file writes ndc3_unconditional and ndc3_conditional (NDC 3.0 names).
+You must update case name references in those downstream scripts before running.
+Alternatively, add NDC 3.0 rows to the SAME CSV alongside NDC 2.0 rows
+(which this file does NOT do — it overwrites the CSV).
+
+RESEARCH QUESTIONS ADDRESSED
     RQ-POL-1: Does NDC 3.0's absolute-reduction target require a materially
               different investment trajectory than NDC 2.0's BAU-relative targets?
     RQ-POL-2: What is the implied MAC of moving from unconditional to conditional
@@ -92,8 +104,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
-# ── Emission factor (consistent with optimize_model.py) ──
+# ── Emission factor (consistent with optimize_model.py and original 00_build) ──
 # Derived from: eta=0.43 * 1e6 * CARBON_EMISSION_FACTOR=0.421 = 181,030 tCO2/TWh_th
+# Original file uses 181,100 — retained for consistency across all scripts.
 EF_TCO2_PER_TWH_TH = 181_100.0   # tCO2 per TWh_th  (0.04% difference to model, immaterial)
 
 # ── Time horizon ───────────────────────────────────────────────────────────────
@@ -136,23 +149,53 @@ ELEC_SHARE_2035 = 23.467 / NDC3_ECONOMY_REDUCTION_2035_MTCO2E   # ~12.69%
 UNCONDITIONAL_ABS_REDUCTION_MTCO2E = 0.20 * NDC3_BASELINE_2018_MTCO2E  # 114.7 MtCO2e
 
 # ── Scenario definitions ───────────────────────────────────────────────────────
-# Each entry: (economy-wide absolute reduction by 2030, by 2035) in MtCO2e
-# ndc3_unconditional: the domestically self-funded 20% floor
-# ndc3_conditional:   the full 29%/32% economy-wide target
+# NDC 3.0 scenarios: absolute-reduction basis (this file's primary purpose)
+# NDC 2.0 scenarios: BAU-relative basis (added for POL-1 comparison)
+#
+# POL-1 requires running the model under BOTH NDC versions with identical
+# model parameters. The NDC 2.0 scenarios use a different methodology:
+# they define a cap as a MULTIPLIER on the model's own baseline gas emissions
+# at the target year (BAU-relative), not as an apportioned absolute reduction.
+#
+# NDC 2.0 unconditional: cap_2030 = 0.80 × Ebase_2030  (20% below BAU)
+# NDC 2.0 conditional:   cap_2030 = 0.53 × Ebase_2030  (47% below BAU)
+# These are linearly interpolated from Ebase_2025 to cap_2030, then held flat.
+#
+# NDC 2.0 entries use a "type": "bau_relative" key to signal the different
+# computation path inside main().
+
 SCENARIOS = {
+    # ── NDC 3.0 (absolute-reduction basis) ────────────────────────────────
     "ndc3_unconditional": {
-        "eco_red_2030": UNCONDITIONAL_ABS_REDUCTION_MTCO2E,           # 114.7 MtCO2e
-        "eco_red_2035": UNCONDITIONAL_ABS_REDUCTION_MTCO2E,           # held flat at 2030 level
-        "description": "Unconditional: 20% of 573.5 MtCO2e 2018 baseline (self-funded)",
+        "type":          "absolute",
+        "eco_red_2030":  UNCONDITIONAL_ABS_REDUCTION_MTCO2E,   # 114.7 MtCO2e
+        "eco_red_2035":  UNCONDITIONAL_ABS_REDUCTION_MTCO2E,   # held flat
+        "description":   "NDC 3.0 unconditional: 20% of 573.5 MtCO2e 2018 baseline (self-funded)",
     },
     "ndc3_conditional": {
-        "eco_red_2030": NDC3_ECONOMY_REDUCTION_2030_MTCO2E,           # 168.2 MtCO2e
-        "eco_red_2035": NDC3_ECONOMY_REDUCTION_2035_MTCO2E,           # 184.9 MtCO2e
-        "description": "Conditional: full 29%/32% NDC 3.0 target (requires int'l finance)",
+        "type":          "absolute",
+        "eco_red_2030":  NDC3_ECONOMY_REDUCTION_2030_MTCO2E,   # 168.2 MtCO2e
+        "eco_red_2035":  NDC3_ECONOMY_REDUCTION_2035_MTCO2E,   # 184.9 MtCO2e
+        "description":   "NDC 3.0 conditional: full 29%/32% NDC 3.0 target (requires int'l finance)",
+    },
+    # ── NDC 2.0 (BAU-relative basis — added for POL-1 comparison) ──────────
+    # These replicate the original 00_build_emissions_cap.py methodology
+    # (multiplier on the model's modelled 2030 baseline power-sector emissions)
+    # so that both NDC versions are computed from the same baseline run.
+    # Scenario names use ndc2_ prefix to distinguish from NDC 3.0 scenarios.
+    "ndc2_unconditional": {
+        "type":          "bau_relative",
+        "bau_mult_2030": 0.80,   # 20% reduction below BAU 2030 power emissions
+        "description":   "NDC 2.0 unconditional: -20% vs projected 2030 power-sector BAU",
+    },
+    "ndc2_conditional": {
+        "type":          "bau_relative",
+        "bau_mult_2030": 0.53,   # 47% reduction below BAU 2030 power emissions
+        "description":   "NDC 2.0 conditional: -47% vs projected 2030 power-sector BAU",
     },
 }
 
-# ── File paths  ────────────────────────────
+# ── File paths (same structure as NDC 2.0 version) ────────────────────────────
 BASELINE_DIAG_PATH = ROOT / "results" / "baseline" / "diagnostics.json"
 OUT_PATH           = ROOT / "data" / "cost" / "processed" / "emissions_cap.csv"
 
@@ -221,6 +264,32 @@ def main():
 
     for scen_name, scen_cfg in SCENARIOS.items():
 
+        scen_type = scen_cfg.get("type", "absolute")
+
+        # ── NDC 2.0 BAU-relative scenarios ────────────────────────────────────
+        if scen_type == "bau_relative":
+            # cap_2030 = multiplier × Ebase_2030 (model's own baseline at 2030)
+            # Linearly interpolated from Ebase_2025 (unconstrained) to cap_2030,
+            # then held flat from 2030 to END_YEAR.
+            bau_mult = scen_cfg["bau_mult_2030"]
+            cap_2030 = bau_mult * Ebase_2030
+
+            for y in range(START_YEAR, END_YEAR + 1):
+                if y <= START_YEAR:
+                    cap_y = Ebase_2025
+                elif y <= TARGET_YEAR:
+                    cap_y = _lerp(y, START_YEAR, Ebase_2025, TARGET_YEAR, cap_2030)
+                else:
+                    cap_y = cap_2030   # held flat after 2030
+
+                rows.append({
+                    "year":     y,
+                    "scenario": scen_name,
+                    "cap_tco2": max(cap_y, 0.0),
+                })
+            continue   # skip the absolute-scenario logic below
+
+        # ── NDC 3.0 absolute-reduction scenarios ──────────────────────────────
         eco_red_2030 = scen_cfg["eco_red_2030"] * 1e6   # MtCO2e → tCO2
         eco_red_2035 = scen_cfg["eco_red_2035"] * 1e6
 
@@ -306,6 +375,12 @@ def main():
         print()
 
     print(f"Saved to: {OUT_PATH}")
+    print()
+    print("DOWNSTREAM SCRIPT UPDATE REQUIRED:")
+    print("  02_run_ndc_caps.py   — update cases list to:")
+    print("    [\"ndc3_unconditional\", \"ndc3_conditional\"]")
+    print("  03_run_ndc_eaas.py   — same update")
+    print("  08_phase8_analysis.py — update CASES paths to ndc3_ result directories")
     print()
     print("FOR RQ-POL-2 (Marginal Abatement Cost):")
     print("  MAC = (cost_ndc3_conditional - cost_ndc3_unconditional) /")

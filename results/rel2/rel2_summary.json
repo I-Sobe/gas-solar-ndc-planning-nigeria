@@ -1,0 +1,77 @@
+{
+  "experiment": {
+    "capital_case": "moderate",
+    "gas_cases": [
+      "baseline",
+      "upside",
+      "downside",
+      "shock_recovery"
+    ],
+    "eps_levels": [
+      0.2,
+      0.15,
+      0.1,
+      0.08,
+      0.06,
+      0.05
+    ],
+    "voll": "voll_mid"
+  },
+  "curve_by_gas_case": {
+    "baseline": {
+      "onset_eps": null,
+      "onset_reliability": null,
+      "max_dual_usd_per_pct_pt": null,
+      "steepness": null,
+      "n_binding_eps": 0,
+      "n_infeasible_eps": 0
+    },
+    "downside": {
+      "onset_eps": null,
+      "onset_reliability": null,
+      "max_dual_usd_per_pct_pt": null,
+      "steepness": null,
+      "n_binding_eps": 0,
+      "n_infeasible_eps": 0
+    },
+    "shock_recovery": {
+      "onset_eps": null,
+      "onset_reliability": null,
+      "max_dual_usd_per_pct_pt": null,
+      "steepness": null,
+      "n_binding_eps": 0,
+      "n_infeasible_eps": 0
+    },
+    "upside": {
+      "onset_eps": null,
+      "onset_reliability": null,
+      "max_dual_usd_per_pct_pt": null,
+      "steepness": null,
+      "n_binding_eps": 0,
+      "n_infeasible_eps": 0
+    }
+  },
+  "left_shift_analysis": {
+    "baseline": {
+      "onset_eps": null,
+      "left_shift_eps": null,
+      "curve_left_shifted": null
+    },
+    "downside": {
+      "onset_eps": null,
+      "left_shift_eps": null,
+      "curve_left_shifted": null
+    },
+    "shock_recovery": {
+      "onset_eps": null,
+      "left_shift_eps": null,
+      "curve_left_shifted": null
+    },
+    "upside": {
+      "onset_eps": null,
+      "left_shift_eps": null,
+      "curve_left_shifted": null
+    }
+  },
+  "interpretation": null
+}

@@ -1,8 +1,0 @@
-eps,reliability,npv_cost,unserved_total,dual_reliability,case,status
-,,127164328505.51637,105.97871077999999,,voll_only,feasible
-0.2,0.8,127164328505.51637,105.97871077999999,0.0,reliability_constrained,feasible
-0.15,0.85,127164328505.51637,105.97871077999999,0.0,reliability_constrained,feasible
-0.1,0.9,180694308585.15164,73.7849172,3481288300.0,reliability_constrained,feasible
-0.08,0.92,,,,reliability_constrained,infeasible
-0.06,0.94,,,,reliability_constrained,infeasible
-0.05,0.95,,,,reliability_constrained,infeasible

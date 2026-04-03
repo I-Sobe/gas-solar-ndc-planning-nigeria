@@ -1,0 +1,101 @@
+{
+  "experiment": {
+    "demand_cases": [
+      "low",
+      "baseline",
+      "high"
+    ],
+    "growth_rates": {
+      "low": 0.025,
+      "baseline": 0.04,
+      "high": 0.06
+    },
+    "gas_cases": [
+      "baseline",
+      "upside",
+      "downside",
+      "shock_recovery"
+    ],
+    "policy_arms": [
+      "no_policy",
+      "ndc3_unconditional"
+    ],
+    "voll": "voll_mid"
+  },
+  "interaction_findings": {
+    "no_policy": {
+      "baseline": {
+        "gas_premium_low": 0.0,
+        "gas_premium_high": 0.0,
+        "interaction": 0.0,
+        "amplifies": false
+      },
+      "downside": {
+        "gas_premium_low": 1088604407.1962109,
+        "gas_premium_high": 182490347391.70996,
+        "interaction": 181401742984.51376,
+        "amplifies": true
+      },
+      "shock_recovery": {
+        "gas_premium_low": -20950088.682157516,
+        "gas_premium_high": -7367258515.659897,
+        "interaction": -7346308426.977739,
+        "amplifies": false
+      },
+      "upside": {
+        "gas_premium_low": -367988173.1692581,
+        "gas_premium_high": -13372464480.369751,
+        "interaction": -13004476307.200493,
+        "amplifies": false
+      }
+    },
+    "ndc3_unconditional": {
+      "baseline": {
+        "gas_premium_low": 0.0,
+        "gas_premium_high": 0.0,
+        "interaction": 0.0,
+        "amplifies": false
+      },
+      "downside": {
+        "gas_premium_low": 0.0,
+        "gas_premium_high": 0.0,
+        "interaction": 0.0,
+        "amplifies": false
+      },
+      "shock_recovery": {
+        "gas_premium_low": 0.0,
+        "gas_premium_high": 0.0,
+        "interaction": 0.0,
+        "amplifies": false
+      },
+      "upside": {
+        "gas_premium_low": 0.0,
+        "gas_premium_high": 0.0,
+        "interaction": 0.0,
+        "amplifies": false
+      }
+    }
+  },
+  "eaas_value_findings": {
+    "no_policy": {
+      "eaas_value_monotone_by_gas_case": {
+        "baseline": true,
+        "downside": true,
+        "shock_recovery": false,
+        "upside": true
+      },
+      "max_eaas_value_usd": 196807132391.58075,
+      "max_eaas_value_at_demand_case": "high"
+    },
+    "ndc3_unconditional": {
+      "eaas_value_monotone_by_gas_case": {
+        "baseline": true,
+        "downside": true,
+        "shock_recovery": true,
+        "upside": true
+      },
+      "max_eaas_value_usd": 1029267572834.445,
+      "max_eaas_value_at_demand_case": "high"
+    }
+  }
+}

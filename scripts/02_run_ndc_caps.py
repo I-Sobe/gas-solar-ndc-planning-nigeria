@@ -8,7 +8,7 @@ import pyomo.environ as pyo
 ROOT = Path(__file__).resolve().parents[1]  # repo root
 sys.path.append(str(ROOT))
 
-from src.io import load_econ
+from src.io import (load_econ, load_solar_capex_by_year)
 from src.scenarios import load_scenario
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
@@ -64,11 +64,23 @@ def load_annual_caps(scenario_name: str, years: list[int]) -> list[float]:
 def run_case(cap_scenario_name: str, scenario: dict, econ: dict) -> dict:
     years = [int(y) for y in scenario["years"]]
     caps = load_annual_caps(cap_scenario_name, years)
+    
+    # Load time-varying solar CAPEX from NREL ATB (solar_low scenario).
+    # solar_low declines from $1,456k/MW (2025) to $603k/MW (2045).
+    solar_capex_tv = load_solar_capex_by_year(
+        scenario_name="solar_low",
+        start_year=2025, end_year=2045,
+    )
+    # Activate minimum build floor when time-varying CAPEX is in use.
+    # This prevents, the optimizer from delaying all solar to the cheapest years
+    # (2040-2045) creating unrealistic 2025-2030 supply gaps.
+    scenario["solar_min_build_mw_per_year"] = 100.0
 
     m = build_model(
         scenario=scenario,
         econ=econ,
         emissions_cap_by_year=caps,  # annual cap trajectory
+        solar_capex_by_year=solar_capex_tv,
     )
 
     status = solve_model(m)
@@ -121,25 +133,46 @@ def run_case(cap_scenario_name: str, scenario: dict, econ: dict) -> dict:
 
 def main():
 
-    scenario = load_scenario(
-        demand_level_case="served",
-        demand_case="baseline",
-        gas_deliverability_case="baseline",
-        #solar_case="baseline",
-        carbon_case="no_policy",
-        start_year=2025,
-        end_year=2045,
-    )
-
-    # NDC 3.0 scenario names — must match scenario column written by
-    # 00_build_emissions_cap.py (NDC 3.0 edition).
     CANONICAL_VOLL = "voll_mid"
-    cases = ["ndc3_unconditional", "ndc3_conditional"]
-    # Single canonical VoLL — midpoint of defensible Nigerian range (5-30 USD/kWh).
-    # Keeps cross-case comparisons valid. Add entries here for VoLL sensitivity.
-    voll_cases = [CANONICAL_VOLL]
 
-    for c in cases:
+    # ----------------------------------------------------------------
+    # NDC 3.0 scenario definitions
+    #
+    # Each case carries two parameters that differ between unconditional
+    # and conditional:
+    #
+    #   capital_case — public capital ceiling passed to load_scenario().
+    #     unconditional: "moderate" (0.85 × B* = 5.2B USD)
+    #       → domestically self-funded floor, budget is binding.
+    #     conditional:   "expansion" (1.20 × B* = 7.4B USD)
+    #       → international finance supplements domestic capital;
+    #         apportioned power-sector share of $270bn is ~$19.8bn,
+    #         expansion (7.4B) sits within that envelope while keeping
+    #         the constraint economically meaningful (not unconstrained).
+    #         Source: NDC 3.0 p.21, same 12.7% electricity-gen share
+    #         used to derive the emissions cap.
+    #
+    # Note: 02_run_ndc_caps.py has NO EaaS. Public capital is the only
+    # deployment channel, so capital_case is the dominant constraint.
+    # ----------------------------------------------------------------
+    NDC_CASES = {
+        "ndc3_unconditional": {"capital_case": "moderate"},
+        "ndc3_conditional":   {"capital_case": "expansion"},
+    }
+
+    for c, cfg in NDC_CASES.items():
+        scenario = load_scenario(
+            demand_level_case="served",
+            demand_case="baseline",
+            gas_deliverability_case="baseline",
+            capital_case=cfg["capital_case"],
+            carbon_case="no_policy",
+            start_year=2025,
+            end_year=2045,
+        )
+
+        voll_cases = [CANONICAL_VOLL]
+
         for voll_case in voll_cases:
 
             print(f"\nRunning {c} with {voll_case}")
@@ -154,6 +187,7 @@ def main():
                 json.dump(
                     {
                         "cap_scenario": c,
+                        "capital_case": cfg["capital_case"],
                         "voll_case": voll_case,
                         "voll_value_usd_per_twh": econ["UNSERVED_ENERGY_PENALTY"],
                         "decision_variables": out["decision_variables"],

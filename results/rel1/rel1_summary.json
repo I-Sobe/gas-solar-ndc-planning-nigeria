@@ -1,0 +1,122 @@
+{
+  "experiment": {
+    "capital_case": "moderate",
+    "gas_cases": [
+      "baseline",
+      "upside",
+      "downside",
+      "shock_recovery"
+    ],
+    "solar_build_cases": [
+      "aggressive",
+      "conservative"
+    ],
+    "eps_levels": [
+      0.2,
+      0.15,
+      0.1,
+      0.08,
+      0.06,
+      0.05
+    ],
+    "voll": "voll_mid"
+  },
+  "primary_determinant": "indeterminate",
+  "interpretation": "Gas regime and solar build rate shift the threshold by equal amounts.",
+  "max_gas_range_eps": 0.15000000000000002,
+  "max_solar_diff_eps": 0.15000000000000002,
+  "gas_variation_by_solar_arm": {
+    "aggressive": {
+      "min_threshold": 0.05,
+      "max_threshold": 0.05,
+      "range": 0.0,
+      "n_infeasible": 0
+    },
+    "conservative": {
+      "min_threshold": 0.05,
+      "max_threshold": 0.2,
+      "range": 0.15000000000000002,
+      "n_infeasible": 0
+    }
+  },
+  "solar_variation_by_gas_case": {
+    "baseline": {
+      "aggressive_threshold": 0.05,
+      "conservative_threshold": 0.05,
+      "solar_arm_difference": 0.0
+    },
+    "upside": {
+      "aggressive_threshold": 0.05,
+      "conservative_threshold": 0.05,
+      "solar_arm_difference": 0.0
+    },
+    "downside": {
+      "aggressive_threshold": 0.05,
+      "conservative_threshold": 0.2,
+      "solar_arm_difference": -0.15000000000000002
+    },
+    "shock_recovery": {
+      "aggressive_threshold": 0.05,
+      "conservative_threshold": 0.05,
+      "solar_arm_difference": 0.0
+    }
+  },
+  "threshold_table": [
+    {
+      "gas_case": "baseline",
+      "solar_build_case": "aggressive",
+      "feasibility_threshold_eps": 0.05,
+      "fully_infeasible": false,
+      "npv_cost_at_threshold": 9527136237.188107
+    },
+    {
+      "gas_case": "baseline",
+      "solar_build_case": "conservative",
+      "feasibility_threshold_eps": 0.05,
+      "fully_infeasible": false,
+      "npv_cost_at_threshold": 119555663611.53654
+    },
+    {
+      "gas_case": "downside",
+      "solar_build_case": "aggressive",
+      "feasibility_threshold_eps": 0.05,
+      "fully_infeasible": false,
+      "npv_cost_at_threshold": 11507693668.356066
+    },
+    {
+      "gas_case": "downside",
+      "solar_build_case": "conservative",
+      "feasibility_threshold_eps": 0.2,
+      "fully_infeasible": false,
+      "npv_cost_at_threshold": 407660979891.14276
+    },
+    {
+      "gas_case": "shock_recovery",
+      "solar_build_case": "aggressive",
+      "feasibility_threshold_eps": 0.05,
+      "fully_infeasible": false,
+      "npv_cost_at_threshold": 9477572989.183296
+    },
+    {
+      "gas_case": "shock_recovery",
+      "solar_build_case": "conservative",
+      "feasibility_threshold_eps": 0.05,
+      "fully_infeasible": false,
+      "npv_cost_at_threshold": 135492666363.3317
+    },
+    {
+      "gas_case": "upside",
+      "solar_build_case": "aggressive",
+      "feasibility_threshold_eps": 0.05,
+      "fully_infeasible": false,
+      "npv_cost_at_threshold": 9152171332.941607
+    },
+    {
+      "gas_case": "upside",
+      "solar_build_case": "conservative",
+      "feasibility_threshold_eps": 0.05,
+      "fully_infeasible": false,
+      "npv_cost_at_threshold": 99506823284.11842
+    }
+  ]
+}

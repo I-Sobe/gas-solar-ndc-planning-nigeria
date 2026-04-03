@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 # CONFIG
 # =========================
 PROJECT_ROOT = Path(".")
-OUT_DIR = PROJECT_ROOT / "results_phase8"
+OUT_DIR = PROJECT_ROOT / "results" / "phase8"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Single VoLL used across ALL cases. Change here to switch all five cases at once.
@@ -37,22 +37,16 @@ CASES = [
     },
     {
         "case": "ndc3_unconditional_eaas",
-        "summary_path":    PROJECT_ROOT / f"results/ndc_eaas/ndc3_unconditional_{CANONICAL_VOLL}/summary.json",
-        "timeseries_path": PROJECT_ROOT / f"results/ndc_eaas/ndc3_unconditional_{CANONICAL_VOLL}/timeseries.csv",
+        "summary_path":    PROJECT_ROOT / f"results/ndc_eaas/ndc3_unconditional_eaas_{CANONICAL_VOLL}/summary.json",
+        "timeseries_path": PROJECT_ROOT / f"results/ndc_eaas/ndc3_unconditional_eaas_{CANONICAL_VOLL}/timeseries.csv",
     },
     {
         "case": "ndc3_conditional_eaas",
-        "summary_path":    PROJECT_ROOT / f"results/ndc_eaas/ndc3_conditional_{CANONICAL_VOLL}/summary.json",
-        "timeseries_path": PROJECT_ROOT / f"results/ndc_eaas/ndc3_conditional_{CANONICAL_VOLL}/timeseries.csv",
+        "summary_path":    PROJECT_ROOT / f"results/ndc_eaas/ndc3_conditional_eaas_{CANONICAL_VOLL}/summary.json",
+        "timeseries_path": PROJECT_ROOT / f"results/ndc_eaas/ndc3_conditional_eaas_{CANONICAL_VOLL}/timeseries.csv",
     },
 ]
 
-# Netback regimes in USD/MMBtu (scenario anchors, not point estimates)
-NETBACK_USD_PER_MMBTU = {
-    "low_5": 5.0,
-    "mid_8": 8.0,
-    "high_12": 12.0,
-}
 
 # Conversion:
 # 1 MMBtu = 293.071 kWh_th
@@ -67,11 +61,6 @@ def load_summary(path: Path) -> dict:
     with open(path, "r") as f:
         return json.load(f)
 
-def pick(df: pd.DataFrame, names: list[str], case: str) -> str:
-    for n in names:
-        if n in df.columns:
-            return n
-    raise KeyError(f"{case}: none of {names} found. Available: {df.columns.tolist()}")
 
 def load_timeseries(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
@@ -225,13 +214,7 @@ def main():
     # ---- 8.4 Scarcity pricing stats ----
     scarcity_rows = []
     for case, ts in ts_by_case.items():
-        # gas shadow
-        gas_col = pick(
-            ts,
-            ["gas_shadow_usd_per_twh_th", "gas_shadow_price_usd_per_twh_th"],
-            case,
-        )
-        g = safe_numeric(ts[gas_col])
+        
         # carbon shadow (baseline may be NaN/0)
         if "carbon_shadow_usd_per_tco2" not in ts.columns:
             raise ValueError(f"Missing 'carbon_shadow_usd_per_tco2' in {case} timeseries.csv")
@@ -240,10 +223,6 @@ def main():
         scarcity_rows.append(
             {
                 "case": case,
-                "gas_shadow_mean": float(g.dropna().mean()) if g.dropna().shape[0] else np.nan,
-                "gas_shadow_max": float(g.dropna().max()) if g.dropna().shape[0] else np.nan,
-                "gas_shadow_binding_years": binding_years(g),
-                **{f"gas_shadow_{k}": v for k, v in quantiles(g, qs=(0.5, 0.9)).items()},
                 "carbon_shadow_mean": float(c.dropna().mean()) if c.dropna().shape[0] else np.nan,
                 "carbon_shadow_max": float(c.dropna().max()) if c.dropna().shape[0] else np.nan,
                 "carbon_shadow_binding_years": binding_years(c),
@@ -253,36 +232,7 @@ def main():
     scarcity = pd.DataFrame(scarcity_rows)
     scarcity.to_csv(OUT_DIR / "scarcity_stats.csv", index=False)
 
-    # ---- Plot shadow prices by year ----
-    def plot_shadow_gas():
-        plt.figure()
-        for case, ts in ts_by_case.items():
-            gas_col = None
-            for candidate in [
-                "gas_shadow_usd_per_twh_th",
-                "gas_shadow_price_usd_per_twh_th",
-            ]:
-                if candidate in ts.columns:
-                    gas_col = candidate
-                    break
-
-            if gas_col is not None:
-                plt.plot(
-                    ts["year"].values,
-                    safe_numeric(ts[gas_col]).values,
-                    marker="o",
-                    label=case,
-                )
-
-        plt.xlabel("Year")
-        plt.ylabel("USD per TWh_th")
-        plt.title("Gas scarcity shadow value by year")
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig(OUT_DIR / "gas_shadow_by_year.png", dpi=200)
-        plt.close()
-
-
+    
     def plot_shadow_carbon():
         plt.figure()
         for case, ts in ts_by_case.items():
@@ -303,61 +253,9 @@ def main():
         plt.close()
 
 
-    plot_shadow_gas()
     plot_shadow_carbon()
-    # ---- 8.5 Export vs Power wedge ----
-    # Compare power-sector gas scarcity value vs (i) domestic regulated benchmarks and (ii) stylised opportunity regimes
 
-    DOMESTIC_BENCHMARK_USD_PER_MMBTU = {
-        "dom_power_2p4": 2.4,
-        "dom_commercial_2p9": 2.9,
-        "dom_high_3p3": 3.3,  # conservative upper domestic anchor
-    }
-
-    OPPORTUNITY_USD_PER_MMBTU = {
-        "opp_3": 3.0,
-        "opp_5": 5.0,
-        "opp_7": 7.0,
-    }
-
-    wedge_rows = []
-    for case, ts in ts_by_case.items():
-        gas_col = pick(
-            ts,
-            ["gas_shadow_usd_per_twh_th", "gas_shadow_price_usd_per_twh_th"],
-            case,
-        )
-        gas_shadow = safe_numeric(ts[gas_col])
-
-        # Build one iterable of (family, regime_name, usd_per_mmbtu)
-        regimes = []
-        regimes += [("domestic", name, val) for name, val in DOMESTIC_BENCHMARK_USD_PER_MMBTU.items()]
-        regimes += [("opportunity", name, val) for name, val in OPPORTUNITY_USD_PER_MMBTU.items()]
-
-        for family, name, price_mmbtu in regimes:
-            price_twh = price_mmbtu * MMBTU_PER_TWH_TH  # USD/TWh_th
-            diff = gas_shadow - price_twh  # positive => power value exceeds benchmark
-
-            d = diff.dropna()
-            share = float((d > 0).mean()) if d.shape[0] else np.nan
-
-            wedge_rows.append(
-                {
-                    "case": case,
-                    "benchmark_family": family,              # domestic vs opportunity
-                    "benchmark_regime": name,                # e.g., dom_power_2p4 / opp_5
-                    "benchmark_usd_per_mmbtu": price_mmbtu,
-                    "benchmark_usd_per_twh_th": price_twh,
-                    "share_years_lambda_power_gt_benchmark": share,
-                    "max_gap_usd_per_twh_th": float(d.max()) if d.shape[0] else np.nan,
-                    "min_gap_usd_per_twh_th": float(d.min()) if d.shape[0] else np.nan,
-                }
-            )
-
-    wedge = pd.DataFrame(wedge_rows)
-    wedge.to_csv(OUT_DIR / "export_vs_power_wedge.csv", index=False)
-
-    # ---- 8.6 Energy security dashboard (partial: adequacy+sustainability now; reliability/resilience later) ----
+    # ---- 8.5 Energy security dashboard (partial: adequacy+sustainability now; reliability/resilience later) ----
     es_rows = []
     for case, ts in ts_by_case.items():
         unserved = safe_numeric(ts["unserved_twh"])
@@ -381,7 +279,7 @@ def main():
     es.to_csv(OUT_DIR / "energy_security_dashboard.csv", index=False)
 
     
-    # ---- 8.7 EaaS Deployment vs Carbon Shadow Price ----
+    # ---- 8.6 EaaS Deployment vs Carbon Shadow Price ----
     # Note: financing gap is zero at the modelled tariff level (tariff revenue
     # exceeds CAPEX), so subsidy_per_mw_usd is mechanically zero. The
     # analytically meaningful series is EaaS deployment volume alongside the

@@ -10,7 +10,7 @@ from src.scenarios import load_scenario
 import pyomo.environ as pyo
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import run_deterministic_scenario, run_tariff_public_capital_frontier ,extract_planning_diagnostics
-from src.io import load_econ
+from src.io import (load_econ, load_solar_capex_by_year)
 
 # ============================================================
 # PATH SETUP
@@ -31,7 +31,7 @@ def main():
     scenario = load_scenario(
         demand_level_case="served",
         demand_case="baseline",
-        capital_case="tight",
+        capital_case="moderate",
         gas_deliverability_case="baseline",
         #solar_case="baseline",
         solar_build_case="aggressive",
@@ -49,12 +49,24 @@ def main():
 
     years = scenario["years"]
 
+    # Load time-varying solar CAPEX from NREL ATB (solar_low scenario).
+    # solar_low declines from $1,456k/MW (2025) to $603k/MW (2045).
+    solar_capex_tv = load_solar_capex_by_year(
+        scenario_name="solar_low",
+        start_year=2025, end_year=2045,
+    )
+    # Activate minimum build floor when time-varying CAPEX is in use.
+    # This prevents, the optimizer from delaying all solar to the cheapest years
+    # (2040-2045) creating unrealistic 2025-2030 supply gaps.
+    scenario["solar_min_build_mw_per_year"] = 100.0
+    
     # Build and solve baseline model with an effectively non-binding cumulative cap
     m = build_model(
         scenario=scenario,
         econ=econ,
         emissions_cap=1e18,          # scalar cumulative cap
         emissions_cap_by_year=None,  # ensure this is scalar case
+        solar_capex_by_year=solar_capex_tv,
     )
 
     status = solve_model(m)
@@ -173,16 +185,6 @@ def main():
         100_000_000,
         110_000_000,
     ]
-
-    frontier = run_tariff_public_capital_frontier(
-        scenario,
-        econ,
-        tariffs=tariff_grid
-    )
-
-    print("Tariff–capital frontier:")
-    for row in frontier:
-        print(row)
 
     print("--- EaaS run saved ---")
     print("Saved diagnostics:", RESULTS_DIR / "diagnostics.json")

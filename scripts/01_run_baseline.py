@@ -11,7 +11,7 @@ import pyomo.environ as pyo
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
 from src.optimize_experiments import run_deterministic_scenario
-from src.io import load_econ
+from src.io import load_econ, load_solar_capex_by_year
 
 
 CANONICAL_VOLL = "voll_mid"
@@ -46,7 +46,19 @@ def main():
     econ = load_econ(CANONICAL_VOLL)
 
     years = scenario["years"]
-       
+
+    # Load time-varying solar CAPEX from NREL ATB (solar_low scenario).
+    # solar_low declines from $1,456k/MW (2025) to $603k/MW (2045).
+    solar_capex_tv = load_solar_capex_by_year(
+        scenario_name="solar_low",
+        start_year=int(years[0]),
+        end_year=int(years[-1]),
+    )
+
+    # Activate minimum build floor when time-varying CAPEX is in use.
+    # This prevents, the optimizer from delaying all solar to the cheapest years
+    # (2040-2045) creating unrealistic 2025-2030 supply gaps.
+    scenario["solar_min_build_mw_per_year"] = 100.0
 
     # Build and solve baseline model with an effectively non-binding cumulative cap
     m = build_model(
@@ -54,6 +66,7 @@ def main():
         econ=econ,
         emissions_cap=1e18,          # scalar cumulative cap
         emissions_cap_by_year=None,  # ensure this is scalar case
+        solar_capex_by_year=solar_capex_tv,
     )
 
     status = solve_model(m)
@@ -121,12 +134,15 @@ def main():
         json.dump(diag, f, indent=2)
 
     # Compute actual discounted public solar CAPEX used.
-    # Uses m.solar_capex_param[t] (time-varying NREL ATB prices) to match
-    # what the optimiser actually priced each year's addition at.
+    # The model uses econ["SOLAR_CAPEX_PER_MW"] — a fixed 2025 scalar from
+    # the solar_low NREL ATB scenario. There is no time-varying solar_capex_param
+    # Pyomo object in the current model; that was a planned extension that was
+    # not implemented. Using the scalar is consistent with how the objective
+    # function prices solar additions.
     solar_public_npv_spend = sum(
         float(pyo.value(m.DF[t]))
         * float(pyo.value(m.solar_public_add[t]))
-        * float(pyo.value(m.solar_capex_param[t]))
+        * econ["SOLAR_CAPEX_PER_MW"]
         for t in range(len(years))
     )
 

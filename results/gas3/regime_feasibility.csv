@@ -1,0 +1,15 @@
+gas_case,ndc_scenario,is_flat,feasible,status
+baseline,ndc3_unconditional,False,True,optimal
+downside,ndc3_unconditional,False,True,optimal
+upside,ndc3_unconditional,False,True,optimal
+shock_recovery,ndc3_unconditional,False,True,optimal
+baseline,ndc3_conditional,False,True,optimal
+downside,ndc3_conditional,False,True,optimal
+upside,ndc3_conditional,False,True,optimal
+shock_recovery,ndc3_conditional,False,True,optimal
+flat_downside,ndc3_unconditional,True,True,optimal
+flat_upside,ndc3_unconditional,True,True,optimal
+flat_shock_recovery,ndc3_unconditional,True,True,optimal
+flat_downside,ndc3_conditional,True,True,optimal
+flat_upside,ndc3_conditional,True,True,optimal
+flat_shock_recovery,ndc3_conditional,True,True,optimal

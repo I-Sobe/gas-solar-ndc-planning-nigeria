@@ -35,3 +35,28 @@ cases:
     recovery_ramp_years: 5          # Historical repair + stabilization perios often span 3-5 years.
     recovery_uplift_fraction: 0.20  # Recovery capped at moderate improvement, not structural doubling
 
+
+  flat_downside:
+    type: flat_level
+    level_twh_th: 30.496258
+    # Mean of the downside scenario (3% exponential decline) over 2025-2045.
+    # Cumulative gas = 640.42 TWh_th, identical to downside.
+    # Used in GAS-3 to isolate the shape effect of exponential decline
+    # independently of the reduced level. Any cost/feasibility difference
+    # between downside and flat_downside is attributable to shape alone.
+
+  flat_upside:
+    type: flat_level
+    level_twh_th: 45.694095
+    # Mean of the upside scenario (lag-ramp-uplift) over 2025-2045.
+    # Cumulative gas = 959.58 TWh_th, identical to upside.
+    # Used in GAS-3 to isolate the shape effect of delayed ramp-up
+    # independently of the increased level.
+
+  flat_shock_recovery:
+    type: flat_level
+    level_twh_th: 43.524500
+    # Mean of the shock_recovery scenario over 2025-2045.
+    # Cumulative gas = 914.01 TWh_th, identical to shock_recovery.
+    # Used in GAS-3 to isolate the shape effect of disruption-and-recovery
+    # independently of the slightly elevated mean supply level.

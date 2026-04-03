@@ -1,0 +1,6 @@
+case,carbon_shadow_mean,carbon_shadow_max,carbon_shadow_binding_years,carbon_shadow_q50,carbon_shadow_q90
+baseline_no_policy,0.0,0.0,0,0.0,0.0
+ndc3_unconditional,9277.415276190475,21557.111,20,8311.1994,17815.794
+ndc3_conditional,7340.28859062381,21557.111,20,8311.1994,17815.794
+ndc3_unconditional_eaas,7340.28859062381,21557.111,20,8311.1994,17815.794
+ndc3_conditional_eaas,7340.28859062381,21557.111,20,8311.1994,17815.794

@@ -1,0 +1,40 @@
+{
+  "findings": {
+    "ndc3_unconditional": {
+      "cost_premium_latent_high_vs_served_pct": 882.3791375959214,
+      "latent_high_feasible_public_only": true,
+      "latent_high_feasible_eaas": true
+    },
+    "ndc3_conditional": {
+      "cost_premium_latent_high_vs_served_pct": 2062.378596737313,
+      "latent_high_feasible_public_only": true,
+      "latent_high_feasible_eaas": true
+    }
+  },
+  "bottleneck_diagnosis": {
+    "ndc3_unconditional": {
+      "budget_shadow_served": null,
+      "budget_shadow_latent_low": null,
+      "budget_shadow_latent_high": null,
+      "bottleneck_intensifies": false
+    },
+    "ndc3_conditional": {
+      "budget_shadow_served": null,
+      "budget_shadow_latent_low": null,
+      "budget_shadow_latent_high": null,
+      "bottleneck_intensifies": false
+    }
+  },
+  "eaas_necessity": {
+    "ndc3_unconditional": {
+      "served": false,
+      "latent_low": false,
+      "latent_high": false
+    },
+    "ndc3_conditional": {
+      "served": false,
+      "latent_low": false,
+      "latent_high": false
+    }
+  }
+}

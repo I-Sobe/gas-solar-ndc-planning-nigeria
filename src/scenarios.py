@@ -9,7 +9,7 @@ for use in system evaluation and optimization studies.
 This module provides scenario DEFINITIONS ONLY.
 It does NOT execute models, run experiments, or aggregate results.
 
-Demand framing 
+Demand framing (examiner-safe)
 ------------------------------
 - Demand is treated as an EXOGENOUS planning input, not statistically forecast
   from historical time series.
@@ -131,12 +131,25 @@ def gas_deliverability_scenarios() -> dict[str, str]:
 
     These labels must match the 'scenario' column in:
     data/gas/processed/gas_available_power_annual_twh_th.csv
+
+    Structural scenarios (used in all RQs):
+      downside, baseline, upside, shock_recovery
+
+    Level-equivalent flat scenarios (GAS-3 only):
+      flat_downside, flat_upside, flat_shock_recovery
+      These hold cumulative gas supply identical to the paired structural
+      scenario but remove shape variation. Used to isolate whether cost
+      and feasibility differences are driven by SHAPE or LEVEL.
     """
     return {
-        "downside": "downside",
-        "baseline": "baseline",
-        "upside": "upside",
-        "shock_recovery": "shock_recovery",
+        "downside":            "downside",
+        "baseline":            "baseline",
+        "upside":              "upside",
+        "shock_recovery":      "shock_recovery",
+        # Level-equivalent controls for GAS-3 shape isolation
+        "flat_downside":       "flat_downside",
+        "flat_upside":         "flat_upside",
+        "flat_shock_recovery": "flat_shock_recovery",
     }
 
 def land_scenarios():
@@ -153,7 +166,7 @@ def capital_envelope_scenarios():
     Calibrated from unconstrained adequacy requirement:
     B* ≈ 6.13B USD
     """
-    B_star = 6_130_600_000
+    B_star = 9_104_000_000
 
     return {
         "tight": int(0.50 * B_star),
@@ -164,12 +177,47 @@ def capital_envelope_scenarios():
     }
 
 def solar_tariff_scenarios():
+    """
+    EaaS service tariff scenarios (USD per TWh).
 
+    Three named levels for general use (low/baseline/high).
+
+    Self-financing threshold analysis (FIN-2):
+      At solar_low CAPEX (1,456,000 USD/MW), discount rate 4%, 21-year horizon:
+        NPV energy per MW = 0.03451 TWh
+        T* (unconditional, required_margin=1.10) = 46.4 M USD/TWh
+        T* (conditional,   required_margin=1.05) = 44.3 M USD/TWh
+
+      Below T*: financing_gap_per_mw > 0  → eaas_subsidy is required
+      Above T*: financing_gap_per_mw = 0  → EaaS is fully self-financing
+
+      The named levels are used by load_scenario() via solar_tariff_case.
+      The FIN-2 sweep (run_tariff_bankability_sweep) uses the TARIFF_SWEEP_GRID
+      constant defined below and bypasses load_scenario() directly.
+    """
     return {
-        "low": 45_000_000,
+        "low":      45_000_000,
         "baseline": 65_000_000,
-        "high": 85_000_000,
+        "high":     85_000_000,
     }
+
+
+# Tariff sweep grid for FIN-2 bankability analysis.
+# Spans sub-threshold (30M) through well-above-threshold (110M),
+# with fine resolution around the T* = 44-46M crossing point.
+# Units: USD per TWh.
+TARIFF_SWEEP_GRID = [
+    30_000_000,   # well below threshold — large subsidy required
+    35_000_000,
+    40_000_000,
+    44_000_000,   # just below T* (conditional threshold ~44.3M)
+    46_000_000,   # just above T* (unconditional threshold ~46.4M)
+    50_000_000,
+    60_000_000,
+    75_000_000,
+    95_000_000,   # existing canonical run value
+    110_000_000,  # well above threshold — no subsidy required
+]
 
 def gas_probability_weights():
     return {
@@ -188,6 +236,7 @@ def load_scenario(
     land_case: str = "moderate",
     capital_case: str = "moderate", 
     gas_deliverability_case: str = "baseline",
+    #solar_case: str = "baseline",
     solar_build_case: str = "baseline",
     solar_tariff_case= "baseline",
     carbon_case: str = "no_policy",
@@ -231,6 +280,8 @@ def load_scenario(
         raise ValueError(f"Unknown demand_level_case: {demand_level_case}")
     if demand_case not in demand_growth_scenarios():
         raise ValueError(f"Unknown demand_case: {demand_case}")
+    #if solar_case not in solar_capacity_scenarios():
+        #raise ValueError(f"Unknown solar_case: {solar_case}")
     if carbon_case not in carbon_policy_scenarios():
         raise ValueError(f"Unknown carbon_case: {carbon_case}")
     if gas_deliverability_case not in gas_deliverability_scenarios():
@@ -275,13 +326,17 @@ def load_scenario(
         "storage_baseline_mwh": 0.0,  # No existing utility-scale BESS (brownfield baseline)
         # ---- Solar
         "solar_cf": 0.27,
-        "solar_baseline_mw": 100,  # 2025 installed base (MW); brownfield anchor
+        "solar_baseline_mw": 500,  # 2025 installed base (MW); brownfield anchor
         "solar_max_build_mw_per_year": solar_build_scenarios()[solar_build_case],
-        "solar_capex_scenario":   "solar_low",    # NREL ATB solar CAPEX trajectory
-        "storage_capex_scenario": "Storage_low",  # NREL ATB storage CAPEX trajectory
+        # Minimum annual solar build rate (MW/yr).
+        # Prevents pathological all-delay when time-varying CAPEX is active.
+        # Default 100 MW/yr when time-varying CAPEX used; 0 otherwise.
+        # Override in runner scripts: scenario["solar_min_build_mw_per_year"] = 100.
+        "solar_min_build_mw_per_year": 0.0,
+        "solar_capex_scenario": "solar_low",  # NREL ATB scenario for LCOE diagnostic
         # ---- Public capital constraint (NPV, USD)
         "public_solar_budget_npv": capital_envelope_scenarios()[capital_case],
-        
+        "disco_collection_rate": 1.0,
         # ---- Storage reduced-form (optimization; annual, energy-neutral)
         # Equivalent full cycles/year (dimensionless). Typical planning proxy: 150–350.
         "storage_deployable_hours_per_year": 700.0,
@@ -299,16 +354,6 @@ def load_scenario(
 
         # Required NPV margin
         "required_margin": 1.10,
-        # Social discount rate for NPV calculations.
-        # 10% is the standard rate for emerging-market power sector studies
-        # (World Bank, IEA Nigeria 2023). Used for both public investment
-        # and as the EaaS bankability reference rate.
-        "discount_rate": 0.10,
-        # EaaS contract tenor for bankability calculation.
-        # 20 years reflects standard utility-scale solar PPA tenor in
-        # sub-Saharan Africa and is consistent with NREL ATB project life.
-        # This is independent of the model planning horizon (2025–2045).
-        "eaas_contract_tenor_years": 20,
         "peak_demand_multiple": 2.5,
         # ---- Carbon policy
         **carbon_policy_scenarios()[carbon_case],

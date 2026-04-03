@@ -1,0 +1,118 @@
+{
+  "ndc3_unconditional": {
+    "upside_paradox_confirmed": false,
+    "upside_paradox_note": "NOT confirmed: Upside gas does not worsen NDC compliance at this cap level.",
+    "shock_cap_disruption_coincidence_years": [
+      2030,
+      2031,
+      2032,
+      2033,
+      2034
+    ],
+    "shock_coincidence_note": "NDC cap binds in the same years as gas disruption (5 years): [2030, 2031, 2032, 2033, 2034]. This is the dual-constraint squeeze \u2014 less gas AND binding emissions cap.",
+    "regimes": {
+      "baseline": {
+        "feasible": true,
+        "npv_cost_b_usd": 806.1228563590677,
+        "cost_premium_vs_baseline_pct": 0.0,
+        "shape_cost_premium_pct": null,
+        "shape_cost_premium_usd": null,
+        "carbon_binding_years": 20,
+        "carbon_shadow_mean": 9277.415276190475,
+        "gas_shadow_binding_years": 1,
+        "cumulative_unserved_twh": 137.62318379
+      },
+      "downside": {
+        "feasible": true,
+        "npv_cost_b_usd": 806.1228563590677,
+        "cost_premium_vs_baseline_pct": 0.0,
+        "shape_cost_premium_pct": -5.134458870846787,
+        "shape_cost_premium_usd": -43630222328.9928,
+        "carbon_binding_years": 20,
+        "carbon_shadow_mean": 9277.415276190475,
+        "gas_shadow_binding_years": 1,
+        "cumulative_unserved_twh": 137.62318379
+      },
+      "upside": {
+        "feasible": true,
+        "npv_cost_b_usd": 806.1228563590677,
+        "cost_premium_vs_baseline_pct": 0.0,
+        "shape_cost_premium_pct": 0.008373089199668213,
+        "shape_cost_premium_usd": 67491734.67871094,
+        "carbon_binding_years": 20,
+        "carbon_shadow_mean": 9277.415276190475,
+        "gas_shadow_binding_years": 1,
+        "cumulative_unserved_twh": 137.62318379
+      },
+      "shock_recovery": {
+        "feasible": true,
+        "npv_cost_b_usd": 806.1228563590677,
+        "cost_premium_vs_baseline_pct": 0.0,
+        "shape_cost_premium_pct": 0.008373089199668213,
+        "shape_cost_premium_usd": 67491734.67871094,
+        "carbon_binding_years": 20,
+        "carbon_shadow_mean": 9277.415276190475,
+        "gas_shadow_binding_years": 1,
+        "cumulative_unserved_twh": 137.62318379
+      }
+    }
+  },
+  "ndc3_conditional": {
+    "upside_paradox_confirmed": false,
+    "upside_paradox_note": "NOT confirmed: Upside gas does not worsen NDC compliance at this cap level.",
+    "shock_cap_disruption_coincidence_years": [
+      2030,
+      2031,
+      2032,
+      2033,
+      2034
+    ],
+    "shock_coincidence_note": "NDC cap binds in the same years as gas disruption (5 years): [2030, 2031, 2032, 2033, 2034]. This is the dual-constraint squeeze \u2014 less gas AND binding emissions cap.",
+    "regimes": {
+      "baseline": {
+        "feasible": true,
+        "npv_cost_b_usd": 623.6982621730359,
+        "cost_premium_vs_baseline_pct": 0.0,
+        "shape_cost_premium_pct": null,
+        "shape_cost_premium_usd": null,
+        "carbon_binding_years": 20,
+        "carbon_shadow_mean": 7340.28859062381,
+        "gas_shadow_binding_years": 1,
+        "cumulative_unserved_twh": 88.53082441999999
+      },
+      "downside": {
+        "feasible": true,
+        "npv_cost_b_usd": 623.6982621730359,
+        "cost_premium_vs_baseline_pct": 0.0,
+        "shape_cost_premium_pct": -6.538042859289961,
+        "shape_cost_premium_usd": -43630222328.9928,
+        "carbon_binding_years": 20,
+        "carbon_shadow_mean": 7340.28859062381,
+        "gas_shadow_binding_years": 1,
+        "cumulative_unserved_twh": 88.53082441999999
+      },
+      "upside": {
+        "feasible": true,
+        "npv_cost_b_usd": 623.6982621730359,
+        "cost_premium_vs_baseline_pct": 0.0,
+        "shape_cost_premium_pct": 0.010822386879843686,
+        "shape_cost_premium_usd": 67491734.67858887,
+        "carbon_binding_years": 20,
+        "carbon_shadow_mean": 7340.28859062381,
+        "gas_shadow_binding_years": 1,
+        "cumulative_unserved_twh": 88.53082441999999
+      },
+      "shock_recovery": {
+        "feasible": true,
+        "npv_cost_b_usd": 623.6982621730359,
+        "cost_premium_vs_baseline_pct": 0.0,
+        "shape_cost_premium_pct": 0.010822386879843686,
+        "shape_cost_premium_usd": 67491734.67858887,
+        "carbon_binding_years": 20,
+        "carbon_shadow_mean": 7340.28859062381,
+        "gas_shadow_binding_years": 1,
+        "cumulative_unserved_twh": 88.53082441999999
+      }
+    }
+  }
+}

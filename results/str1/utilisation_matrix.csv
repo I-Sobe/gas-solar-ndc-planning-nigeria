@@ -1,0 +1,37 @@
+hd,surplus_frac,financing_arm,policy_label,storage_utilisation,hd_is_binding,power_limit_years,charge_limit_years,dominant_constraint,status
+200,0.1,eaas,ndc3_unconditional,0.20267824208855212,False,1,0,H_d (power throughput),optimal
+200,0.1,eaas,no_policy,0.0,False,21,0,H_d (power throughput),optimal
+200,0.1,public_only,ndc3_unconditional,0.13995110087626678,False,0,0,neither (slack),optimal
+200,0.1,public_only,no_policy,0.0,False,21,0,H_d (power throughput),optimal
+200,0.2,eaas,ndc3_unconditional,0.20672268907563027,False,1,0,H_d (power throughput),optimal
+200,0.2,eaas,no_policy,0.0,False,21,0,H_d (power throughput),optimal
+200,0.2,public_only,ndc3_unconditional,0.1441482982449615,False,0,0,neither (slack),optimal
+200,0.2,public_only,no_policy,0.0,False,21,0,H_d (power throughput),optimal
+200,0.35,eaas,ndc3_unconditional,0.2078474342692371,False,1,0,H_d (power throughput),optimal
+200,0.35,eaas,no_policy,0.0,False,21,0,H_d (power throughput),optimal
+200,0.35,public_only,ndc3_unconditional,0.1497615256366636,False,0,0,neither (slack),optimal
+200,0.35,public_only,no_policy,0.0,False,21,0,H_d (power throughput),optimal
+700,0.1,eaas,ndc3_unconditional,0.2026782420885521,False,1,0,H_d (power throughput),optimal
+700,0.1,eaas,no_policy,0.0,False,21,0,H_d (power throughput),optimal
+700,0.1,public_only,ndc3_unconditional,0.13995110111753106,False,0,0,neither (slack),optimal
+700,0.1,public_only,no_policy,0.0,False,21,0,H_d (power throughput),optimal
+700,0.2,eaas,ndc3_unconditional,0.20672268701911775,False,1,0,H_d (power throughput),optimal
+700,0.2,eaas,no_policy,0.0,False,21,0,H_d (power throughput),optimal
+700,0.2,public_only,ndc3_unconditional,0.14414829889703706,False,0,0,neither (slack),optimal
+700,0.2,public_only,no_policy,0.0,False,21,0,H_d (power throughput),optimal
+700,0.35,eaas,ndc3_unconditional,0.20784743394989008,False,1,0,H_d (power throughput),optimal
+700,0.35,eaas,no_policy,0.0,False,21,0,H_d (power throughput),optimal
+700,0.35,public_only,ndc3_unconditional,0.1497615260794911,False,0,0,neither (slack),optimal
+700,0.35,public_only,no_policy,0.0,False,21,0,H_d (power throughput),optimal
+1200,0.1,eaas,ndc3_unconditional,0.20267824293080827,False,1,0,H_d (power throughput),optimal
+1200,0.1,eaas,no_policy,0.0,False,21,0,H_d (power throughput),optimal
+1200,0.1,public_only,ndc3_unconditional,0.1399511006005361,False,0,0,neither (slack),optimal
+1200,0.1,public_only,no_policy,0.0,False,21,0,H_d (power throughput),optimal
+1200,0.2,eaas,ndc3_unconditional,0.20672268907563018,False,1,0,H_d (power throughput),optimal
+1200,0.2,eaas,no_policy,0.0,False,21,0,H_d (power throughput),optimal
+1200,0.2,public_only,ndc3_unconditional,0.14414829782303026,False,0,0,neither (slack),optimal
+1200,0.2,public_only,no_policy,0.0,False,21,0,H_d (power throughput),optimal
+1200,0.35,eaas,ndc3_unconditional,0.20784743394989005,False,1,0,H_d (power throughput),optimal
+1200,0.35,eaas,no_policy,0.0,False,21,0,H_d (power throughput),optimal
+1200,0.35,public_only,ndc3_unconditional,0.1497615256113592,False,0,0,neither (slack),optimal
+1200,0.35,public_only,no_policy,0.0,False,21,0,H_d (power throughput),optimal

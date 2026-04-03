@@ -1,0 +1,5 @@
+gas_case,onset_eps,onset_reliability,max_dual_usd_per_pct_pt,steepness_usd_per_pct_pt_per_eps,n_binding_eps,n_infeasible_eps
+baseline,,,,,0,0
+downside,,,,,0,0
+shock_recovery,,,,,0,0
+upside,,,,,0,0
