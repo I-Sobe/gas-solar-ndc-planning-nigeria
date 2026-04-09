@@ -33,16 +33,17 @@ if "gas_shadow_usd_per_twh_th" in df.columns:
     gas_shadow = df["gas_shadow_usd_per_twh_th"]
 else:
     gas_shadow = df["gas-shadow_price_usd_per_twh_th"]
-
-carbon_shadow = df["carbon_shadow_usd_per_tco2"]
-
+if "carbon_shadow_usd_per_tco2" in df.columns:
+    carbon_shadow = df["carbon_shadow_usd_per_tco2"]
+else:
+    carbon_shadow = df["caron_shadow_price_usd_per_tco2"]
 # Optional VoLL (set or load)
 VOLL = 10_000_000_000 # voll_mid: 10B USD/TWH
 
 # ----------------------------
 # Create figure
 # ----------------------------
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 5))
 
 # ----------------------------
 # Panel A: System response
@@ -75,25 +76,6 @@ ax1.set_title("System Evolution")
 ax1.legend()
 ax1.grid()
 
-# ----------------------------
-# Panel B: Marginal prices
-# ----------------------------
-
-for case_name, case_df in dfs.items():
-    ax2.plot(
-        case_df["year"],
-        pd.to_numeric(case_df["carbon_shadow_usd_per_tco2"], errors="coerce"),
-        color=COLOURS[case_name],
-        label=f"Carbon shadow — {case_name}",
-        linestyle="--" if "eaas" in case_name else "-",
-    )
-
-ax2.axhline(VOLL, linestyle="--", label="VoLL_USD_PER_TWH")
-
-ax2.set_xlabel("Year")
-ax2.set_ylabel("USD")
-ax2.set_title("Marginal Value of Constraints")
-
 # Compute regime transition years from data
 gas_binding_year = df.loc[
     (df["gas_shadow_usd_per_twh_th"] if "gas_shadow_usd_per_twh_th" in df.columns
@@ -105,6 +87,43 @@ carbon_binding_year = df.loc[
     df["carbon_shadow_usd_per_tco2"] > 1e-6,
     "year"
 ].min()
+
+# ----------------------------
+# Panel B: Marginal prices
+# ----------------------------
+
+# ax2: carbon shadow only
+for case_name, case_df in dfs.items():
+    cs_col = "carbon_shadow_usd_per_tco2" if "carbon_shadow_usd_per_tco2" in case_df.columns else "carbon_shadow_price_usd_per_tco2"
+    ax2.plot(
+        case_df["year"],
+        pd.to_numeric(case_df[cs_col], errors="coerce"),
+        color=COLOURS[case_name],
+        label=f"Carbon shadow — {case_name}",
+        linestyle="--" if "eaas" in case_name else "-",
+    )
+ax2.set_xlabel("Year")
+ax2.set_ylabel("USD / tCO2")
+ax2.set_title("Carbon Shadow Price")
+ax2.legend()
+ax2.grid()
+
+# ax3: gas shadow + VoLL (same unit: USD/TWh)
+gs_col = "gas_shadow_price_usd_per_twh_th" if "gas_shadow_price_usd_per_twh_th" in df.columns else "gas_shadow_usd_per_twh_th"
+ax3.plot(years, df[gs_col], label="Gas shadow — baseline", color="grey")
+ax3.axhline(VOLL, linestyle="--", color="blue", label="VoLL (10B USD/TWh)")
+if pd.notna(gas_binding_year):
+    ax3.axvline(gas_binding_year, linestyle=":", label=f"Gas binds ({int(gas_binding_year)})")
+ax3.set_xlabel("Year")
+ax3.set_ylabel("USD / TWh_th")
+ax3.set_title("Gas Scarcity Rent vs VoLL")
+ax3.legend()
+ax3.grid()
+
+ax2.set_xlabel("Year")
+ax2.set_ylabel("USD")
+ax2.set_title("Marginal Value of Constraints")
+
 
 if pd.notna(gas_binding_year):
     ax2.axvline(gas_binding_year, linestyle=":", label=f"Gas shadow binds ({int(gas_binding_year)})")
