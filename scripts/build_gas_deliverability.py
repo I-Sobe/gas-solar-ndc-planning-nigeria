@@ -34,6 +34,30 @@ def build_series(years, anchor_year, anchor_value, case_cfg):
             out.append(anchor_value * f)
         return out
     
+    if typ == "lag_then_drift":
+        L = int(case_cfg["lag_years"])
+        g = float(case_cfg["annual_drift"])
+        out = []
+        for y in years:
+            if y <= anchor_year + L:
+                out.append(anchor_value)
+            else:
+                growth_years = y - (anchor_year + L)
+                out.append(anchor_value * ((1 + g) ** growth_years))
+        return out
+
+    if typ == "lag_then_decline":
+        L = int(case_cfg["lag_years"])
+        d = float(case_cfg["decline_rate"])
+        out = []
+        for y in years:
+            if y <= anchor_year + L:
+                out.append(anchor_value)
+            else:
+                decline_years = y - (anchor_year + L)
+                out.append(anchor_value * ((1 - d) ** decline_years))
+        return out
+
     if typ == "shock_recovery":
         baseline_end = int(case_cfg["baseline_end_year"])
         shock_start = int(case_cfg["shock_start_year"])
