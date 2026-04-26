@@ -28,7 +28,7 @@ If (b) is large and (a) is small, solar investment is the driver —
 EXPERIMENT DESIGN
 -----------------
 Fixed:
-  capital_case = "moderate"  (0.85 × B* = 5.21B NPV)
+  capital_case = "tight"  
   This is the baseline public capital assumption used throughout.
   It constrains solar deployment without being so tight that the
   system is trivially infeasible under all gas regimes.
