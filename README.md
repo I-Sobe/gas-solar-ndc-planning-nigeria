@@ -257,6 +257,7 @@ NDC 3.0 (proportional top-down apportionment) unconditional and
 conditional targets, with NDC 2.0 BAU-relative targets as a 
 methodological robustness arm. Tests whether the EaaS mechanism 
 absorbs or amplifies methodology-driven cost variation.
+
 ---
 
 ### Dual-Based Scarcity Valuation — Cross-Cutting Contribution
