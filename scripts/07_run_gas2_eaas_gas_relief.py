@@ -77,11 +77,15 @@ GAS_CASES = ["baseline", "downside", "upside", "shock_recovery"]
 # NDC scenarios: unconditional uses commercial finance (rm=1.10),
 # conditional uses concessional (rm=1.05). Both are run with and without EaaS.
 NDC_CASES = {
-    "baseline_no_policy": {"required_margin": 1.10, "capital_case": "moderate",
+    "baseline_no_policy": {"required_margin": 1.10, "capital_case": "unconstrained",
                            "ndc_cap_scenario": None},
-    "ndc3_unconditional": {"required_margin": 1.10, "capital_case": "moderate",
+    "ndc2_unconditional": {"required_margin": 1.10, "capital_case": "tight",
+                           "ndc_cap_scenario": "ndc2_unconditional"},
+    "ndc2_conditional":   {"required_margin": 1.05, "capital_case": "moderate",
+                           "ndc_cap_scenario": "ndc2_conditional"},
+    "ndc3_unconditional": {"required_margin": 1.10, "capital_case": "tight",
                            "ndc_cap_scenario": "ndc3_unconditional"},
-    "ndc3_conditional":   {"required_margin": 1.05, "capital_case": "expansion",
+    "ndc3_conditional":   {"required_margin": 1.05, "capital_case": "tight",
                            "ndc_cap_scenario": "ndc3_conditional"},
 }
 

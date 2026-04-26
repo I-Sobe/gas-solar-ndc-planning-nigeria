@@ -1,4 +1,5 @@
 import json
+import numpy as np
 import sys
 from pathlib import Path
 
@@ -11,6 +12,7 @@ import pyomo.environ as pyo
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import run_deterministic_scenario, run_tariff_public_capital_frontier ,extract_planning_diagnostics
 from src.io import (load_econ, load_solar_capex_by_year)
+from src.utils import json_safe
 
 # ============================================================
 # PATH SETUP
@@ -45,7 +47,7 @@ def main():
     scenario["solar_service_tariff_usd_per_twh"] = 95_000_000.0
     scenario["required_margin"] = 1.10
     
-    econ = load_econ()
+    econ = load_econ("voll_mid")
 
     years = scenario["years"]
 
@@ -126,12 +128,13 @@ def main():
 
     print("Storage discharge (TWh by year):", diag["storage_discharge_twh_e_by_year"])
     print("Storage binding constraint by year:", diag["storage_binding_by_year"])
-    print("Deterministic total cost:", det_output["costs"]["total"])
+    det_unserved = float(np.sum(det_output["unserved"]))
+    print(f"Deterministic dispatch unserved (TWh): {det_unserved: .4f}")
     # ------------------------------------------------------------
     # Save diagnostics (json)
     # ------------------------------------------------------------
     with open(RESULTS_DIR / "diagnostics.json", "w") as f:
-        json.dump(diag, f, indent=2)
+        json.dump(json_safe(diag), f, indent=2)
 
     # ------------------------------------------------------------
     # Save summary (json)

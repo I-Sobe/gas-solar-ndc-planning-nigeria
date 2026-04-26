@@ -10,47 +10,47 @@
     {
       "capital_case": "tight",
       "budget_b_usd": 4.552,
-      "cumulative_unserved_twh": 297.90589200000005,
+      "cumulative_unserved_twh": 88.27825250000001,
       "budget_shadow": null,
-      "carbon_shadow_mean": 9613.362804761904,
+      "carbon_shadow_mean": 9242.112476190476,
       "status": "optimal"
     },
     {
       "capital_case": "moderate",
       "budget_b_usd": 7.7384,
-      "cumulative_unserved_twh": 137.62318379,
+      "cumulative_unserved_twh": 4.33529023,
       "budget_shadow": null,
-      "carbon_shadow_mean": 9277.415276190475,
+      "carbon_shadow_mean": 3671.761640952381,
       "status": "optimal"
     },
     {
       "capital_case": "adequacy",
       "budget_b_usd": 9.104,
-      "cumulative_unserved_twh": 86.33325185999999,
+      "cumulative_unserved_twh": 1.54161221,
       "budget_shadow": null,
-      "carbon_shadow_mean": 8071.647004285715,
+      "carbon_shadow_mean": 1063.4494621952383,
       "status": "optimal"
     },
     {
       "capital_case": "expansion",
       "budget_b_usd": 10.9248,
-      "cumulative_unserved_twh": 82.69883501999999,
+      "cumulative_unserved_twh": 1.54161221,
       "budget_shadow": null,
-      "carbon_shadow_mean": 7340.28859062381,
+      "carbon_shadow_mean": 1063.4494621952383,
       "status": "optimal"
     },
     {
       "capital_case": "unconstrained",
       "budget_b_usd": null,
-      "cumulative_unserved_twh": 82.69883501999999,
+      "cumulative_unserved_twh": 1.54161221,
       "budget_shadow": null,
-      "carbon_shadow_mean": 7340.28859062381,
+      "carbon_shadow_mean": 1063.4494621952383,
       "status": "optimal"
     },
     {
       "capital_case": "tight",
       "budget_b_usd": 4.552,
-      "cumulative_unserved_twh": 337.70338740000005,
+      "cumulative_unserved_twh": 122.448694,
       "budget_shadow": null,
       "carbon_shadow_mean": 9613.362804761904,
       "status": "optimal"
@@ -58,39 +58,39 @@
     {
       "capital_case": "moderate",
       "budget_b_usd": 7.7384,
-      "cumulative_unserved_twh": 178.79304766,
+      "cumulative_unserved_twh": 27.13964465,
       "budget_shadow": null,
-      "carbon_shadow_mean": 9613.362804761904,
+      "carbon_shadow_mean": 7859.8876,
       "status": "optimal"
     },
     {
       "capital_case": "adequacy",
       "budget_b_usd": 9.104,
-      "cumulative_unserved_twh": 129.98429475,
+      "cumulative_unserved_twh": 3.4726599300000003,
       "budget_shadow": null,
-      "carbon_shadow_mean": 9229.045142857143,
+      "carbon_shadow_mean": 2940.041287619048,
       "status": "optimal"
     },
     {
       "capital_case": "expansion",
       "budget_b_usd": 10.9248,
-      "cumulative_unserved_twh": 82.69883501999999,
+      "cumulative_unserved_twh": 1.54161221,
       "budget_shadow": null,
-      "carbon_shadow_mean": 7340.28859062381,
+      "carbon_shadow_mean": 1063.4494621952383,
       "status": "optimal"
     },
     {
       "capital_case": "unconstrained",
       "budget_b_usd": null,
-      "cumulative_unserved_twh": 82.69883501999999,
+      "cumulative_unserved_twh": 1.54161221,
       "budget_shadow": null,
-      "carbon_shadow_mean": 7340.28859062381,
+      "carbon_shadow_mean": 1063.4494621952383,
       "status": "optimal"
     },
     {
       "capital_case": "tight",
       "budget_b_usd": 4.552,
-      "cumulative_unserved_twh": 364.47409139999996,
+      "cumulative_unserved_twh": 145.1357329,
       "budget_shadow": null,
       "carbon_shadow_mean": 9613.362804761904,
       "status": "optimal"
@@ -98,33 +98,33 @@
     {
       "capital_case": "moderate",
       "budget_b_usd": 7.7384,
-      "cumulative_unserved_twh": 212.1615771,
+      "cumulative_unserved_twh": 44.52739171,
       "budget_shadow": null,
-      "carbon_shadow_mean": 9613.362804761904,
+      "carbon_shadow_mean": 8045.820071428572,
       "status": "optimal"
     },
     {
       "capital_case": "adequacy",
       "budget_b_usd": 9.104,
-      "cumulative_unserved_twh": 162.0891428,
+      "cumulative_unserved_twh": 20.805964456620003,
       "budget_shadow": null,
-      "carbon_shadow_mean": 9486.470357142858,
+      "carbon_shadow_mean": 7657.8160333333335,
       "status": "optimal"
     },
     {
       "capital_case": "expansion",
       "budget_b_usd": 10.9248,
-      "cumulative_unserved_twh": 112.16169194000001,
+      "cumulative_unserved_twh": 2.11146298,
       "budget_shadow": null,
-      "carbon_shadow_mean": 9010.67202857143,
+      "carbon_shadow_mean": 1869.9295552380954,
       "status": "optimal"
     },
     {
       "capital_case": "unconstrained",
       "budget_b_usd": null,
-      "cumulative_unserved_twh": 82.69883501999999,
+      "cumulative_unserved_twh": 1.54161221,
       "budget_shadow": null,
-      "carbon_shadow_mean": 7340.28859062381,
+      "carbon_shadow_mean": 1063.4494621952383,
       "status": "optimal"
     }
   ]

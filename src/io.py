@@ -152,6 +152,10 @@ def load_econ(voll_case="voll_low", gas_price_case="gas_low"):
         (solar_df["Year"]==2025)
     ].iloc[0]
 
+    # SOLAR_CAPEX_PER_MW: 2025 anchor value (solar_low NREL ATB).
+    # Used ONLY as fallback when solar_capex_by_year is not passed to build_model().
+    # All runner scripts must pass solar_capex_by_year. Do not use this scalar
+    # in any post-solve cost diagnostic when time-varying CAPEX is active.
     econ["SOLAR_CAPEX_PER_MW"] = to_float(solar_row["Solar_capex_usd_per_mw"])
 
     storage_df = pd.read_csv(ROOT/"data/cost/processed/storage_capex.csv", thousands=",")

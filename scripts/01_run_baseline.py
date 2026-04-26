@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+import numpy as np
 ROOT = Path(__file__).resolve().parents[1]  # repo root
 sys.path.append(str(ROOT))
 
@@ -12,7 +13,7 @@ from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
 from src.optimize_experiments import run_deterministic_scenario
 from src.io import load_econ, load_solar_capex_by_year
-
+from src.utils import json_safe
 
 CANONICAL_VOLL = "voll_mid"
 
@@ -34,7 +35,7 @@ def main():
     scenario = load_scenario(
         demand_level_case="served",
         demand_case="baseline",
-        capital_case="moderate",
+        capital_case="unconstrained",
         gas_deliverability_case="baseline",
         solar_build_case="aggressive",
         land_case="loose",
@@ -126,12 +127,20 @@ def main():
 
     print("Storage discharge (TWh by year):", diag["storage_discharge_twh_e_by_year"])
     print("Storage binding constraint by year:", diag["storage_binding_by_year"])
-    print("Deterministic total cost:", det_output["costs"]["total"])
+
+    # Cross-validation of LP storage formulation against stateful dispatch
+    det_unserved = float(np.sum(det_output["unserved"]))
+    lp_unserved = cumulative_unserved_twh
+    print(f"LP unserved (TWh): {lp_unserved:.4f}")
+    print(f"Deterministic dispatch unserved (TWh): {det_unserved:.4f}")
+    if abs(det_unserved - lp_unserved) > 0.1:
+        print(f"WARNING: dispatch mismatch = {abs(det_unserved - lp_unserved):.3f} TWh")
+
     # ------------------------------------------------------------
     # Save diagnostics (json)
     # ------------------------------------------------------------
     with open(RESULTS_DIR / "diagnostics.json", "w") as f:
-        json.dump(diag, f, indent=2)
+        json.dump(json_safe(diag), f, indent=2)
 
     # Compute actual discounted public solar CAPEX used.
     # The model uses econ["SOLAR_CAPEX_PER_MW"] — a fixed 2025 scalar from
@@ -142,11 +151,13 @@ def main():
     solar_public_npv_spend = sum(
         float(pyo.value(m.DF[t]))
         * float(pyo.value(m.solar_public_add[t]))
-        * econ["SOLAR_CAPEX_PER_MW"]
+        * float(pyo.value(m.solar_capex_param[t])) #time-varying NREL ATB value
         for t in range(len(years))
     )
 
     print("Discounted public solar CAPEX used (USD):", solar_public_npv_spend)
+
+
     # ------------------------------------------------------------
     # Save summary (json)
     # ------------------------------------------------------------

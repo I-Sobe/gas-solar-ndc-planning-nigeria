@@ -12,6 +12,7 @@ from src.io import (load_econ, load_solar_capex_by_year)
 from src.scenarios import load_scenario
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
+from src.utils import json_safe
 
 
 # ============================================================
@@ -124,8 +125,7 @@ def run_case(cap_scenario_name: str, scenario: dict, econ: dict) -> dict:
         }
 
     print("Storage discharge (TWh by year):", diag["storage_discharge_twh_e_by_year"])
-    # binding constraint by year:", diag["storage_binding_by_year"])
-
+    
     return out
 
 
@@ -167,14 +167,24 @@ def main():
     #   result: private bankability removes the need for a public ceiling.
     # ----------------------------------------------------------------
     NDC_CASES = {
+        "ndc2_unconditional_eaas": {
+            "ndc_cap_scenario": "ndc2_unconditional",
+            "capital_case": "tight",
+            "required_margin": 1.10,
+            },
+        "ndc2_conditional_eaas": {
+            "ndc_cap_scenario": "ndc2_conditional",
+            "capital_case": "moderate",
+            "required_margin": 1.05,
+        },
         "ndc3_unconditional_eaas": {
             "ndc_cap_scenario": "ndc3_unconditional",
-            "capital_case":    "moderate",
+            "capital_case":    "tight",
             "required_margin": 1.10,  # commercial hurdle rate
         },
         "ndc3_conditional_eaas": {
             "ndc_cap_scenario": "ndc3_conditional",
-            "capital_case":    "expansion",
+            "capital_case":    "moderate",
             "required_margin": 1.05,  # concessional blended finance hurdle
         },
     }
@@ -235,7 +245,7 @@ def main():
                 )
 
             with open(case_dir / "diagnostics.json", "w") as f:
-                json.dump(out["diagnostics"], f, indent=2)
+                json.dump(json_safe(out["diagnostics"]), f, indent=2)
 
             # ------------------------------------------------------------
             # Save timeseries (csv)

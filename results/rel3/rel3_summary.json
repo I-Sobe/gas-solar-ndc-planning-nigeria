@@ -8,6 +8,8 @@
     ],
     "policy_arms": [
       "no_policy",
+      "ndc2_unconditional",
+      "ndc2_conditional",
       "ndc3_unconditional",
       "ndc3_conditional"
     ],
@@ -68,10 +70,10 @@
         }
       ]
     },
-    "ndc3_unconditional": {
+    "ndc2_unconditional": {
       "n_gas_cases_where_eaas_strictly_better": 4,
       "n_gas_cases_where_eaas_necessary": 0,
-      "max_frontier_shift_eps": 0.05000000000000002,
+      "max_frontier_shift_eps": 0.09999999999999999,
       "gas_cases_eaas_necessary": [],
       "gas_cases_eaas_better": [
         "baseline",
@@ -82,39 +84,139 @@
       "shift_by_gas_case": [
         {
           "gas_case": "baseline",
-          "pub_threshold_eps": 0.2,
-          "eaas_threshold_eps": 0.15,
-          "frontier_shift_eps": 0.05000000000000002,
+          "pub_threshold_eps": 0.15,
+          "eaas_threshold_eps": 0.05,
+          "frontier_shift_eps": 0.09999999999999999,
           "eaas_strictly_better": true,
           "eaas_necessary": false,
-          "interpretation": "EaaS improves frontier by 0.05 eps units."
+          "interpretation": "EaaS improves frontier by 0.10 eps units."
         },
         {
           "gas_case": "downside",
-          "pub_threshold_eps": 0.2,
-          "eaas_threshold_eps": 0.15,
-          "frontier_shift_eps": 0.05000000000000002,
+          "pub_threshold_eps": 0.15,
+          "eaas_threshold_eps": 0.05,
+          "frontier_shift_eps": 0.09999999999999999,
           "eaas_strictly_better": true,
           "eaas_necessary": false,
-          "interpretation": "EaaS improves frontier by 0.05 eps units."
+          "interpretation": "EaaS improves frontier by 0.10 eps units."
         },
         {
           "gas_case": "shock_recovery",
-          "pub_threshold_eps": 0.2,
-          "eaas_threshold_eps": 0.15,
-          "frontier_shift_eps": 0.05000000000000002,
+          "pub_threshold_eps": 0.15,
+          "eaas_threshold_eps": 0.05,
+          "frontier_shift_eps": 0.09999999999999999,
           "eaas_strictly_better": true,
           "eaas_necessary": false,
-          "interpretation": "EaaS improves frontier by 0.05 eps units."
+          "interpretation": "EaaS improves frontier by 0.10 eps units."
         },
         {
           "gas_case": "upside",
-          "pub_threshold_eps": 0.2,
-          "eaas_threshold_eps": 0.15,
-          "frontier_shift_eps": 0.05000000000000002,
+          "pub_threshold_eps": 0.15,
+          "eaas_threshold_eps": 0.05,
+          "frontier_shift_eps": 0.09999999999999999,
           "eaas_strictly_better": true,
           "eaas_necessary": false,
-          "interpretation": "EaaS improves frontier by 0.05 eps units."
+          "interpretation": "EaaS improves frontier by 0.10 eps units."
+        }
+      ]
+    },
+    "ndc2_conditional": {
+      "n_gas_cases_where_eaas_strictly_better": 4,
+      "n_gas_cases_where_eaas_necessary": 0,
+      "max_frontier_shift_eps": 0.009999999999999995,
+      "gas_cases_eaas_necessary": [],
+      "gas_cases_eaas_better": [
+        "baseline",
+        "downside",
+        "shock_recovery",
+        "upside"
+      ],
+      "shift_by_gas_case": [
+        {
+          "gas_case": "baseline",
+          "pub_threshold_eps": 0.06,
+          "eaas_threshold_eps": 0.05,
+          "frontier_shift_eps": 0.009999999999999995,
+          "eaas_strictly_better": true,
+          "eaas_necessary": false,
+          "interpretation": "EaaS improves frontier by 0.01 eps units."
+        },
+        {
+          "gas_case": "downside",
+          "pub_threshold_eps": 0.06,
+          "eaas_threshold_eps": 0.05,
+          "frontier_shift_eps": 0.009999999999999995,
+          "eaas_strictly_better": true,
+          "eaas_necessary": false,
+          "interpretation": "EaaS improves frontier by 0.01 eps units."
+        },
+        {
+          "gas_case": "shock_recovery",
+          "pub_threshold_eps": 0.06,
+          "eaas_threshold_eps": 0.05,
+          "frontier_shift_eps": 0.009999999999999995,
+          "eaas_strictly_better": true,
+          "eaas_necessary": false,
+          "interpretation": "EaaS improves frontier by 0.01 eps units."
+        },
+        {
+          "gas_case": "upside",
+          "pub_threshold_eps": 0.06,
+          "eaas_threshold_eps": 0.05,
+          "frontier_shift_eps": 0.009999999999999995,
+          "eaas_strictly_better": true,
+          "eaas_necessary": false,
+          "interpretation": "EaaS improves frontier by 0.01 eps units."
+        }
+      ]
+    },
+    "ndc3_unconditional": {
+      "n_gas_cases_where_eaas_strictly_better": 4,
+      "n_gas_cases_where_eaas_necessary": 0,
+      "max_frontier_shift_eps": 0.09999999999999999,
+      "gas_cases_eaas_necessary": [],
+      "gas_cases_eaas_better": [
+        "baseline",
+        "downside",
+        "shock_recovery",
+        "upside"
+      ],
+      "shift_by_gas_case": [
+        {
+          "gas_case": "baseline",
+          "pub_threshold_eps": 0.15,
+          "eaas_threshold_eps": 0.05,
+          "frontier_shift_eps": 0.09999999999999999,
+          "eaas_strictly_better": true,
+          "eaas_necessary": false,
+          "interpretation": "EaaS improves frontier by 0.10 eps units."
+        },
+        {
+          "gas_case": "downside",
+          "pub_threshold_eps": 0.15,
+          "eaas_threshold_eps": 0.05,
+          "frontier_shift_eps": 0.09999999999999999,
+          "eaas_strictly_better": true,
+          "eaas_necessary": false,
+          "interpretation": "EaaS improves frontier by 0.10 eps units."
+        },
+        {
+          "gas_case": "shock_recovery",
+          "pub_threshold_eps": 0.15,
+          "eaas_threshold_eps": 0.05,
+          "frontier_shift_eps": 0.09999999999999999,
+          "eaas_strictly_better": true,
+          "eaas_necessary": false,
+          "interpretation": "EaaS improves frontier by 0.10 eps units."
+        },
+        {
+          "gas_case": "upside",
+          "pub_threshold_eps": 0.15,
+          "eaas_threshold_eps": 0.05,
+          "frontier_shift_eps": 0.09999999999999999,
+          "eaas_strictly_better": true,
+          "eaas_necessary": false,
+          "interpretation": "EaaS improves frontier by 0.10 eps units."
         }
       ]
     },
@@ -127,8 +229,8 @@
       "shift_by_gas_case": [
         {
           "gas_case": "baseline",
-          "pub_threshold_eps": 0.15,
-          "eaas_threshold_eps": 0.15,
+          "pub_threshold_eps": 0.05,
+          "eaas_threshold_eps": 0.05,
           "frontier_shift_eps": 0.0,
           "eaas_strictly_better": false,
           "eaas_necessary": false,
@@ -136,8 +238,8 @@
         },
         {
           "gas_case": "downside",
-          "pub_threshold_eps": 0.15,
-          "eaas_threshold_eps": 0.15,
+          "pub_threshold_eps": 0.05,
+          "eaas_threshold_eps": 0.05,
           "frontier_shift_eps": 0.0,
           "eaas_strictly_better": false,
           "eaas_necessary": false,
@@ -145,8 +247,8 @@
         },
         {
           "gas_case": "shock_recovery",
-          "pub_threshold_eps": 0.15,
-          "eaas_threshold_eps": 0.15,
+          "pub_threshold_eps": 0.05,
+          "eaas_threshold_eps": 0.05,
           "frontier_shift_eps": 0.0,
           "eaas_strictly_better": false,
           "eaas_necessary": false,
@@ -154,8 +256,8 @@
         },
         {
           "gas_case": "upside",
-          "pub_threshold_eps": 0.15,
-          "eaas_threshold_eps": 0.15,
+          "pub_threshold_eps": 0.05,
+          "eaas_threshold_eps": 0.05,
           "frontier_shift_eps": 0.0,
           "eaas_strictly_better": false,
           "eaas_necessary": false,
@@ -166,7 +268,7 @@
   },
   "ndc_relevance": {
     "max_shift_no_policy": 0.0,
-    "max_shift_ndc_unconditional": 0.05000000000000002,
+    "max_shift_ndc_unconditional": 0.09999999999999999,
     "max_shift_ndc_conditional": 0.0,
     "eaas_improvement_grows_with_ndc_ambition": false,
     "interpretation": "EaaS frontier improvement does not increase with NDC ambition. EaaS may be sufficient without NDC pressure at the current gas regime."

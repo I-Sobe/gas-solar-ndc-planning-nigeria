@@ -1,4 +1,147 @@
 {
+  "cost_decomposition": {
+    "real_expenditure_npv": 9527136237.0,
+    "voll_penalty_npv": 0.0,
+    "voll_penalty_share": 0.0,
+    "components": {
+      "gas_opex_npv": 2811365163.0,
+      "gas_capex_npv": 0.0,
+      "public_solar_capex_npv": 6715771074.0,
+      "eaas_solar_capex_npv": 0.0,
+      "storage_capex_npv": 0.0,
+      "voll_penalty_npv": 0.0,
+      "carbon_cost_npv": 0.0
+    }
+  },
+  "eaas_reliability_trigger_by_year": {
+    "2025": {
+      "eaas_add_mw": 0.0,
+      "eaas_lcoe_usd_per_mwh": 30.78,
+      "voll_usd_per_mwh": 1e+16,
+      "reliability_motivated": false
+    },
+    "2026": {
+      "eaas_add_mw": 0.0,
+      "eaas_lcoe_usd_per_mwh": 29.15,
+      "voll_usd_per_mwh": 1e+16,
+      "reliability_motivated": false
+    },
+    "2027": {
+      "eaas_add_mw": 0.0,
+      "eaas_lcoe_usd_per_mwh": 27.52,
+      "voll_usd_per_mwh": 1e+16,
+      "reliability_motivated": false
+    },
+    "2028": {
+      "eaas_add_mw": 0.0,
+      "eaas_lcoe_usd_per_mwh": 25.88,
+      "voll_usd_per_mwh": 1e+16,
+      "reliability_motivated": false
+    },
+    "2029": {
+      "eaas_add_mw": 0.0,
+      "eaas_lcoe_usd_per_mwh": 24.25,
+      "voll_usd_per_mwh": 1e+16,
+      "reliability_motivated": false
+    },
+    "2030": {
+      "eaas_add_mw": 0.0,
+      "eaas_lcoe_usd_per_mwh": 22.62,
+      "voll_usd_per_mwh": 1e+16,
+      "reliability_motivated": false
+    },
+    "2031": {
+      "eaas_add_mw": 0.0,
+      "eaas_lcoe_usd_per_mwh": 20.97,
+      "voll_usd_per_mwh": 1e+16,
+      "reliability_motivated": false
+    },
+    "2032": {
+      "eaas_add_mw": 0.0,
+      "eaas_lcoe_usd_per_mwh": 19.34,
+      "voll_usd_per_mwh": 1e+16,
+      "reliability_motivated": false
+    },
+    "2033": {
+      "eaas_add_mw": 0.0,
+      "eaas_lcoe_usd_per_mwh": 17.72,
+      "voll_usd_per_mwh": 1e+16,
+      "reliability_motivated": false
+    },
+    "2034": {
+      "eaas_add_mw": 0.0,
+      "eaas_lcoe_usd_per_mwh": 16.07,
+      "voll_usd_per_mwh": 1e+16,
+      "reliability_motivated": false
+    },
+    "2035": {
+      "eaas_add_mw": 0.0,
+      "eaas_lcoe_usd_per_mwh": 14.44,
+      "voll_usd_per_mwh": 1e+16,
+      "reliability_motivated": false
+    },
+    "2036": {
+      "eaas_add_mw": 0.0,
+      "eaas_lcoe_usd_per_mwh": 14.27,
+      "voll_usd_per_mwh": 1e+16,
+      "reliability_motivated": false
+    },
+    "2037": {
+      "eaas_add_mw": 0.0,
+      "eaas_lcoe_usd_per_mwh": 13.93,
+      "voll_usd_per_mwh": 1e+16,
+      "reliability_motivated": false
+    },
+    "2038": {
+      "eaas_add_mw": 0.0,
+      "eaas_lcoe_usd_per_mwh": 13.76,
+      "voll_usd_per_mwh": 1e+16,
+      "reliability_motivated": false
+    },
+    "2039": {
+      "eaas_add_mw": 0.0,
+      "eaas_lcoe_usd_per_mwh": 13.59,
+      "voll_usd_per_mwh": 1e+16,
+      "reliability_motivated": false
+    },
+    "2040": {
+      "eaas_add_mw": 0.0,
+      "eaas_lcoe_usd_per_mwh": 13.59,
+      "voll_usd_per_mwh": 1e+16,
+      "reliability_motivated": false
+    },
+    "2041": {
+      "eaas_add_mw": 0.0,
+      "eaas_lcoe_usd_per_mwh": 13.42,
+      "voll_usd_per_mwh": 1e+16,
+      "reliability_motivated": false
+    },
+    "2042": {
+      "eaas_add_mw": 0.0,
+      "eaas_lcoe_usd_per_mwh": 13.25,
+      "voll_usd_per_mwh": 1e+16,
+      "reliability_motivated": false
+    },
+    "2043": {
+      "eaas_add_mw": 0.0,
+      "eaas_lcoe_usd_per_mwh": 13.09,
+      "voll_usd_per_mwh": 1e+16,
+      "reliability_motivated": false
+    },
+    "2044": {
+      "eaas_add_mw": 0.0,
+      "eaas_lcoe_usd_per_mwh": 12.92,
+      "voll_usd_per_mwh": 1e+16,
+      "reliability_motivated": false
+    },
+    "2045": {
+      "eaas_add_mw": 0.0,
+      "eaas_lcoe_usd_per_mwh": 12.75,
+      "voll_usd_per_mwh": 1e+16,
+      "reliability_motivated": false
+    }
+  },
+  "eaas_reliability_motivated_years": 0,
   "peak_adequacy_by_year": {
     "2025": {
       "peak_demand_mw": 6586.8,
@@ -152,7 +295,6 @@
     "2044": 0.0,
     "2045": 0.0
   },
-  "solar_lcoe_usd_per_twh": 64706852.221210115,
   "solar_capex_usd_per_mw": 1456000.0,
   "solar_tariff_usd_per_twh": 65000000,
   "solar_beats_gas_year": null,
@@ -208,9 +350,9 @@
   "eaas_public_spending_usd": 0.0,
   "eaas_private_investment_usd": 0.0,
   "eaas_capital_multiplier": null,
-  "ndc_finance_public_solar_npv_usd": 9103929462.716995,
+  "ndc_finance_public_solar_npv_usd": 6715771074.193859,
   "ndc_finance_eaas_subsidy_npv_usd": 0.0,
-  "ndc_finance_total_spend_usd": 9103929462.716995,
+  "ndc_finance_total_spend_usd": 6715771074.193859,
   "ndc_finance_utilisation": null,
   "years_with_unserved_energy": [],
   "max_unserved_year": null,

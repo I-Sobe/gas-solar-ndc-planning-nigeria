@@ -26,6 +26,26 @@ CASES = [
         "timeseries_path": PROJECT_ROOT / "results/baseline/timeseries.csv",
     },
     {
+        "case": "ndc2_unconditional",
+        "summary_path":    PROJECT_ROOT / f"results/ndc/ndc2_unconditional_{CANONICAL_VOLL}/summary.json",
+        "timeseries_path": PROJECT_ROOT / f"results/ndc/ndc2_unconditional_{CANONICAL_VOLL}/timeseries.csv",
+    },
+    {
+        "case": "ndc2_conditional",
+        "summary_path":    PROJECT_ROOT / f"results/ndc/ndc2_conditional_{CANONICAL_VOLL}/summary.json",
+        "timeseries_path": PROJECT_ROOT / f"results/ndc/ndc2_conditional_{CANONICAL_VOLL}/timeseries.csv",
+    },
+    {
+        "case": "ndc2_unconditional_eaas",
+        "summary_path":    PROJECT_ROOT / f"results/ndc_eaas/ndc2_unconditional_eaas_{CANONICAL_VOLL}/summary.json",
+        "timeseries_path": PROJECT_ROOT / f"results/ndc_eaas/ndc2_unconditional_eaas_{CANONICAL_VOLL}/timeseries.csv",
+    },
+    {
+        "case": "ndc2_conditional_eaas",
+        "summary_path":    PROJECT_ROOT / f"results/ndc_eaas/ndc2_conditional_eaas_{CANONICAL_VOLL}/summary.json",
+        "timeseries_path": PROJECT_ROOT / f"results/ndc_eaas/ndc2_conditional_eaas_{CANONICAL_VOLL}/timeseries.csv",
+    },
+    {
         "case": "ndc3_unconditional",
         "summary_path":    PROJECT_ROOT / f"results/ndc/ndc3_unconditional_{CANONICAL_VOLL}/summary.json",
         "timeseries_path": PROJECT_ROOT / f"results/ndc/ndc3_unconditional_{CANONICAL_VOLL}/timeseries.csv",

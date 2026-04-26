@@ -1,4 +1,16 @@
 demand_level,ndc_label,financing_arm,base_demand_twh,budget_shadow,budget_utilisation,shadow_shift_vs_served,bottleneck_worsens,status
+served,ndc2_conditional,eaas,23.08,,,,,optimal
+latent_low,ndc2_conditional,eaas,38.47,,,,,optimal
+latent_high,ndc2_conditional,eaas,76.93,,,,,optimal
+served,ndc2_conditional,public_only,23.08,,,,,optimal
+latent_low,ndc2_conditional,public_only,38.47,,,,,optimal
+latent_high,ndc2_conditional,public_only,76.93,,,,,optimal
+served,ndc2_unconditional,eaas,23.08,,,,,optimal
+latent_low,ndc2_unconditional,eaas,38.47,,,,,optimal
+latent_high,ndc2_unconditional,eaas,76.93,,,,,optimal
+served,ndc2_unconditional,public_only,23.08,,,,,optimal
+latent_low,ndc2_unconditional,public_only,38.47,,,,,optimal
+latent_high,ndc2_unconditional,public_only,76.93,,,,,optimal
 served,ndc3_conditional,eaas,23.08,,,,,optimal
 latent_low,ndc3_conditional,eaas,38.47,,,,,optimal
 latent_high,ndc3_conditional,eaas,76.93,,,,,optimal

@@ -85,11 +85,15 @@ GAS_CASES = ["baseline", "upside", "downside", "shock_recovery"]
 NDC_CASES = {
     "baseline_no_policy": {
         "ndc_cap_scenario": None,           # no cap — handled separately below
-        "capital_case":     "moderate",
+        "capital_case":     "unconstrained",
+    },
+    "ndc2_unconditional": {
+        "ndc_cap_scenario": "ndc2_unconditional",
+        "capital_case":     "tight",
     },
     "ndc3_unconditional": {
         "ndc_cap_scenario": "ndc3_unconditional",
-        "capital_case":     "moderate",
+        "capital_case":     "tight",
     },
 }
 

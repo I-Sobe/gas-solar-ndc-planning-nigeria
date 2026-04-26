@@ -271,191 +271,144 @@ def compute_eaas_storage_tradeoff(df):
 
 def main():
 
-    econ = load_econ(CANONICAL_VOLL)
+    STORAGE_OM_CASES = {
+        "om_2k":  2_000.0,    # current: LP degeneracy breaker
+        "om_10k": 10_000.0,   # NREL ATB low end
+        "om_18k": 18_000.0,   # NREL ATB high end
+    }
 
-    n_solves = (
-        len(HD_VALUES) * len(SURPLUS_FRAC_VALUES)
-        * len(FINANCING_CONFIGS) * len(POLICY_CONFIGS)
-    )
-    print(f"\nSTR-1: Storage role — H_d × surplus_frac sweep")
-    print(f"  H_d values:          {HD_VALUES} h/yr")
-    print(f"  surplus_frac values: {SURPLUS_FRAC_VALUES}")
-    print(f"  financing_arms:      {[f['label'] for f in FINANCING_CONFIGS]}")
-    print(f"  policy_arms:         {[p['policy_label'] for p in POLICY_CONFIGS]}")
-    print(f"  total solves:        {n_solves}")
+    for om_label, om_value in STORAGE_OM_CASES.items():
 
-    rows = run_str1_storage_parameter_sweep(
-        econ=econ,
-        hd_values=HD_VALUES,
-        surplus_frac_values=SURPLUS_FRAC_VALUES,
-        financing_configs=FINANCING_CONFIGS,
-        policy_configs=POLICY_CONFIGS,
-        cap_path=str(CAP_PATH),
-    )
+        print(f"\n{'='*60}")
+        print(f"  STR-1 sweep: storage O&M = {om_label} ({om_value:,.0f} USD/MWh-yr)")
+        print(f"{'='*60}")
 
-    df = pd.DataFrame(rows)
-    df.to_csv(RESULTS_DIR / "str1_results.csv", index=False)
-    print(f"\nSaved: {RESULTS_DIR / 'str1_results.csv'}")
+        econ = load_econ(CANONICAL_VOLL)
+        # Override storage O&M for this sweep arm
+        econ["STORAGE_OM_PER_MWH_YR"] = om_value
 
-    optimal = df[df["status"] == "optimal"].copy()
+        out_dir = RESULTS_DIR / om_label
+        out_dir.mkdir(parents=True, exist_ok=True)
 
-    # ── Derived tables ─────────────────────────────────────────────────────
-    complement_df   = compute_complement_matrix(optimal)
-    utilisation_df  = compute_utilisation_matrix(optimal)
-    tradeoff_df     = compute_eaas_storage_tradeoff(optimal)
-
-    complement_df.to_csv(RESULTS_DIR / "complement_matrix.csv",    index=False)
-    utilisation_df.to_csv(RESULTS_DIR / "utilisation_matrix.csv",  index=False)
-    tradeoff_df.to_csv(RESULTS_DIR / "eaas_storage_tradeoff.csv",  index=False)
-
-    # ── Summary JSON ──────────────────────────────────────────────────────
-    # Primary finding: dominant storage role per policy
-    summary = {"storage_role_by_policy": {}, "parameter_sensitivity": {}}
-
-    for pol in [p["policy_label"] for p in POLICY_CONFIGS]:
-        comp_sub = complement_df[
-            (complement_df["policy_label"] == pol)
-            & (complement_df["financing_arm"] == "eaas")
-        ]
-        roles = comp_sub["storage_role"].dropna().unique().tolist()
-        dominant_role = (
-            "complement" if roles.count("complement") > roles.count("substitute")
-            else "substitute" if "substitute" in roles
-            else "mixed"
-        ) if roles else "indeterminate"
-
-        util_sub = utilisation_df[
-            (utilisation_df["policy_label"] == pol)
-            & (utilisation_df["financing_arm"] == "eaas")
-        ]
-        hd_binds_fraction = (
-            float(util_sub["hd_is_binding"].mean())
-            if len(util_sub) else None
+        n_solves = (
+            len(HD_VALUES) * len(SURPLUS_FRAC_VALUES)
+            * len(FINANCING_CONFIGS) * len(POLICY_CONFIGS)
         )
-        dominant_constraint = (
-            util_sub["dominant_constraint"].mode().values[0]
-            if len(util_sub) else None
+        print(f"  H_d values:          {HD_VALUES} h/yr")
+        print(f"  surplus_frac values: {SURPLUS_FRAC_VALUES}")
+        print(f"  financing_arms:      {[f['label'] for f in FINANCING_CONFIGS]}")
+        print(f"  policy_arms:         {[p['policy_label'] for p in POLICY_CONFIGS]}")
+        print(f"  total solves:        {n_solves}")
+
+        rows = run_str1_storage_parameter_sweep(
+            econ=econ,
+            hd_values=HD_VALUES,
+            surplus_frac_values=SURPLUS_FRAC_VALUES,
+            financing_configs=FINANCING_CONFIGS,
+            policy_configs=POLICY_CONFIGS,
+            cap_path=str(CAP_PATH),
         )
 
-        summary["storage_role_by_policy"][pol] = {
-            "dominant_role":            dominant_role,
-            "hd_binding_fraction":      hd_binds_fraction,
-            "dominant_constraint":      dominant_constraint,
-            "interpretation": (
-                f"Storage primarily COMPLEMENTS EaaS solar: both grow together "
-                f"as H_d increases. The dominant operational bottleneck is "
-                f"{dominant_constraint}."
-                if dominant_role == "complement"
-                else
-                f"Storage primarily SUBSTITUTES for EaaS solar: higher H_d "
-                f"reduces EaaS solar requirements. "
-                f"Dominant bottleneck: {dominant_constraint}."
+        df = pd.DataFrame(rows)
+        df.to_csv(out_dir / "str1_results.csv", index=False)
+        print(f"\nSaved: {out_dir / 'str1_results.csv'}")
+
+        optimal = df[df["status"] == "optimal"].copy()
+
+        # ── Derived tables ────────────────────────────────────────
+        complement_df   = compute_complement_matrix(optimal)
+        utilisation_df  = compute_utilisation_matrix(optimal)
+        tradeoff_df     = compute_eaas_storage_tradeoff(optimal)
+
+        complement_df.to_csv(out_dir / "complement_matrix.csv",    index=False)
+        utilisation_df.to_csv(out_dir / "utilisation_matrix.csv",  index=False)
+        tradeoff_df.to_csv(out_dir / "eaas_storage_tradeoff.csv",  index=False)
+
+        # ── Summary JSON ──────────────────────────────────────────
+        summary = {"storage_om_usd_per_mwh_yr": om_value,
+                    "storage_role_by_policy": {},
+                    "parameter_sensitivity": {}}
+
+        for pol in [p["policy_label"] for p in POLICY_CONFIGS]:
+            comp_sub = complement_df[
+                (complement_df["policy_label"] == pol)
+                & (complement_df["financing_arm"] == "eaas")
+            ]
+            roles = comp_sub["storage_role"].dropna().unique().tolist()
+            dominant_role = (
+                "complement" if roles.count("complement") > roles.count("substitute")
+                else "substitute" if "substitute" in roles
+                else "mixed"
+            ) if roles else "indeterminate"
+
+            util_sub = utilisation_df[
+                (utilisation_df["policy_label"] == pol)
+                & (utilisation_df["financing_arm"] == "eaas")
+            ]
+            hd_binds_fraction = (
+                float(util_sub["hd_is_binding"].mean())
+                if len(util_sub) else None
+            )
+            dominant_constraint = (
+                util_sub["dominant_constraint"].mode().values[0]
+                if len(util_sub) else None
+            )
+
+            summary["storage_role_by_policy"][pol] = {
+                "dominant_role":       dominant_role,
+                "hd_binding_fraction": hd_binds_fraction,
+                "dominant_constraint": dominant_constraint,
+            }
+
+        # Parameter sensitivity
+        eaas_opt = optimal[
+            (optimal["financing_arm"] == "eaas")
+            & (optimal["policy_label"] == "no_policy")
+        ]
+        hd_range = (
+            float(eaas_opt.groupby("hd")["complement_ratio"].mean().max()
+                  - eaas_opt.groupby("hd")["complement_ratio"].mean().min())
+            if len(eaas_opt) else None
+        )
+        sfrac_range = (
+            float(eaas_opt.groupby("surplus_frac")["complement_ratio"].mean().max()
+                  - eaas_opt.groupby("surplus_frac")["complement_ratio"].mean().min())
+            if len(eaas_opt) else None
+        )
+        summary["parameter_sensitivity"] = {
+            "complement_ratio_range_across_hd":          hd_range,
+            "complement_ratio_range_across_surplus_frac": sfrac_range,
+            "dominant_parameter": (
+                "H_d" if (hd_range is not None and sfrac_range is not None
+                          and hd_range > sfrac_range)
+                else "surplus_frac" if sfrac_range is not None
+                else "indeterminate"
             ),
         }
 
-    # Parameter sensitivity: which parameter matters more?
-    # Compare complement_ratio range across H_d sweep vs surplus_frac sweep
-    eaas_opt = optimal[
-        (optimal["financing_arm"] == "eaas")
-        & (optimal["policy_label"] == "no_policy")
-    ]
-    hd_range = (
-        float(eaas_opt.groupby("hd")["complement_ratio"].mean().max()
-              - eaas_opt.groupby("hd")["complement_ratio"].mean().min())
-        if len(eaas_opt) else None
-    )
-    sfrac_range = (
-        float(eaas_opt.groupby("surplus_frac")["complement_ratio"].mean().max()
-              - eaas_opt.groupby("surplus_frac")["complement_ratio"].mean().min())
-        if len(eaas_opt) else None
-    )
+        with open(out_dir / "str1_summary.json", "w") as f:
+            json.dump(summary, f, indent=2, default=str)
 
-    summary["parameter_sensitivity"] = {
-        "complement_ratio_range_across_hd":          hd_range,
-        "complement_ratio_range_across_surplus_frac": sfrac_range,
-        "dominant_parameter": (
-            "H_d" if (hd_range is not None and sfrac_range is not None
-                      and hd_range > sfrac_range)
-            else "surplus_frac" if sfrac_range is not None
-            else "indeterminate"
-        ),
-        "interpretation": (
-            "H_d has greater influence on the storage-EaaS relationship than "
-            "surplus_frac — operational dispatch capability (infrastructure) "
-            "matters more than solar-storage coupling intensity."
-            if (hd_range is not None and sfrac_range is not None
-                and hd_range > sfrac_range)
-            else
-            "surplus_frac has greater influence — the solar-storage coupling "
-            "intensity (integration quality) matters more than dispatch hours."
-        ),
-    }
+        # ── Console headline ──────────────────────────────────────
+        print(f"\n  === {om_label}: HEADLINE ===")
+        for pol, s in summary["storage_role_by_policy"].items():
+            print(f"    {pol}: {s['dominant_role'].upper()}")
+        print(f"    Dominant parameter: {summary['parameter_sensitivity']['dominant_parameter']}")
 
-    with open(RESULTS_DIR / "str1_summary.json", "w") as f:
-        json.dump(summary, f, indent=2, default=str)
+    # ── Cross-O&M comparison ──────────────────────────────────
+    print(f"\n{'='*60}")
+    print(f"  STR-1: Cross-O&M robustness check")
+    print(f"{'='*60}")
+    for om_label in STORAGE_OM_CASES:
+        summary_path = RESULTS_DIR / om_label / "str1_summary.json"
+        if summary_path.exists():
+            with open(summary_path) as f:
+                s = json.load(f)
+            om_val = s["storage_om_usd_per_mwh_yr"]
+            for pol, role_info in s["storage_role_by_policy"].items():
+                print(f"  O&M={om_val:>8,.0f}  {pol:>25s}  → {role_info['dominant_role']}")
 
-    # ── Console output ─────────────────────────────────────────────────────
-    print("\n=== STR-1: COMPLEMENT RATIO (EaaS arm, no_policy) ===")
-    print("  complement_ratio = storage_mwh / solar_eaas_mw")
-    print("  Rising with H_d => complement;  Falling => substitute")
-    print()
-    print(f"  {'surplus_frac':>12}  "
-          + "  ".join(f"H_d={h:4d}" for h in HD_VALUES))
-    print("  " + "-" * 52)
-
-    eaas_no_pol = optimal[
-        (optimal["financing_arm"] == "eaas")
-        & (optimal["policy_label"] == "no_policy")
-    ]
-    for sfrac in SURPLUS_FRAC_VALUES:
-        ratios = []
-        for hd in HD_VALUES:
-            r = eaas_no_pol[
-                (eaas_no_pol["surplus_frac"] == sfrac)
-                & (eaas_no_pol["hd"] == hd)
-            ]
-            val = (
-                f"{r['complement_ratio'].values[0]:.1f}"
-                if len(r) and pd.notna(r["complement_ratio"].values[0])
-                else "—"
-            )
-            ratios.append(val)
-        print(f"  {sfrac:>12.2f}  " + "  ".join(f"{v:>10}" for v in ratios))
-
-    print("\n=== STR-1: STORAGE UTILISATION (EaaS arm, no_policy) ===")
-    print("  utilisation ≈ 1.0: H_d is binding;  << 1.0: solar surplus is binding")
-    print()
-    print(f"  {'surplus_frac':>12}  "
-          + "  ".join(f"H_d={h:4d}" for h in HD_VALUES))
-    print("  " + "-" * 52)
-
-    for sfrac in SURPLUS_FRAC_VALUES:
-        utils = []
-        for hd in HD_VALUES:
-            r = eaas_no_pol[
-                (eaas_no_pol["surplus_frac"] == sfrac)
-                & (eaas_no_pol["hd"] == hd)
-            ]
-            val = (
-                f"{r['storage_utilisation'].values[0]:.2f}"
-                if len(r) and pd.notna(r["storage_utilisation"].values[0])
-                else "—"
-            )
-            utils.append(val)
-        print(f"  {sfrac:>12.2f}  " + "  ".join(f"{v:>10}" for v in utils))
-
-    print(f"\n=== HEADLINE ===")
-    for pol, s in summary["storage_role_by_policy"].items():
-        print(f"\n  {pol}: {s['dominant_role'].upper()}")
-        print(f"  {s['interpretation']}")
-
-    ps = summary["parameter_sensitivity"]
-    print(f"\n  Dominant parameter: {ps['dominant_parameter']}")
-    print(f"  H_d range: {ps['complement_ratio_range_across_hd']}")
-    print(f"  surplus_frac range: {ps['complement_ratio_range_across_surplus_frac']}")
-
-    print(f"\nSaved to: {RESULTS_DIR}")
-
+    print(f"\nAll outputs saved to: {RESULTS_DIR}")
 
 if __name__ == "__main__":
     main()

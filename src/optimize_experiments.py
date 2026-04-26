@@ -516,7 +516,7 @@ def run_reliability_sweep(
             ),
             "status":              status_str,
         }
-
+    
     # ── 1. VoLL-only baseline ──────────────────────────────────────────────
     try:
         m_base = _build_and_solve(eps=None)
@@ -1670,7 +1670,7 @@ def extract_planning_diagnostics(m, scenario, econ=None, solar_capex_series=None
         for t in range(len(years))
     )
 
-    solar_lcoe = econ["SOLAR_CAPEX_PER_MW"] / npv_energy if npv_energy > 0 else None
+    # solar_lcoe = econ["SOLAR_CAPEX_PER_MW"] / npv_energy if npv_energy > 0 else None
     # Solar LCOE: annualized over remaining horizon from each year t
     # Using a "remaining horizon" LCOE — CAPEX recovered over years remaining
     # from t onwards. This reflects the effective cost of a MW built in year t.
@@ -1719,7 +1719,7 @@ def extract_planning_diagnostics(m, scenario, econ=None, solar_capex_series=None
         private_investment += (
             pyo.value(m.DF[t])
             * pyo.value(m.solar_eaas_add[t])
-            * econ["SOLAR_CAPEX_PER_MW"]
+            * pyo.value(m.solar_capex_param[t])
         )
 
     eaas_multiplier = None
@@ -1741,7 +1741,7 @@ def extract_planning_diagnostics(m, scenario, econ=None, solar_capex_series=None
     public_solar_npv_spend = sum(
         pyo.value(m.DF[t])
         * pyo.value(m.solar_public_add[t])
-        * econ["SOLAR_CAPEX_PER_MW"]
+        * pyo.value(m.solar_capex_param[t])
         for t in T
     )
     # eaas_subsidy spend (already computed above as public_spending)
@@ -1802,7 +1802,11 @@ def extract_planning_diagnostics(m, scenario, econ=None, solar_capex_series=None
             storage_binding[int(y)] = "none"
 
     # ---- Peak adequacy heuristic (must be computed before return dict)
-    peak_demand_multiple = scenario.get("peak_demand_multiple", 2.5)
+    # Peak-to-average demand ratio. Nigerian grid load factor ≈ 0.55
+    # (Nigerian System Operator statistics, 2022-2023). 1/0.55 ≈ 1.82.
+    # A higher value (2.0-2.5) would reflect more peaky demand patterns
+    # characteristic of residential-dominated systems.
+    peak_demand_multiple = scenario.get("peak_demand_multiple", 1.82)
     peak_adequacy_by_year = {}
     for t, y in enumerate(years):
         avg_demand_twh = demand[t]
@@ -1857,7 +1861,7 @@ def extract_planning_diagnostics(m, scenario, econ=None, solar_capex_series=None
 
         realised_public_spend = sum(
             float(pyo.value(m.DF[t])) * (
-                float(pyo.value(m.solar_public_add[t])) * econ["SOLAR_CAPEX_PER_MW"]
+                float(pyo.value(m.solar_public_add[t])) * float(pyo.value(m.solar_capex_param[t]))
                 + float(pyo.value(m.eaas_subsidy[t]))
             )
             for t in T
@@ -1865,15 +1869,103 @@ def extract_planning_diagnostics(m, scenario, econ=None, solar_capex_series=None
         budget_npv = scenario.get("public_solar_budget_npv", None)
         if budget_npv and budget_npv > 0:
             public_budget_utilisation = realised_public_spend / budget_npv
+    
+    
+    # ============================================================
+    # EaaS reliability trigger diagnostic (post-solve)
+    # ============================================================
+    # Evaluates whether EaaS deployment was reliability-motivated:
+    # compares the marginal value of unserved energy (VoLL dual or
+    # penalty) against the effective cost of EaaS-financed solar.
+    #
+    # If unserved_shadow_price > eaas_effective_lcoe in a given year,
+    # EaaS deployment in that year was reliability-justified — it was
+    # cheaper to deploy private solar than to accept blackouts.
+    #
+    # This is a diagnostic, not a constraint. The LP decides EaaS
+    # deployment optimally; this metric explains *why* it deployed.
+    # ============================================================
+
+    eaas_reliability_trigger_by_year = {}
+    for t in T:
+        yr = years[t]
+        eaas_add_t = float(pyo.value(m.solar_eaas_add[t]))
+
+        # Effective LCOE of EaaS solar at year t (USD per MWh)
+        capex_t = float(pyo.value(m.solar_capex_param[t]))  # USD/MW
+        cf_t = scenario.get("solar_cf", 0.27)
+        hours_per_year = 8760
+        eaas_lcoe_mwh = capex_t / (cf_t * hours_per_year * 20)  # simple 20-yr levelization
+
+        # Marginal value of unserved energy (USD per MWh)
+        # This is the VoLL penalty from the objective — represents
+        # the planner's valuation of avoided blackouts.
+        voll_usd_per_mwh = econ["UNSERVED_ENERGY_PENALTY"] * 1e6  # convert from USD/TWh to USD/MWh
+
+        # Was EaaS deployment reliability-motivated at year t?
+        reliability_motivated = (
+            eaas_add_t > 0.01 and  # non-trivial deployment
+            voll_usd_per_mwh > eaas_lcoe_mwh  # cheaper to build than to blackout
+        )
+
+        eaas_reliability_trigger_by_year[yr] = {
+            "eaas_add_mw":           round(eaas_add_t, 1),
+            "eaas_lcoe_usd_per_mwh": round(eaas_lcoe_mwh, 2),
+            "voll_usd_per_mwh":      round(voll_usd_per_mwh, 2),
+            "reliability_motivated": reliability_motivated,
+        }
+
+    n_reliability_motivated = sum(
+        1 for v in eaas_reliability_trigger_by_year.values()
+        if v["reliability_motivated"]
+    )
+
+    # ============================================================
+    # COST DECOMPOSITION (real expenditure vs VoLL penalty)
+    # ============================================================
+    cost_gas_opex     = float(pyo.value(m.cost_gas_opex_npv))
+    cost_gas_capex    = float(pyo.value(m.cost_gas_capex_npv))
+    cost_pub_solar    = float(pyo.value(m.cost_public_solar_capex_npv))
+    cost_eaas_solar   = float(pyo.value(m.cost_eaas_solar_capex_npv))
+    cost_storage      = float(pyo.value(m.cost_storage_capex_npv))
+    cost_voll_penalty = float(pyo.value(m.cost_unserved_voll_npv))
+    cost_carbon       = float(pyo.value(m.cost_carbon_npv))
+
+    cost_real_expenditure = (
+        cost_gas_opex + cost_gas_capex + cost_pub_solar
+        + cost_eaas_solar + cost_storage + cost_carbon
+    )
+    cost_total = cost_real_expenditure + cost_voll_penalty
+
+    cost_decomposition = {
+        "real_expenditure_npv":        round(cost_real_expenditure, 0),
+        "voll_penalty_npv":            round(cost_voll_penalty, 0),
+        "voll_penalty_share":          round(cost_voll_penalty / cost_total, 4) if cost_total > 0 else 0,
+        "components": {
+            "gas_opex_npv":            round(cost_gas_opex, 0),
+            "gas_capex_npv":           round(cost_gas_capex, 0),
+            "public_solar_capex_npv":  round(cost_pub_solar, 0),
+            "eaas_solar_capex_npv":    round(cost_eaas_solar, 0),
+            "storage_capex_npv":       round(cost_storage, 0),
+            "voll_penalty_npv":        round(cost_voll_penalty, 0),
+            "carbon_cost_npv":         round(cost_carbon, 0),
+        },
+    }
 
     return {
+        # Cost decomposition
+        "cost_decomposition": cost_decomposition,
+        # EaaS reliability trigger
+        "eaas_reliability_trigger_by_year": eaas_reliability_trigger_by_year,
+        "eaas_reliability_motivated_years": n_reliability_motivated,
+        # Peak and storage diagnostics
         "peak_adequacy_by_year": peak_adequacy_by_year,
         "storage_binding_by_year": storage_binding,
         "subsidy_per_mw_usd_by_year": subsidy_per_mw_by_year,
-        "solar_lcoe_usd_per_twh": solar_lcoe,
-        "solar_capex_usd_per_mw": econ["SOLAR_CAPEX_PER_MW"],
+        "solar_capex_usd_per_mw": float(pyo.value(m.solar_capex_param[0])),
         "solar_tariff_usd_per_twh": scenario["solar_service_tariff_usd_per_twh"],
         "solar_beats_gas_year": solar_beats_gas_year,
+        # Gas and energy value diagnostics
         "value_of_gas_to_power_usd_per_twh_e_by_year": gas_value_electricity,
         "storage_charge_twh_e_by_year":
             {int(y): float(pyo.value(m.storage_charge[t]))
@@ -1881,7 +1973,7 @@ def extract_planning_diagnostics(m, scenario, econ=None, solar_capex_series=None
         "bankability_threshold":
             scenario["required_margin"] *
             (
-                econ["SOLAR_CAPEX_PER_MW"] /
+                float(pyo.value(m.solar_capex_param[0])) /
                 sum(pyo.value(m.DF[t]) for t in range(len(years)))
             ),
         "solar_generation_share": solar_share,
@@ -1969,8 +2061,7 @@ def extract_planning_diagnostics(m, scenario, econ=None, solar_capex_series=None
         "storage_energy_limit_years": sum(
             1 for v in storage_binding.values() if v == "energy_limit"
         ),
-    }
-
+    }    
 
 # ============================================================
 # BATCH DETERMINISTIC EXECUTION

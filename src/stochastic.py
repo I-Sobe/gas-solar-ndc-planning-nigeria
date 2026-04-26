@@ -47,7 +47,6 @@ def sample_uncertainties(
     carbon_mu,
     carbon_sigma,
     demand_sigma=0.01,
-    #gas_sigma=0.01,
     seed=None,
 ):
     """
@@ -65,8 +64,6 @@ def sample_uncertainties(
         Standard deviation of lognormal carbon price distribution
     demand_sigma : float, optional
         Standard deviation of demand growth perturbation
-    gas_sigma : float, optional
-        Standard deviation of gas supply regime (discrete deliverability scenarios)
     seed : int or None
 
     Returns
@@ -99,27 +96,14 @@ def sample_uncertainties(
         labels = list(gas_probs.keys())
         weights = list(gas_probs.values())
 
-        scenario["gas_scenario"] = np.random.choice(labels, p=weights)
-        # scenario["gas_scenario"] = np.random.choice(gas_cases)
+        scenario["gas_scenario"] = np.random.choice(labels, p=weights)        
         
-        
-        # ---- Gas decline uncertainty (truncated normal)
-        #scenario["gas_decline"] = max(
-        #    0.0,
-        #    np.random.normal(
-        #        base_scenario["gas_decline"],
-        #        gas_sigma,
-        #    ),
-        #)
-
         # ---- Carbon price uncertainty (lognormal, exogenous)
         if scenario["carbon_active"]:
             scenario["carbon_price"] = np.random.lognormal(
                 mean=carbon_mu,
                 sigma=carbon_sigma,
             )
-        #else:
-        #    scenario["carbon_policy"] = 0.0
 
         samples.append(scenario)
 
@@ -169,8 +153,7 @@ def run_stochastic_simulation(
     )
 
     outcomes = []
-    #outcomes = np.zeros(N)
-
+    
     for i, scenario in enumerate(samples):
         output = run_deterministic_scenario(
             scenario=scenario,
@@ -180,8 +163,7 @@ def run_stochastic_simulation(
         outcomes.append(
             (scenario["gas_scenario"], output["costs"]["total"])
         )
-        #outcomes[i] = output["costs"]["total"]
-
+        
     return outcomes
 
 

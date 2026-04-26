@@ -108,6 +108,22 @@ DEMAND_LEVEL_CASES = ["served", "latent_low", "latent_high"]
 # NDC configurations — consistent with 02_run_ndc_caps.py and 03_run_ndc_eaas.py
 NDC_CONFIGS = [
     {
+        "ndc_label":    "ndc2_unconditional",
+        "ndc_scenario": "ndc2_unconditional",
+        "public_capital": "moderate",    # 0.85 × B* = 5.21B
+        "eaas_capital":   "moderate",
+        "eaas_margin":    1.10,          # commercial finance
+        "eaas_tariff":    CANONICAL_TARIFF,
+    },
+    {
+        "ndc_label":    "ndc2_conditional",
+        "ndc_scenario": "ndc2_conditional",
+        "public_capital": "expansion",   # 1.20 × B* = 7.36B
+        "eaas_capital":   "expansion",
+        "eaas_margin":    1.05,          # concessional finance
+        "eaas_tariff":    CANONICAL_TARIFF,
+    },
+    {
         "ndc_label":    "ndc3_unconditional",
         "ndc_scenario": "ndc3_unconditional",
         "public_capital": "moderate",    # 0.85 × B* = 5.21B

@@ -18,6 +18,7 @@
     ],
     "policy_arms": [
       "no_policy",
+      "ndc2_unconditional",
       "ndc3_unconditional"
     ],
     "voll": "voll_mid"
@@ -32,20 +33,46 @@
       },
       "downside": {
         "gas_premium_low": 1088604407.1962109,
-        "gas_premium_high": 182490347391.70996,
-        "interaction": 181401742984.51376,
+        "gas_premium_high": 207167714788.6783,
+        "interaction": 206079110381.48212,
         "amplifies": true
       },
       "shock_recovery": {
         "gas_premium_low": -20950088.682157516,
-        "gas_premium_high": -7367258515.659897,
-        "interaction": -7346308426.977739,
+        "gas_premium_high": -15627837786.853546,
+        "interaction": -15606887698.171389,
         "amplifies": false
       },
       "upside": {
         "gas_premium_low": -367988173.1692581,
-        "gas_premium_high": -13372464480.369751,
-        "interaction": -13004476307.200493,
+        "gas_premium_high": -73835701309.67722,
+        "interaction": -73467713136.50797,
+        "amplifies": false
+      }
+    },
+    "ndc2_unconditional": {
+      "baseline": {
+        "gas_premium_low": 0.0,
+        "gas_premium_high": 0.0,
+        "interaction": 0.0,
+        "amplifies": false
+      },
+      "downside": {
+        "gas_premium_low": 245740909.14040565,
+        "gas_premium_high": 48557934021.9881,
+        "interaction": 48312193112.847694,
+        "amplifies": true
+      },
+      "shock_recovery": {
+        "gas_premium_low": 0.0,
+        "gas_premium_high": 0.0,
+        "interaction": 0.0,
+        "amplifies": false
+      },
+      "upside": {
+        "gas_premium_low": 0.0,
+        "gas_premium_high": 0.0,
+        "interaction": 0.0,
         "amplifies": false
       }
     },
@@ -57,10 +84,10 @@
         "amplifies": false
       },
       "downside": {
-        "gas_premium_low": 0.0,
-        "gas_premium_high": 0.0,
-        "interaction": 0.0,
-        "amplifies": false
+        "gas_premium_low": 213457920.81612587,
+        "gas_premium_high": 41160068969.20282,
+        "interaction": 40946611048.386696,
+        "amplifies": true
       },
       "shock_recovery": {
         "gas_premium_low": 0.0,
@@ -84,7 +111,17 @@
         "shock_recovery": false,
         "upside": true
       },
-      "max_eaas_value_usd": 196807132391.58075,
+      "max_eaas_value_usd": 393794128374.12555,
+      "max_eaas_value_at_demand_case": "high"
+    },
+    "ndc2_unconditional": {
+      "eaas_value_monotone_by_gas_case": {
+        "baseline": true,
+        "downside": true,
+        "shock_recovery": true,
+        "upside": true
+      },
+      "max_eaas_value_usd": 417910288104.6545,
       "max_eaas_value_at_demand_case": "high"
     },
     "ndc3_unconditional": {
@@ -94,7 +131,7 @@
         "shock_recovery": true,
         "upside": true
       },
-      "max_eaas_value_usd": 1029267572834.445,
+      "max_eaas_value_usd": 404560497495.97296,
       "max_eaas_value_at_demand_case": "high"
     }
   }

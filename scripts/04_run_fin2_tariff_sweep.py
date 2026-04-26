@@ -75,18 +75,29 @@ CANONICAL_VOLL = "voll_mid"
 # NDC scenarios to sweep — each has its own required_margin and capital_case,
 # which is the core of the conditional vs unconditional finance comparison.
 NDC_CASES = {
+    # Robustness arm: NDC 2.0 ( BAU-relative, no apportionment required)
+    "ndc2_unconditional": {
+        "required_margin": 1.10, # commercial rate of return
+        "capital_case": "tight",
+        "ndc_cap_scenario": "ndc2_unconditional",
+    },
+    "ndc2_conditional": {
+        "required_margin": 1.05, # concessional rate of return. reps a derisking by foreign funding
+        "capital_case": "moderate",
+        "ndc_cap_scenario": "ndc2_conditional",
+    },
     "baseline_no_policy": {
-        "capital_case":    "moderate",
+        "capital_case":    "unconstrained",
         "required_margin": 1.10,
         "ndc_cap_scenario": None,
     },
     "ndc3_unconditional": {
-        "capital_case":    "moderate",
+        "capital_case":    "tight",
         "required_margin": 1.10,
         "ndc_cap_scenario": "ndc3_unconditional",
     },
     "ndc3_conditional": {
-        "capital_case":    "expansion",
+        "capital_case":    "moderate",
         "required_margin": 1.05,
         "ndc_cap_scenario": "ndc3_conditional",
     },

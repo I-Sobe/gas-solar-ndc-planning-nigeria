@@ -1,0 +1,20 @@
+{
+  "storage_om_usd_per_mwh_yr": 2000.0,
+  "storage_role_by_policy": {
+    "no_policy": {
+      "dominant_role": "complement",
+      "hd_binding_fraction": 0.0,
+      "dominant_constraint": "H_d (power throughput)"
+    },
+    "ndc3_unconditional": {
+      "dominant_role": "complement",
+      "hd_binding_fraction": 0.0,
+      "dominant_constraint": "H_d (power throughput)"
+    }
+  },
+  "parameter_sensitivity": {
+    "complement_ratio_range_across_hd": 0.0,
+    "complement_ratio_range_across_surplus_frac": 0.0,
+    "dominant_parameter": "surplus_frac"
+  }
+}

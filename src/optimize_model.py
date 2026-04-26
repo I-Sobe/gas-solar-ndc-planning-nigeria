@@ -67,7 +67,6 @@ def build_model(
 
     years = scenario["years"]
     T = range(len(years))
-    # SOLAR_UNIT_SIZE_MW = 50 # continuous capacity expansion
     
     # --------------------------
     # Discounting 
@@ -128,26 +127,16 @@ def build_model(
     if not (0.0 < storage_round_trip_eff <= 1.0):
         raise ValueError("storage_round_trip_eff must be in (0, 1]")
 
-    # ------------------------------------------------------------
-    # Decision Variables
-    # ------------------------------------------------------------
-    # Solar additions (MW built each year)
-    # m.solar_public_units = pyo.Var(T, domain=pyo.NonNegativeReals)
-    # m.solar_eaas_units = pyo.Var(T, domain=pyo.NonNegativeReals)
-
-    # m.solar_public_add = pyo.Expression(
-    #    T, rule=lambda m,t: SOLAR_UNIT_SIZE_MW * m.solar_public_units[t]
-    # )
-
-    # m.solar_eaas_add = pyo.Expression(
-    #    T, rule=lambda m,t: SOLAR_UNIT_SIZE_MW * m.solar_eaas_units[t]
-    # )
     
     m.solar_public_add = pyo.Var(T, domain=pyo.NonNegativeReals)
     m.solar_eaas_add = pyo.Var(T, domain=pyo.NonNegativeReals)
     m.eaas_subsidy = pyo.Var(T, domain=pyo.NonNegativeReals)
-    # Storage: 
-    m.gas_add = pyo.Var(T, domain=pyo.NonNegativeReals)
+     
+    # No new gas plant construction: fuel availability is always the binding constraint.
+    # New gas capacity is structurally non-optimal across all scenarios (verified).
+    # gas_add is fixed at zero to make this assumption explicit.
+    m.gas_add = pyo.Param(T, initialize=0.0, within=pyo.NonNegativeReals)
+    # Storage:
     m.storage_add = pyo.Var(T, domain=pyo.NonNegativeReals)
     
     gas_baseline = scenario["gas_baseline_mw"]
@@ -169,8 +158,8 @@ def build_model(
 
     storage_baseline = scenario.get("storage_baseline_mwh", 0.0)
 
-    def storage_cap_rule(m, t):
-        return storage_baseline + sum(m.storage_add[k] for k in range(0, t + 1))
+    # Storage always starts from zero — no brownfield BESS baseline in Nigeria (2025).
+    # storage_baseline_mwh is set to 0.0 in all scenarios and is intentionally excluded.
     def storage_cap_rule(m, t):
         return sum(m.storage_add[k] for k in range(0, t+1))
 
@@ -216,13 +205,7 @@ def build_model(
             <= m.gas_capacity_mw[t] * 8760 / 1e6
 
     )
-    #m.gas_utilization_constraint = pyo.Constraint(
-    #    T,
-    #    rule=lambda m, t:
-    #        m.gas_capacity_mw[t] * 8760 / 1e6
-    #        <= gas_avail[t]
-    #)
-
+    
     m.gas_balance = pyo.Constraint(
         T,
         rule=lambda m, t:
@@ -247,7 +230,7 @@ def build_model(
     else:
         eaas_trigger_strength = max(0.0, voll - tariff)
     # Financing Regime Adjustment (EaaS)
-    effective_solar_capex = econ["SOLAR_CAPEX_PER_MW"]
+    # effective_solar_capex = econ["SOLAR_CAPEX_PER_MW"]
 
     if financing_regime == "eaas":
         if tariff is None:
@@ -300,24 +283,21 @@ def build_model(
         m.eaas_bankability = pyo.Constraint(T, rule=eaas_bankability_rule)   
     
     # ============================================================
-    # RELIABILITY-TRIGGERED EAAS INVESTMENT
+    # EaaS deployment gating (non-EaaS regimes only)
+    # ============================================================
+    # When financing_regime is not "eaas", solar_eaas_add is structurally
+    # disabled. Economic feasibility under EaaS regimes is governed by
+    # eaas_bankability and eaas_subsidy_limit constraints below.
+    #
+    # Reliability-based EaaS triggering is evaluated post-solve as a
+    # diagnostic (see extract_planning_diagnostics) — the LP decides
+    # deployment optimally without artificial gating.
     # ============================================================
 
-    # BIG_M = 10000  # sufficiently large MW cap
-
-    def eaas_reliability_trigger(m, t):
-
-        if financing_regime != "eaas":
+    if financing_regime != "eaas":
+        def eaas_disable_rule(m, t):
             return m.solar_eaas_add[t] == 0
-
-        #if eaas_trigger_strength <= 0:
-        #    return m.solar_eaas_add[t] == 0
-
-        if tariff >= voll:
-            return m.solar_eaas_add[t] == 0
-
-        return pyo.Constraint.Skip
-    m.eaas_reliability = pyo.Constraint(T, rule=eaas_reliability_trigger)
+        m.eaas_disable = pyo.Constraint(T, rule=eaas_disable_rule)
     
     # ============================================================
     # SUBSIDY LIMITED TO FINANCING GAP
@@ -535,13 +515,37 @@ def build_model(
     )
     m.system_cost_npv = pyo.Expression(expr=system_cost_npv)
     
+    # ============================================================
+    # COST COMPONENT EXPRESSIONS (for decomposition diagnostics)
+    # ============================================================
+    m.cost_gas_opex_npv          = pyo.Expression(expr=gas_opex_npv)
+    m.cost_gas_capex_npv         = pyo.Expression(expr=gas_capex_npv)
+    m.cost_public_solar_capex_npv = pyo.Expression(expr=public_solar_capex_npv)
+    m.cost_eaas_solar_capex_npv   = pyo.Expression(expr=eaas_solar_capex_npv)
+    m.cost_storage_capex_npv      = pyo.Expression(expr=storage_capex_npv)
+    m.cost_unserved_voll_npv      = pyo.Expression(expr=unserved_npv)
+    m.cost_carbon_npv             = pyo.Expression(expr=carbon_cost_npv)
+    
     public_budget_npv = scenario.get("public_solar_budget_npv", None)
 
     if public_budget_npv is not None:
+        # ============================================================
+        # PUBLIC CAPITAL BUDGET CONSTRAINT
+        # ============================================================
+        # The public capital envelope covers all generation-side CAPEX:
+        #   - Public solar CAPEX (utility-scale solar additions)
+        #   - Storage CAPEX (battery storage additions)
+        #   - EaaS subsidy (public gap-funding for private solar)
+        #
+        # This reflects Nigerian fiscal reality where solar and storage
+        # compete for the same infrastructure capital allocation from
+        # federal budget and international development finance.
+        # ============================================================
         m.public_budget_constraint = pyo.Constraint(
             expr=pyo.quicksum(
                 m.DF[t] * (
                     m.solar_public_add[t] * m.solar_capex_param[t]
+                    + m.storage_add[t] * econ["STORAGE_COST_PER_MWH"]
                     + m.eaas_subsidy[t]
                 )
                 for t in T

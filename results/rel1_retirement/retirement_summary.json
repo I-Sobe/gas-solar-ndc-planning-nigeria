@@ -1,0 +1,50 @@
+{
+  "experiment": "REL-1 retirement rate sensitivity",
+  "retirement_rates_mw_yr": [
+    0.0,
+    340.0,
+    680.0,
+    1360.0
+  ],
+  "solar_build_case": "aggressive",
+  "threshold_by_retirement_and_gas": {
+    "no_retirement": {
+      "thresholds_by_gas": {
+        "baseline": 0.05,
+        "downside": 0.05,
+        "shock_recovery": 0.05,
+        "upside": 0.05
+      },
+      "threshold_range_across_gas": 0.0
+    },
+    "slow": {
+      "thresholds_by_gas": {
+        "baseline": 0.05,
+        "downside": 0.05,
+        "shock_recovery": 0.05,
+        "upside": 0.05
+      },
+      "threshold_range_across_gas": 0.0
+    },
+    "default": {
+      "thresholds_by_gas": {
+        "baseline": 0.05,
+        "downside": 0.05,
+        "shock_recovery": 0.05,
+        "upside": 0.05
+      },
+      "threshold_range_across_gas": 0.0
+    },
+    "fast": {
+      "thresholds_by_gas": {
+        "baseline": 0.05,
+        "downside": 0.05,
+        "shock_recovery": 0.05,
+        "upside": 0.05
+      },
+      "threshold_range_across_gas": 0.0
+    }
+  },
+  "gas_regime_drives_threshold_across_all_retirement_rates": false,
+  "interpretation": "The gas regime threshold range collapses under some retirement rate assumptions. The REL-1 finding may be partially driven by retirement rate, not purely by gas deliverability."
+}

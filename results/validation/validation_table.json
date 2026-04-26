@@ -1,0 +1,26 @@
+{
+  "demand_twh": {
+    "observed_2024": 23.08,
+    "model_2025": 23.08,
+    "gap_abs_twh": 0.0,
+    "gap_pct": 0.0
+  },
+  "gas_generation_twh": {
+    "observed_2024": 25.6,
+    "model_2025": 17.4838,
+    "gap_abs_twh": -8.116200000000003,
+    "gap_pct": -31.703906250000006
+  },
+  "solar_generation_twh": {
+    "observed_2024": 0.3,
+    "model_2025": 5.596199908560001,
+    "gap_abs_twh": 5.296199908560001,
+    "gap_pct": 1765.3999695200002
+  },
+  "unserved_twh": {
+    "observed_2024": 3.0,
+    "model_2025": 0.0,
+    "gap_abs_twh": -3.0,
+    "gap_pct": -100.0
+  }
+}

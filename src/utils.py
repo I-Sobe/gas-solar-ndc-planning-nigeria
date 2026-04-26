@@ -111,3 +111,20 @@ def year_index(start_year, end_year):
     np.ndarray
     """
     return np.arange(start_year, end_year + 1)
+
+
+def json_safe(obj):
+    """Recursively convert NumPy types to Python natives for JSON serialization."""
+    if isinstance(obj, dict):
+        return {str(k): json_safe(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [json_safe(item) for item in obj]
+    elif isinstance(obj, (np.integer,)):
+        return int(obj)
+    elif isinstance(obj, (np.floating,)):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, (np.bool_,)):
+        return bool(obj)
+    return obj

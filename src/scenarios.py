@@ -220,11 +220,43 @@ TARIFF_SWEEP_GRID = [
 ]
 
 def gas_probability_weights():
+    """
+    Probabilistic prior over gas deliverability regimes for Monte Carlo analysis.
+
+    These weights represent a plausible scenario prior consistent with Nigerian
+    gas-to-power sector risk assessments. They are not probabilistic forecasts;
+    they are weighted sensitivity priors used for robustness diagnostics.
+
+    Justification:
+    --------------
+    baseline (0.50) — Central expectation aligned with NGC's Decade of Gas
+        roadmap and the NDC 3.0 power-sector planning assumption of sustained
+        current deliverability levels.
+
+    downside (0.25) — Reflects the historical pattern of gas-to-power supply
+        underperforming nameplate deliverability since 2015 (IEA Nigeria
+        Energy Outlook 2023). Vandalism, pipeline integrity failures, and
+        upstream pricing disputes have repeatedly suppressed available gas.
+
+    upside (0.20) — Reflects the probability of successful execution of
+        upstream gas investments and flare-capture under the 2060 net-zero
+        framework (Nigerian Gas Master Plan, PIA 2021).
+
+    shock_recovery (0.05) — Reflects tail-risk events such as the 2022
+        vandalism-driven gas supply crash, where deliverability fell sharply
+        before recovering. Low probability, high consequence.
+
+    Sensitivity:
+    ------------
+    Headline results in this study should also be reported under symmetric
+    weights (0.25 each) as a robustness check. Where findings are sensitive
+    to weight specification, both are reported.
+    """
     return {
-        "downside": 0.25,
-        "baseline": 0.50,
-        "upside": 0.20,
-        "shock_recovery": 0.05
+        "baseline":       0.50,
+        "downside":       0.25,
+        "upside":         0.20,
+        "shock_recovery": 0.05,
     }
 # ============================================================
 # SCENARIO CONSTRUCTOR

@@ -117,24 +117,40 @@ POLICY_CONFIGS = [
     {
         "policy_label":   "no_policy",
         "ndc_scenario":   None,              # no emissions cap
+        "public_capital": "unconstrained",
+        "eaas_capital":   "unconstrained",
+        "eaas_margin":    1.10,
+        "eaas_tariff":    CANONICAL_TARIFF,
+    },
+    {
+        "policy_label":   "ndc2_unconditional",
+        "ndc_scenario":   "ndc2_unconditional",
+        "public_capital": "tight",
+        "eaas_capital":   "tight",
+        "eaas_margin":    1.10,
+        "eaas_tariff":    CANONICAL_TARIFF,
+    },
+    {
+        "policy_label":   "ndc2_conditional",
+        "ndc_scenario":   "ndc2_conditional",
         "public_capital": "moderate",
         "eaas_capital":   "moderate",
-        "eaas_margin":    1.10,
+        "eaas_margin":    1.05,
         "eaas_tariff":    CANONICAL_TARIFF,
     },
     {
         "policy_label":   "ndc3_unconditional",
         "ndc_scenario":   "ndc3_unconditional",
-        "public_capital": "moderate",        # matches 02_run_ndc_caps.py
-        "eaas_capital":   "moderate",
+        "public_capital": "tight",        # matches 02_run_ndc_caps.py
+        "eaas_capital":   "tight",
         "eaas_margin":    1.10,              # commercial finance
         "eaas_tariff":    CANONICAL_TARIFF,
     },
     {
         "policy_label":   "ndc3_conditional",
         "ndc_scenario":   "ndc3_conditional",
-        "public_capital": "expansion",       # matches 02_run_ndc_caps.py
-        "eaas_capital":   "expansion",
+        "public_capital": "moderate",       # matches 02_run_ndc_caps.py
+        "eaas_capital":   "moderate",
         "eaas_margin":    1.05,              # concessional finance
         "eaas_tariff":    CANONICAL_TARIFF,
     },

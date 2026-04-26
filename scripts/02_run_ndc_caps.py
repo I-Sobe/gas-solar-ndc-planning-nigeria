@@ -12,7 +12,7 @@ from src.io import (load_econ, load_solar_capex_by_year)
 from src.scenarios import load_scenario
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
-
+from src.utils import json_safe
 
 # ============================================================
 # PATH SETUP
@@ -156,8 +156,10 @@ def main():
     # deployment channel, so capital_case is the dominant constraint.
     # ----------------------------------------------------------------
     NDC_CASES = {
-        "ndc3_unconditional": {"capital_case": "moderate"},
-        "ndc3_conditional":   {"capital_case": "expansion"},
+        "ndc2_unconditional": {"capital_case": "tight"},
+        "ndc2_conditional": {"capital_case": "moderate"},
+        "ndc3_unconditional": {"capital_case": "tight"},
+        "ndc3_conditional":   {"capital_case": "moderate"},
     }
 
     for c, cfg in NDC_CASES.items():
@@ -200,7 +202,7 @@ def main():
                 )
 
             with open(case_dir / "diagnostics.json", "w") as f:
-                json.dump(out["diagnostics"], f, indent=2)
+                json.dump(json_safe(out["diagnostics"]), f, indent=2)
 
             # ------------------------------------------------------------
             # Save timeseries (csv)

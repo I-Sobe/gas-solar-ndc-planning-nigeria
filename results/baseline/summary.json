@@ -53,6 +53,6 @@
   "npv_total_cost_usd": 9527136237.188107,
   "cumulative_unserved_twh": 0.0,
   "actual_emissions_tco2_total": 154574275.79999998,
-  "solar_public_npv_spend": 9103929462.716995,
+  "solar_public_npv_spend": 6715771074.193859,
   "notes": "Baseline = no binding emissions cap (cap set to 1e18 tCO2)."
 }

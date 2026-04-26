@@ -111,6 +111,8 @@ SHAPE_PAIRS = {
 # Conditional added to check whether a looser cap makes shock feasible
 # where unconditional would be infeasible
 NDC_SCENARIOS = [
+    {"name": "ndc2_unconditional", "capital_case": "moderate"},
+    {"name": "ndc2_conditional",   "capital_case": "expansion"},
     {"name": "ndc3_unconditional", "capital_case": "moderate"},
     {"name": "ndc3_conditional",   "capital_case": "expansion"},
 ]

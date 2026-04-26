@@ -35,69 +35,69 @@
       "ndc_version": "NDC 3.0",
       "ambition_level": "unconditional",
       "cap_2025_tco2": 7363525.999999999,
-      "cap_2030_tco2": 0.0,
-      "cap_2035_tco2": 0.0,
-      "cap_2045_tco2": 0.0,
-      "effectively_zero_gas_from_2030": true
+      "cap_2030_tco2": 6107858.183852535,
+      "cap_2035_tco2": 5713393.756699539,
+      "cap_2045_tco2": 5713393.756699539,
+      "effectively_zero_gas_from_2030": false
     },
     "ndc3_conditional": {
       "ndc_version": "NDC 3.0",
       "ambition_level": "conditional",
       "cap_2025_tco2": 7363525.999999999,
-      "cap_2030_tco2": 0.0,
-      "cap_2035_tco2": 0.0,
-      "cap_2045_tco2": 0.0,
-      "effectively_zero_gas_from_2030": true
+      "cap_2030_tco2": 5522171.800557946,
+      "cap_2035_tco2": 4703461.032377897,
+      "cap_2045_tco2": 4703461.032377897,
+      "effectively_zero_gas_from_2030": false
     }
   },
   "trajectory_findings": {
     "conditional__eaas": {
       "ambition_level": "conditional",
       "financing_arm": "eaas",
-      "cap_tightening_tco2": 3902668.78,
-      "additional_solar_mw": 2389.329179999997,
-      "additional_cost_b_usd": 125.90492071595445,
+      "cap_tightening_tco2": -1619503.020557946,
+      "additional_solar_mw": -804.2107299999989,
+      "additional_cost_b_usd": -0.8737578973381787,
       "ndc3_infeasible": false,
-      "interpretation": "NDC 3.0 requires 2389 MW more solar than NDC 2.0 \u2014 a materially different investment trajectory."
+      "interpretation": "NDC 3.0 and NDC 2.0 require similar solar deployment (difference: -804 MW). Investment trajectories are not materially different."
     },
     "conditional__public_only": {
       "ambition_level": "conditional",
       "financing_arm": "public_only",
-      "cap_tightening_tco2": 3902668.78,
-      "additional_solar_mw": -1053.5902499999993,
-      "additional_cost_b_usd": 304.78394167019803,
+      "cap_tightening_tco2": -1619503.020557946,
+      "additional_solar_mw": -804.2107299999989,
+      "additional_cost_b_usd": -0.8737578973381805,
       "ndc3_infeasible": false,
-      "interpretation": "NDC 3.0 and NDC 2.0 require similar solar deployment (difference: -1054 MW). Investment trajectories are not materially different."
+      "interpretation": "NDC 3.0 and NDC 2.0 require similar solar deployment (difference: -804 MW). Investment trajectories are not materially different."
     },
     "unconditional__eaas": {
       "ambition_level": "unconditional",
       "financing_arm": "eaas",
-      "cap_tightening_tco2": 5890820.8,
-      "additional_solar_mw": 4385.968430000001,
-      "additional_cost_b_usd": 76.19118866042302,
+      "cap_tightening_tco2": -217037.38385253493,
+      "additional_solar_mw": 178.18445000000065,
+      "additional_cost_b_usd": -0.04456966480758286,
       "ndc3_infeasible": false,
-      "interpretation": "NDC 3.0 requires 4386 MW more solar than NDC 2.0 \u2014 a materially different investment trajectory."
+      "interpretation": "NDC 3.0 and NDC 2.0 require similar solar deployment (difference: 178 MW). Investment trajectories are not materially different."
     },
     "unconditional__public_only": {
       "ambition_level": "unconditional",
       "financing_arm": "public_only",
-      "cap_tightening_tco2": 5890820.8,
-      "additional_solar_mw": 672.9294699999973,
-      "additional_cost_b_usd": 748.1236283475289,
+      "cap_tightening_tco2": -217037.38385253493,
+      "additional_solar_mw": 178.18443000000116,
+      "additional_cost_b_usd": -5.353952243843956,
       "ndc3_infeasible": false,
-      "interpretation": "NDC 3.0 requires 673 MW more solar than NDC 2.0 \u2014 a materially different investment trajectory."
+      "interpretation": "NDC 3.0 and NDC 2.0 require similar solar deployment (difference: 178 MW). Investment trajectories are not materially different."
     }
   },
   "eaas_findings": {
     "unconditional": {
       "eaas_necessary_for_ndc3": false,
-      "eaas_cost_improvement_b_usd": 672.5132034819059,
-      "interpretation": "EaaS saves 672.51B USD vs public-only under NDC 3.0 unconditional."
+      "eaas_cost_improvement_b_usd": 27.873327007394987,
+      "interpretation": "EaaS saves 27.87B USD vs public-only under NDC 3.0 unconditional."
     },
     "conditional": {
       "eaas_necessary_for_ndc3": false,
-      "eaas_cost_improvement_b_usd": 178.8790209542436,
-      "interpretation": "EaaS saves 178.88B USD vs public-only under NDC 3.0 conditional."
+      "eaas_cost_improvement_b_usd": -1.9073486328125e-15,
+      "interpretation": "EaaS saves -0.00B USD vs public-only under NDC 3.0 conditional."
     }
   }
 }

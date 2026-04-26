@@ -42,6 +42,8 @@ If the claim holds even at unconstrained budget (i.e. even with unlimited
 public capital, NDC compliance forces emissions reductions that crowd out
 gas, worsening access), then EaaS is NECESSARY.
 This is the distinction FIN-3 settles.
+FIN-3 is explicitly scoped to NDC 3.0 because the capital frontier question is most stringent there;
+the NDC 2.0 equivalent would show a less-binding constraint.
 
 OUTPUTS
 --------

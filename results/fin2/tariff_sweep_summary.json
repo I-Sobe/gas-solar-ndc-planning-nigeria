@@ -1,4 +1,22 @@
 {
+  "ndc2_unconditional": {
+    "required_margin": 1.1,
+    "analytical_threshold_usd_per_twh": 71177537.44333114,
+    "analytical_threshold_m_usd_per_twh": 71.17753744333113,
+    "empirical_threshold_usd_per_twh": 30000000.0,
+    "empirical_threshold_m_usd_per_twh": 30.0,
+    "max_subsidy_npv_usd": 0.0,
+    "max_subsidy_at_tariff_m": 30.0
+  },
+  "ndc2_conditional": {
+    "required_margin": 1.05,
+    "analytical_threshold_usd_per_twh": 67942194.83227062,
+    "analytical_threshold_m_usd_per_twh": 67.94219483227062,
+    "empirical_threshold_usd_per_twh": 30000000.0,
+    "empirical_threshold_m_usd_per_twh": 30.0,
+    "max_subsidy_npv_usd": 0.0,
+    "max_subsidy_at_tariff_m": 30.0
+  },
   "baseline_no_policy": {
     "required_margin": 1.1,
     "analytical_threshold_usd_per_twh": null,

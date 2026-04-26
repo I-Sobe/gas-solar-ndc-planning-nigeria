@@ -132,6 +132,10 @@ POLICY_CONFIGS = [
         "ndc_scenario": None,
     },
     {
+        "policy_label": "ndc2_unconditional",
+        "ndc_scenario": "ndc2_unconditional",
+    },
+    {
         "policy_label": "ndc3_unconditional",
         "ndc_scenario": "ndc3_unconditional",
     },
