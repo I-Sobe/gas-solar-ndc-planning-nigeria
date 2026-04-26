@@ -137,6 +137,22 @@ def main():
                 "gas_available_twh_th": round(v, 6),  # keep precision in file
             })
 
+    # ── Auto-compute flat level-equivalents for GAS-3 ─────────
+    structural_scenarios = ["downside", "upside", "shock_recovery"]
+    for struct_name in structural_scenarios:
+        flat_name = f"flat_{struct_name}"
+        struct_rows = [r for r in rows if r["scenario"] == struct_name]
+        if struct_rows:
+            mean_val = sum(r["gas_available_twh_th"] for r in struct_rows) / len(struct_rows)
+            for y in years:
+                rows.append({
+                    "year": y,
+                    "scenario": flat_name,
+                    "gas_available_twh_th": round(mean_val, 6),
+                })
+            print(f"  {flat_name}: level = {mean_val:.6f} TWh_th "
+                  f"(cumulative = {mean_val * len(years):.2f} TWh_th)")
+
     with open(out_csv, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["year", "scenario", "gas_available_twh_th"])
         writer.writeheader()

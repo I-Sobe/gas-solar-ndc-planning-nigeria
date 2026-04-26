@@ -9,8 +9,8 @@
   "ndc2_unconditional": {
     "required_margin": 1.1,
     "eaas_always_relieves_gas": false,
-    "max_relief_pct": 78.2485780561597,
-    "downside_gas_relief_pct": 78.2485780561597,
+    "max_relief_pct": 75.87087218842919,
+    "downside_gas_relief_pct": 75.87087218842919,
     "interpretation": "Positive relief means EaaS reduces gas scarcity rent. Relief in downside scenario is the key thesis claim: private capital provides gas relief that public-only cannot."
   },
   "ndc2_conditional": {
@@ -23,15 +23,15 @@
   "ndc3_unconditional": {
     "required_margin": 1.1,
     "eaas_always_relieves_gas": false,
-    "max_relief_pct": 80.36475669416696,
-    "downside_gas_relief_pct": 80.36475669416696,
+    "max_relief_pct": 70.13921744406582,
+    "downside_gas_relief_pct": 70.13921744406582,
     "interpretation": "Positive relief means EaaS reduces gas scarcity rent. Relief in downside scenario is the key thesis claim: private capital provides gas relief that public-only cannot."
   },
   "ndc3_conditional": {
     "required_margin": 1.05,
     "eaas_always_relieves_gas": false,
-    "max_relief_pct": 53.207486564298534,
-    "downside_gas_relief_pct": 53.207486564298534,
+    "max_relief_pct": 40.581552732647694,
+    "downside_gas_relief_pct": 40.581552732647694,
     "interpretation": "Positive relief means EaaS reduces gas scarcity rent. Relief in downside scenario is the key thesis claim: private capital provides gas relief that public-only cannot."
   }
 }

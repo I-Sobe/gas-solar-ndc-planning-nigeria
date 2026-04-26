@@ -84,12 +84,12 @@
       "shift_by_gas_case": [
         {
           "gas_case": "baseline",
-          "pub_threshold_eps": 0.15,
+          "pub_threshold_eps": 0.1,
           "eaas_threshold_eps": 0.05,
-          "frontier_shift_eps": 0.09999999999999999,
+          "frontier_shift_eps": 0.05,
           "eaas_strictly_better": true,
           "eaas_necessary": false,
-          "interpretation": "EaaS improves frontier by 0.10 eps units."
+          "interpretation": "EaaS improves frontier by 0.05 eps units."
         },
         {
           "gas_case": "downside",
@@ -102,21 +102,21 @@
         },
         {
           "gas_case": "shock_recovery",
-          "pub_threshold_eps": 0.15,
+          "pub_threshold_eps": 0.1,
           "eaas_threshold_eps": 0.05,
-          "frontier_shift_eps": 0.09999999999999999,
+          "frontier_shift_eps": 0.05,
           "eaas_strictly_better": true,
           "eaas_necessary": false,
-          "interpretation": "EaaS improves frontier by 0.10 eps units."
+          "interpretation": "EaaS improves frontier by 0.05 eps units."
         },
         {
           "gas_case": "upside",
-          "pub_threshold_eps": 0.15,
+          "pub_threshold_eps": 0.1,
           "eaas_threshold_eps": 0.05,
-          "frontier_shift_eps": 0.09999999999999999,
+          "frontier_shift_eps": 0.05,
           "eaas_strictly_better": true,
           "eaas_necessary": false,
-          "interpretation": "EaaS improves frontier by 0.10 eps units."
+          "interpretation": "EaaS improves frontier by 0.05 eps units."
         }
       ]
     },

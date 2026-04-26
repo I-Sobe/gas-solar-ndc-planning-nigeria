@@ -1,0 +1,16 @@
+{
+  "NDC3 uncond": {
+    "prob_eaas_reduces_unserved": 1.0,
+    "prob_eaas_reduces_cost": 1.0,
+    "mean_savings_usd": 504211342822.0,
+    "mean_savings_pct": 85.8,
+    "n_draws": 500
+  },
+  "NDC3 cond": {
+    "prob_eaas_reduces_unserved": 1.0,
+    "prob_eaas_reduces_cost": 1.0,
+    "mean_savings_usd": 112820738533.0,
+    "mean_savings_pct": 73.3,
+    "n_draws": 500
+  }
+}

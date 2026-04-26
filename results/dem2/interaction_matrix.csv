@@ -5,21 +5,21 @@ baseline,eaas,no_policy,0.0,0.0,0.0,False,Demand growth and gas scarcity are app
 baseline,public_only,ndc2_unconditional,0.0,0.0,0.0,False,Demand growth and gas scarcity are approximately independent.
 baseline,public_only,ndc3_unconditional,0.0,0.0,0.0,False,Demand growth and gas scarcity are approximately independent.
 baseline,public_only,no_policy,0.0,0.0,0.0,False,Demand growth and gas scarcity are approximately independent.
-downside,eaas,ndc2_unconditional,245740909.14040565,245740906.39730835,-2.7430973052978516,False,Demand growth and gas scarcity are approximately independent.
-downside,eaas,ndc3_unconditional,213457920.81612396,213457927.13738823,6.321264266967773,True,Demand growth and gas scarcity are approximately independent.
-downside,eaas,no_policy,1088604407.1962109,1088604373.172968,-34.02324295043945,False,Demand growth and gas scarcity are approximately independent.
-downside,public_only,ndc2_unconditional,245740909.14040565,48557934021.9881,48312193112.847694,True,Demand growth AMPLIFIES gas scarcity cost (super-additive).
-downside,public_only,ndc3_unconditional,213457920.81612587,41160068969.20282,40946611048.386696,True,Demand growth AMPLIFIES gas scarcity cost (super-additive).
-downside,public_only,no_policy,1088604407.1962109,207167714788.6783,206079110381.48212,True,Demand growth AMPLIFIES gas scarcity cost (super-additive).
+downside,eaas,ndc2_unconditional,211288125.50842094,211288111.6855755,-13.822845458984375,False,Demand growth and gas scarcity are approximately independent.
+downside,eaas,ndc3_unconditional,157837885.53504372,157837872.69218063,-12.842863082885742,False,Demand growth and gas scarcity are approximately independent.
+downside,eaas,no_policy,980228003.2926512,980227944.9227257,-58.3699254989624,False,Demand growth and gas scarcity are approximately independent.
+downside,public_only,ndc2_unconditional,211288125.50842285,40548934724.374146,40337646598.86572,True,Demand growth AMPLIFIES gas scarcity cost (super-additive).
+downside,public_only,ndc3_unconditional,157837885.53504372,28163159364.269836,28005321478.734795,True,Demand growth AMPLIFIES gas scarcity cost (super-additive).
+downside,public_only,no_policy,980228003.2926512,186608816347.84363,185628588344.55096,True,Demand growth AMPLIFIES gas scarcity cost (super-additive).
 shock_recovery,eaas,ndc2_unconditional,0.0,0.0,0.0,False,Demand growth and gas scarcity are approximately independent.
 shock_recovery,eaas,ndc3_unconditional,0.0,0.0,0.0,False,Demand growth and gas scarcity are approximately independent.
-shock_recovery,eaas,no_policy,-20950088.682157516,-51688151.30921173,-30738062.627054214,False,Demand growth and gas scarcity are approximately independent.
+shock_recovery,eaas,no_policy,327473450.26081944,327473415.2912636,-34.96955585479736,False,Demand growth and gas scarcity are approximately independent.
 shock_recovery,public_only,ndc2_unconditional,0.0,0.0,0.0,False,Demand growth and gas scarcity are approximately independent.
 shock_recovery,public_only,ndc3_unconditional,0.0,0.0,0.0,False,Demand growth and gas scarcity are approximately independent.
-shock_recovery,public_only,no_policy,-20950088.682157516,-15627837786.853546,-15606887698.171389,False,Demand growth and gas scarcity are approximately independent.
+shock_recovery,public_only,no_policy,327473450.26081944,57612050337.44498,57284576887.18416,True,Demand growth AMPLIFIES gas scarcity cost (super-additive).
 upside,eaas,ndc2_unconditional,0.0,0.0,0.0,False,Demand growth and gas scarcity are approximately independent.
 upside,eaas,ndc3_unconditional,0.0,0.0,0.0,False,Demand growth and gas scarcity are approximately independent.
-upside,eaas,no_policy,-367988173.1692581,-374964908.1558342,-6976734.98657608,False,Demand growth and gas scarcity are approximately independent.
+upside,eaas,no_policy,-439153896.4681883,-439153908.4290848,-11.960896492004395,False,Demand growth and gas scarcity are approximately independent.
 upside,public_only,ndc2_unconditional,0.0,0.0,0.0,False,Demand growth and gas scarcity are approximately independent.
 upside,public_only,ndc3_unconditional,0.0,0.0,0.0,False,Demand growth and gas scarcity are approximately independent.
-upside,public_only,no_policy,-367988173.1692581,-73835701309.67722,-73467713136.50797,False,Demand growth and gas scarcity are approximately independent.
+upside,public_only,no_policy,-439153896.4681883,-76943136541.22777,-76503982644.75958,False,Demand growth and gas scarcity are approximately independent.

@@ -7,53 +7,55 @@
       2031,
       2032,
       2033,
-      2034
+      2034,
+      2035,
+      2036
     ],
-    "shock_coincidence_note": "NDC cap binds in the same years as gas disruption (5 years): [2030, 2031, 2032, 2033, 2034]. This is the dual-constraint squeeze \u2014 less gas AND binding emissions cap.",
+    "shock_coincidence_note": "NDC cap binds in the same years as gas disruption (7 years): [2030, 2031, 2032, 2033, 2034, 2035, 2036]. This is the dual-constraint squeeze \u2014 less gas AND binding emissions cap.",
     "regimes": {
       "baseline": {
         "feasible": true,
-        "npv_cost_b_usd": 49.352276295261774,
+        "npv_cost_b_usd": 43.89421427306728,
         "cost_premium_vs_baseline_pct": 0.0,
         "shape_cost_premium_pct": null,
         "shape_cost_premium_usd": null,
         "carbon_binding_years": 20,
-        "carbon_shadow_mean": 3671.761640952381,
+        "carbon_shadow_mean": 2940.041287619048,
         "gas_shadow_binding_years": 1,
-        "cumulative_unserved_twh": 5.28948268
+        "cumulative_unserved_twh": 3.54470717
       },
       "downside": {
         "feasible": true,
-        "npv_cost_b_usd": 87.13445586148555,
-        "cost_premium_vs_baseline_pct": 76.55610318799253,
-        "shape_cost_premium_pct": -57.05739203581545,
-        "shape_cost_premium_usd": -115774636045.92342,
-        "carbon_binding_years": 7,
-        "carbon_shadow_mean": 5105.034323809525,
-        "gas_shadow_binding_years": 14,
-        "cumulative_unserved_twh": 17.91618458
+        "npv_cost_b_usd": 63.03294509449136,
+        "cost_premium_vs_baseline_pct": 43.60194421606786,
+        "shape_cost_premium_pct": -57.29687435091765,
+        "shape_cost_premium_usd": -84574388411.89304,
+        "carbon_binding_years": 8,
+        "carbon_shadow_mean": 4938.510628571429,
+        "gas_shadow_binding_years": 13,
+        "cumulative_unserved_twh": 14.81325753
       },
       "upside": {
         "feasible": true,
-        "npv_cost_b_usd": 49.352276295261774,
+        "npv_cost_b_usd": 43.89421427306728,
         "cost_premium_vs_baseline_pct": 0.0,
-        "shape_cost_premium_pct": 0.1369423348005128,
-        "shape_cost_premium_usd": 67491734.67866516,
+        "shape_cost_premium_pct": 0.15399447923490978,
+        "shape_cost_premium_usd": 67490734.67866516,
         "carbon_binding_years": 20,
-        "carbon_shadow_mean": 3671.761640952381,
+        "carbon_shadow_mean": 2940.041287619048,
         "gas_shadow_binding_years": 1,
-        "cumulative_unserved_twh": 5.28948268
+        "cumulative_unserved_twh": 3.54470717
       },
       "shock_recovery": {
         "feasible": true,
-        "npv_cost_b_usd": 49.352276295261774,
+        "npv_cost_b_usd": 43.89421427306728,
         "cost_premium_vs_baseline_pct": 0.0,
-        "shape_cost_premium_pct": 0.1369423348005128,
-        "shape_cost_premium_usd": 67491734.67866516,
+        "shape_cost_premium_pct": -0.38758838314815,
+        "shape_cost_premium_usd": -170790840.85520172,
         "carbon_binding_years": 20,
-        "carbon_shadow_mean": 3671.761640952381,
+        "carbon_shadow_mean": 2940.041287619048,
         "gas_shadow_binding_years": 1,
-        "cumulative_unserved_twh": 5.28948268
+        "cumulative_unserved_twh": 3.54470717
       }
     }
   },
@@ -65,53 +67,55 @@
       2031,
       2032,
       2033,
-      2034
+      2034,
+      2035,
+      2036
     ],
-    "shock_coincidence_note": "NDC cap binds in the same years as gas disruption (5 years): [2030, 2031, 2032, 2033, 2034]. This is the dual-constraint squeeze \u2014 less gas AND binding emissions cap.",
+    "shock_coincidence_note": "NDC cap binds in the same years as gas disruption (7 years): [2030, 2031, 2032, 2033, 2034, 2035, 2036]. This is the dual-constraint squeeze \u2014 less gas AND binding emissions cap.",
     "regimes": {
       "baseline": {
         "feasible": true,
-        "npv_cost_b_usd": 79.73174476623264,
+        "npv_cost_b_usd": 72.23742568964816,
         "cost_premium_vs_baseline_pct": 0.0,
         "shape_cost_premium_pct": null,
         "shape_cost_premium_usd": null,
         "carbon_binding_years": 20,
         "carbon_shadow_mean": 5496.077042857143,
         "gas_shadow_binding_years": 1,
-        "cumulative_unserved_twh": 8.704887189999999
+        "cumulative_unserved_twh": 7.5833571300000004
       },
       "downside": {
         "feasible": true,
-        "npv_cost_b_usd": 79.73174476623264,
+        "npv_cost_b_usd": 72.23742568964816,
         "cost_premium_vs_baseline_pct": 0.0,
-        "shape_cost_premium_pct": -49.26401149562544,
-        "shape_cost_premium_usd": -77418528869.1337,
+        "shape_cost_premium_pct": -44.64168656111623,
+        "shape_cost_premium_usd": -58253229104.95488,
         "carbon_binding_years": 20,
         "carbon_shadow_mean": 5496.077042857143,
         "gas_shadow_binding_years": 1,
-        "cumulative_unserved_twh": 8.704887189999999
+        "cumulative_unserved_twh": 7.5833571300000004
       },
       "upside": {
         "feasible": true,
-        "npv_cost_b_usd": 79.73174476623264,
+        "npv_cost_b_usd": 72.23742568964816,
         "cost_premium_vs_baseline_pct": 0.0,
-        "shape_cost_premium_pct": 0.08472022533360422,
+        "shape_cost_premium_pct": 0.09351780025290961,
         "shape_cost_premium_usd": 67491734.67866516,
         "carbon_binding_years": 20,
         "carbon_shadow_mean": 5496.077042857143,
         "gas_shadow_binding_years": 1,
-        "cumulative_unserved_twh": 8.704887189999999
+        "cumulative_unserved_twh": 7.5833571300000004
       },
       "shock_recovery": {
         "feasible": true,
-        "npv_cost_b_usd": 79.73174476623264,
+        "npv_cost_b_usd": 72.23742568964816,
         "cost_premium_vs_baseline_pct": 0.0,
-        "shape_cost_premium_pct": 0.08472022533360422,
-        "shape_cost_premium_usd": 67491734.67866516,
+        "shape_cost_premium_pct": -0.23587218279743868,
+        "shape_cost_premium_usd": -170790840.8551941,
         "carbon_binding_years": 20,
         "carbon_shadow_mean": 5496.077042857143,
         "gas_shadow_binding_years": 1,
-        "cumulative_unserved_twh": 8.704887189999999
+        "cumulative_unserved_twh": 7.5833571300000004
       }
     }
   },
@@ -123,9 +127,11 @@
       2031,
       2032,
       2033,
-      2034
+      2034,
+      2035,
+      2036
     ],
-    "shock_coincidence_note": "NDC cap binds in the same years as gas disruption (5 years): [2030, 2031, 2032, 2033, 2034]. This is the dual-constraint squeeze \u2014 less gas AND binding emissions cap.",
+    "shock_coincidence_note": "NDC cap binds in the same years as gas disruption (7 years): [2030, 2031, 2032, 2033, 2034, 2035, 2036]. This is the dual-constraint squeeze \u2014 less gas AND binding emissions cap.",
     "regimes": {
       "baseline": {
         "feasible": true,
@@ -140,14 +146,14 @@
       },
       "downside": {
         "feasible": true,
-        "npv_cost_b_usd": 74.77097448091655,
-        "cost_premium_vs_baseline_pct": 63.421648107478354,
-        "shape_cost_premium_pct": -63.15050558945092,
-        "shape_cost_premium_usd": -128138117426.49242,
-        "carbon_binding_years": 6,
-        "carbon_shadow_mean": 4645.075476190476,
-        "gas_shadow_binding_years": 15,
-        "cumulative_unserved_twh": 16.446256036999998
+        "npv_cost_b_usd": 63.39293750286984,
+        "cost_premium_vs_baseline_pct": 38.553474754263654,
+        "shape_cost_premium_pct": -58.02676991124803,
+        "shape_cost_premium_usd": -87638892472.6315,
+        "carbon_binding_years": 10,
+        "carbon_shadow_mean": 5891.317176190475,
+        "gas_shadow_binding_years": 11,
+        "cumulative_unserved_twh": 15.282253520000001
       },
       "upside": {
         "feasible": true,
@@ -164,8 +170,8 @@
         "feasible": true,
         "npv_cost_b_usd": 45.75340864983906,
         "cost_premium_vs_baseline_pct": 0.0,
-        "shape_cost_premium_pct": 0.14772984594792873,
-        "shape_cost_premium_usd": 67491734.67866516,
+        "shape_cost_premium_pct": -0.37189726277059987,
+        "shape_cost_premium_usd": -170790840.85520172,
         "carbon_binding_years": 20,
         "carbon_shadow_mean": 3671.761640952381,
         "gas_shadow_binding_years": 1,
@@ -181,9 +187,11 @@
       2031,
       2032,
       2033,
-      2034
+      2034,
+      2035,
+      2036
     ],
-    "shock_coincidence_note": "NDC cap binds in the same years as gas disruption (5 years): [2030, 2031, 2032, 2033, 2034]. This is the dual-constraint squeeze \u2014 less gas AND binding emissions cap.",
+    "shock_coincidence_note": "NDC cap binds in the same years as gas disruption (7 years): [2030, 2031, 2032, 2033, 2034, 2035, 2036]. This is the dual-constraint squeeze \u2014 less gas AND binding emissions cap.",
     "regimes": {
       "baseline": {
         "feasible": true,
@@ -198,13 +206,13 @@
       },
       "downside": {
         "feasible": true,
-        "npv_cost_b_usd": 29.72591296246303,
-        "cost_premium_vs_baseline_pct": 0.2217328646073352,
-        "shape_cost_premium_pct": -76.26955442958759,
-        "shape_cost_premium_usd": -95538961960.60155,
-        "carbon_binding_years": 14,
-        "carbon_shadow_mean": 1058.2807839761906,
-        "gas_shadow_binding_years": 7,
+        "npv_cost_b_usd": 29.700084458104985,
+        "cost_premium_vs_baseline_pct": 0.13465135201146114,
+        "shape_cost_premium_pct": -70.97811589297622,
+        "shape_cost_premium_usd": -72636773991.81583,
+        "carbon_binding_years": 16,
+        "carbon_shadow_mean": 1058.836016452381,
+        "gas_shadow_binding_years": 5,
         "cumulative_unserved_twh": 1.81984802
       },
       "upside": {
@@ -222,8 +230,8 @@
         "feasible": true,
         "npv_cost_b_usd": 29.660146669605776,
         "cost_premium_vs_baseline_pct": 0.0,
-        "shape_cost_premium_pct": 0.22806921118458745,
-        "shape_cost_premium_usd": 67491734.67866516,
+        "shape_cost_premium_pct": -0.5725292434919605,
+        "shape_cost_premium_usd": -170790840.85520172,
         "carbon_binding_years": 20,
         "carbon_shadow_mean": 1063.4494621952383,
         "gas_shadow_binding_years": 1,

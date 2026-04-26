@@ -4,59 +4,25 @@ anchor:
 
 cases:
   downside:
-    type: exponential_decline
-    decline_rate: 0.03          # 3% annual decline reflects mature gas basin depletion
-                                # consistent with Niger Delta post-plateau production trends.
-                                # Literature on mature gas reservoirs commonly reports
-                                # 3–8% aggregate decline absent major reinvestment.
+    type: lag_then_decline
+    lag_years: 2
+    decline_rate: 0.03
 
   baseline:
     type: drift
-    annual_drift: 0.0
+    annual_drift: 0.005
 
   upside:
-    type: lag_ramp_uplift
-    lag_years: 5                # Development and infrastructure lag typical of upstream projects
-                                # (FID to first gas often 4-6 years in NIgeria)
-    ramp_years: 5               # Gradual ramp-up reflecting phased compression,
-                                # gathering system expansion, and well tie-ins.
-    uplift_fraction: 0.20       # 20% uplift approximates incremental capacity from:
-                                # - Associated gas capture improvements
-                                # - DGDO enforcement
-                                # - Pipeline rehabilitation
-  
+    type: lag_then_drift
+    lag_years: 2
+    annual_drift: 0.02
+
   shock_recovery:
     type: shock_recovery
     baseline_end_year: 2029
     shock_start_year: 2030
     shock_end_year: 2033
-    shock_decline_rate: 0.03        # Reflects disruption from vandalism, outages, or pipeline failure.
+    shock_decline_rate: 0.03
     recovery_start_year: 2034
-    recovery_ramp_years: 5          # Historical repair + stabilization perios often span 3-5 years.
-    recovery_uplift_fraction: 0.20  # Recovery capped at moderate improvement, not structural doubling
-
-
-  flat_downside:
-    type: flat_level
-    level_twh_th: 30.496258
-    # Mean of the downside scenario (3% exponential decline) over 2025-2045.
-    # Cumulative gas = 640.42 TWh_th, identical to downside.
-    # Used in GAS-3 to isolate the shape effect of exponential decline
-    # independently of the reduced level. Any cost/feasibility difference
-    # between downside and flat_downside is attributable to shape alone.
-
-  flat_upside:
-    type: flat_level
-    level_twh_th: 45.694095
-    # Mean of the upside scenario (lag-ramp-uplift) over 2025-2045.
-    # Cumulative gas = 959.58 TWh_th, identical to upside.
-    # Used in GAS-3 to isolate the shape effect of delayed ramp-up
-    # independently of the increased level.
-
-  flat_shock_recovery:
-    type: flat_level
-    level_twh_th: 43.524500
-    # Mean of the shock_recovery scenario over 2025-2045.
-    # Cumulative gas = 914.01 TWh_th, identical to shock_recovery.
-    # Used in GAS-3 to isolate the shape effect of disruption-and-recovery
-    # independently of the slightly elevated mean supply level.
+    recovery_ramp_years: 5
+    recovery_uplift_fraction: 0.05

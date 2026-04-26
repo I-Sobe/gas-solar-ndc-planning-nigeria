@@ -333,16 +333,14 @@ thesis-repo/
 │   └── plot_system_diagnostics.py                  # Visualise system evolution + shadow prices|
 │
 │
-├── notebooks/                                      # Planned - not yet populated
-│   ├── 01_data_validation.ipynb
-│   ├── 02_model_sanity_checks.ipynb
-│   ├── 03_baseline_results.ipynb
+├── notebooks/                                                # Planned - not yet populated
+│   ├── 01_data_validation.ipynb                              # Proves the model is reality based
+│   ├── 02_cost_decomposition_and_eaas_mechanism.ipynb        # central thesis figure factory
+│   ├── 03_shadow_price_analysis.ipynb                        # Dual-variable deep dive
 │   ├── 04_pareto_analysis.ipynb
-│   ├── 05_shadow_price_analysis.ipynb
-│   ├── 06_reliability_analysis.ipynb
-│   ├── 07_eaas_analysis.ipynb
-│   ├── 08_stochastic_results.ipynb
-│   ├── 09_policy_synthesis.ipynb
+│   ├── 04_gas_regime_and_shape_decomposition.ipynb           # GAS-1, GAS-2, GAS-3 result presentation
+│   ├── 06_monte_carlo_uncertainty.ipynb                      # Monte Carlo results presentation
+│   ├── 07_policy_synthesis_and_recommendations.ipynb
 │   └── 99_appendix_figures.ipynb│
 |
 |

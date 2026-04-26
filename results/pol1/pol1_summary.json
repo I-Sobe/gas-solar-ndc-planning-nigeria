@@ -17,18 +17,18 @@
       "ndc_version": "NDC 2.0",
       "ambition_level": "unconditional",
       "cap_2025_tco2": 7363525.999999999,
-      "cap_2030_tco2": 5890820.8,
-      "cap_2035_tco2": 5890820.8,
-      "cap_2045_tco2": 5890820.8,
+      "cap_2030_tco2": 6039571.4140800005,
+      "cap_2035_tco2": 6039571.4140800005,
+      "cap_2045_tco2": 6039571.4140800005,
       "effectively_zero_gas_from_2030": false
     },
     "ndc2_conditional": {
       "ndc_version": "NDC 2.0",
       "ambition_level": "conditional",
       "cap_2025_tco2": 7363525.999999999,
-      "cap_2030_tco2": 3902668.78,
-      "cap_2035_tco2": 3902668.78,
-      "cap_2045_tco2": 3902668.78,
+      "cap_2030_tco2": 4001216.061828,
+      "cap_2035_tco2": 4001216.061828,
+      "cap_2045_tco2": 4001216.061828,
       "effectively_zero_gas_from_2030": false
     },
     "ndc3_unconditional": {
@@ -54,38 +54,38 @@
     "conditional__eaas": {
       "ambition_level": "conditional",
       "financing_arm": "eaas",
-      "cap_tightening_tco2": -1619503.020557946,
-      "additional_solar_mw": -804.2107299999989,
-      "additional_cost_b_usd": -0.8737578973381787,
+      "cap_tightening_tco2": -1520955.7387299458,
+      "additional_solar_mw": -705.2427300000018,
+      "additional_cost_b_usd": -0.8079001701023044,
       "ndc3_infeasible": false,
-      "interpretation": "NDC 3.0 and NDC 2.0 require similar solar deployment (difference: -804 MW). Investment trajectories are not materially different."
+      "interpretation": "NDC 3.0 and NDC 2.0 require similar solar deployment (difference: -705 MW). Investment trajectories are not materially different."
     },
     "conditional__public_only": {
       "ambition_level": "conditional",
       "financing_arm": "public_only",
-      "cap_tightening_tco2": -1619503.020557946,
-      "additional_solar_mw": -804.2107299999989,
-      "additional_cost_b_usd": -0.8737578973381805,
+      "cap_tightening_tco2": -1520955.7387299458,
+      "additional_solar_mw": -705.2427300000018,
+      "additional_cost_b_usd": -0.8079001701023064,
       "ndc3_infeasible": false,
-      "interpretation": "NDC 3.0 and NDC 2.0 require similar solar deployment (difference: -804 MW). Investment trajectories are not materially different."
+      "interpretation": "NDC 3.0 and NDC 2.0 require similar solar deployment (difference: -705 MW). Investment trajectories are not materially different."
     },
     "unconditional__eaas": {
       "ambition_level": "unconditional",
       "financing_arm": "eaas",
-      "cap_tightening_tco2": -217037.38385253493,
-      "additional_solar_mw": 178.18445000000065,
-      "additional_cost_b_usd": -0.04456966480758286,
+      "cap_tightening_tco2": -68286.76977253426,
+      "additional_solar_mw": 327.5700700000016,
+      "additional_cost_b_usd": 0.05483821412416077,
       "ndc3_infeasible": false,
-      "interpretation": "NDC 3.0 and NDC 2.0 require similar solar deployment (difference: 178 MW). Investment trajectories are not materially different."
+      "interpretation": "NDC 3.0 and NDC 2.0 require similar solar deployment (difference: 328 MW). Investment trajectories are not materially different."
     },
     "unconditional__public_only": {
       "ambition_level": "unconditional",
       "financing_arm": "public_only",
-      "cap_tightening_tco2": -217037.38385253493,
-      "additional_solar_mw": 178.18443000000116,
-      "additional_cost_b_usd": -5.353952243843956,
+      "cap_tightening_tco2": -68286.76977253426,
+      "additional_solar_mw": 327.57004999999845,
+      "additional_cost_b_usd": 11.0073259588878,
       "ndc3_infeasible": false,
-      "interpretation": "NDC 3.0 and NDC 2.0 require similar solar deployment (difference: 178 MW). Investment trajectories are not materially different."
+      "interpretation": "NDC 3.0 and NDC 2.0 require similar solar deployment (difference: 328 MW). Investment trajectories are not materially different."
     }
   },
   "eaas_findings": {

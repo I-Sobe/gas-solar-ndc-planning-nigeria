@@ -32,21 +32,21 @@
         "amplifies": false
       },
       "downside": {
-        "gas_premium_low": 1088604407.1962109,
-        "gas_premium_high": 207167714788.6783,
-        "interaction": 206079110381.48212,
+        "gas_premium_low": 980228003.2926512,
+        "gas_premium_high": 186608816347.84363,
+        "interaction": 185628588344.55096,
         "amplifies": true
       },
       "shock_recovery": {
-        "gas_premium_low": -20950088.682157516,
-        "gas_premium_high": -15627837786.853546,
-        "interaction": -15606887698.171389,
-        "amplifies": false
+        "gas_premium_low": 327473450.26081944,
+        "gas_premium_high": 57612050337.44498,
+        "interaction": 57284576887.18416,
+        "amplifies": true
       },
       "upside": {
-        "gas_premium_low": -367988173.1692581,
-        "gas_premium_high": -73835701309.67722,
-        "interaction": -73467713136.50797,
+        "gas_premium_low": -439153896.4681883,
+        "gas_premium_high": -76943136541.22777,
+        "interaction": -76503982644.75958,
         "amplifies": false
       }
     },
@@ -58,9 +58,9 @@
         "amplifies": false
       },
       "downside": {
-        "gas_premium_low": 245740909.14040565,
-        "gas_premium_high": 48557934021.9881,
-        "interaction": 48312193112.847694,
+        "gas_premium_low": 211288125.50842285,
+        "gas_premium_high": 40548934724.374146,
+        "interaction": 40337646598.86572,
         "amplifies": true
       },
       "shock_recovery": {
@@ -84,9 +84,9 @@
         "amplifies": false
       },
       "downside": {
-        "gas_premium_low": 213457920.81612587,
-        "gas_premium_high": 41160068969.20282,
-        "interaction": 40946611048.386696,
+        "gas_premium_low": 157837885.53504372,
+        "gas_premium_high": 28163159364.269836,
+        "interaction": 28005321478.734795,
         "amplifies": true
       },
       "shock_recovery": {
@@ -111,7 +111,7 @@
         "shock_recovery": false,
         "upside": true
       },
-      "max_eaas_value_usd": 393794128374.12555,
+      "max_eaas_value_usd": 334737198572.84503,
       "max_eaas_value_at_demand_case": "high"
     },
     "ndc2_unconditional": {
@@ -121,7 +121,7 @@
         "shock_recovery": true,
         "upside": true
       },
-      "max_eaas_value_usd": 417910288104.6545,
+      "max_eaas_value_usd": 390897337319.80664,
       "max_eaas_value_at_demand_case": "high"
     },
     "ndc3_unconditional": {
@@ -131,7 +131,7 @@
         "shock_recovery": true,
         "upside": true
       },
-      "max_eaas_value_usd": 404560497495.97296,
+      "max_eaas_value_usd": 391619207945.48517,
       "max_eaas_value_at_demand_case": "high"
     }
   }

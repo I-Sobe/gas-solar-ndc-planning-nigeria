@@ -12,7 +12,7 @@
       "2028": 1000.0,
       "2029": 1000.0,
       "2030": 1000.0,
-      "2031": 757.85635,
+      "2031": 658.88838,
       "2032": 493.88742,
       "2033": 513.64291,
       "2034": 534.18863,
@@ -29,9 +29,9 @@
       "2045": 822.35885
     },
     "storage_capacity_mwh": 17570.057099999998,
-    "solar_total_built_mw": 15792.00112
+    "solar_total_built_mw": 15693.03315
   },
-  "npv_total_cost_usd": 62364282525.03957,
-  "cumulative_unserved_twh": 5.83169721,
-  "actual_emissions_tco2_total": 92335770.41314004
+  "npv_total_cost_usd": 57348883545.03447,
+  "cumulative_unserved_twh": 5.12946006,
+  "actual_emissions_tco2_total": 94109621.83293998
 }
