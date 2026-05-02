@@ -1,17 +1,18 @@
 """
-17_run_monte_carlo.py  —  Monte Carlo Uncertainty Analysis
-============================================================
+17_run_monte_carlo.py  —  LP-Based Monte Carlo Uncertainty Analysis
+=====================================================================
 
-For each of four headline cases, solves the LP once to obtain the
-optimal capacity plan, then replays that plan under N draws from the
-joint uncertainty space (demand growth × gas regime) using deterministic
-dispatch. This produces cost, unserved energy, and solar utilisation
+For each of four headline cases, re-solves the LP under N draws from
+the joint uncertainty space (demand growth × gas regime). Produces
+properly discounted cost, LCOE, unserved energy, and solar deployment
 distributions.
 
-This approach is appropriate because the capacity plan is budget-
-constrained and therefore nearly invariant to demand/gas draws — the
-cost variance comes from VoLL penalties on unserved energy, which
-the deterministic replay captures correctly.
+Unlike the deterministic replay approach, this script re-optimises the
+full LP for each draw, ensuring:
+    - Capacity plans adapt to each gas/demand realisation
+    - Cost accounting uses discounted NPV (consistent with deterministic results)
+    - LCOE is properly computed as NPV_cost / NPV_generation
+    - VoLL decomposition is available per draw
 
 UNCERTAINTY DIMENSIONS
 -----------------------
@@ -31,7 +32,6 @@ RUN SEQUENCE
     python scripts/17_run_monte_carlo.py
 """
 
-import copy
 import json
 import sys
 from pathlib import Path
@@ -47,15 +47,11 @@ sys.path.append(str(ROOT))
 from src.io import load_econ, load_solar_capex_by_year
 from src.scenarios import load_scenario, gas_probability_weights
 from src.optimize_model import build_model, solve_model
-from src.optimize_experiments import (
-    extract_planning_diagnostics,
-    run_deterministic_scenario,
-)
+from src.optimize_experiments import extract_planning_diagnostics
 from src.utils import json_safe
-from src.stochastic import compute_risk_metrics
 
 CANONICAL_VOLL = "voll_mid"
-N_DRAWS = 500
+N_DRAWS = 200       # 200 draws × 4 cases = 800 LP solves (~30 seconds)
 SEED = 42
 
 RESULTS_DIR = ROOT / "results" / "monte_carlo"
@@ -105,9 +101,11 @@ def main():
     draws = generate_draws(N_DRAWS, seed=SEED)
     econ = load_econ(CANONICAL_VOLL)
 
-    print(f"\nMonte Carlo Uncertainty Analysis (Deterministic Replay)")
+    total_solves = N_DRAWS * len(CASES)
+    print(f"\nMonte Carlo LP-Based Uncertainty Analysis")
     print(f"  Draws:  {N_DRAWS}")
     print(f"  Cases:  {len(CASES)}")
+    print(f"  Total LP solves: {total_solves}")
     print(f"  Seed:   {SEED}\n")
 
     all_rows = []
@@ -115,132 +113,150 @@ def main():
     for case in CASES:
         print(f"  == {case['label']} ==")
 
-        # ── Step 1: Solve LP once for optimal capacity plan ───────
-        print(f"    Solving LP...")
-        scenario = load_scenario(
-            demand_level_case="served", demand_case="baseline",
-            gas_deliverability_case="baseline",
-            capital_case=case["capital_case"],
-            solar_build_case="aggressive", land_case="loose",
-            carbon_case="no_policy", start_year=2025, end_year=2045,
-        )
-        scenario["solar_min_build_mw_per_year"] = 100.0
-        scenario["financing_regime"] = case["financing_regime"]
-        scenario["required_margin"] = case["required_margin"]
-
-        years = scenario["years"]
-        caps = load_annual_caps(case["ndc_scenario"], years)
-        solar_capex_tv = load_solar_capex_by_year(
-            scenario_name="solar_low",
-            start_year=int(years[0]), end_year=int(years[-1]),
-        )
-
-        m = build_model(
-            scenario=scenario, econ=econ,
-            emissions_cap_by_year=caps,
-            solar_capex_by_year=solar_capex_tv,
-        )
-        status = solve_model(m)
-        if not status["optimal"]:
-            print(f"    WARNING: LP not optimal. Skipping.")
-            continue
-
-        capacity_paths = {
-            "solar_mw": [float(pyo.value(m.solar_capacity_mw[t])) for t in range(len(years))],
-            "storage_mwh": [float(pyo.value(m.storage_capacity_mwh[t])) for t in range(len(years))],
-        }
-
-        diag = extract_planning_diagnostics(m, scenario, econ)
-        lp_cost = float(pyo.value(m.system_cost_npv))
-        lp_unserved = sum(diag["unserved_twh_by_year"].values())
-        lp_solar = sum(
-            float(pyo.value(m.solar_public_add[t])) + float(pyo.value(m.solar_eaas_add[t]))
-            for t in range(len(years))
-        )
-        print(f"    LP: cost=${lp_cost/1e9:.1f}B  unserved={lp_unserved:.2f}TWh  solar={lp_solar:.0f}MW")
-
-        # ── Step 2: Replay under N draws ──────────────────────────
-        print(f"    Replaying {N_DRAWS} draws...")
         for i, draw in enumerate(draws):
-            draw_scenario = load_scenario(
-                demand_level_case="served", demand_case="baseline",
+            scenario = load_scenario(
+                demand_level_case="served",
+                demand_case="baseline",
                 gas_deliverability_case=draw["gas_regime"],
                 capital_case=case["capital_case"],
-                solar_build_case="aggressive", land_case="loose",
-                carbon_case="no_policy", start_year=2025, end_year=2045,
+                solar_build_case="aggressive",
+                land_case="loose",
+                carbon_case="no_policy",
+                start_year=2025,
+                end_year=2045,
             )
-            draw_scenario["demand_growth"] = draw["demand_growth"]
-            draw_scenario["solar_min_build_mw_per_year"] = 100.0
-            draw_scenario["financing_regime"] = case["financing_regime"]
-            draw_scenario["required_margin"] = case["required_margin"]
+            scenario["demand_growth"] = draw["demand_growth"]
+            scenario["solar_min_build_mw_per_year"] = 100.0
+            scenario["financing_regime"] = case["financing_regime"]
+            scenario["required_margin"] = case["required_margin"]
+
+            years = scenario["years"]
+            caps = load_annual_caps(case["ndc_scenario"], years)
+            solar_capex_tv = load_solar_capex_by_year(
+                scenario_name="solar_low",
+                start_year=int(years[0]),
+                end_year=int(years[-1]),
+            )
 
             try:
-                det_output = run_deterministic_scenario(
-                    scenario=draw_scenario, econ=econ,
-                    capacity_paths=capacity_paths,
+                m = build_model(
+                    scenario=scenario,
+                    econ=econ,
+                    emissions_cap_by_year=caps,
+                    solar_capex_by_year=solar_capex_tv,
                 )
+                status = solve_model(m)
+
+                if not status["optimal"]:
+                    all_rows.append({
+                        "case": case["label"], "draw": i,
+                        "demand_growth": draw["demand_growth"],
+                        "gas_regime": draw["gas_regime"],
+                        "status": "infeasible",
+                        "npv_cost": None, "real_exp": None,
+                        "voll_penalty": None, "unserved_twh": None,
+                        "solar_total_mw": None, "storage_mwh": None,
+                        "system_lcoe": None,
+                    })
+                    continue
+
+                diag = extract_planning_diagnostics(m, scenario, econ)
+                decomp = diag.get("cost_decomposition", {})
+
+                npv_cost = float(pyo.value(m.system_cost_npv))
+                unserved = sum(diag["unserved_twh_by_year"].values())
+                solar_total = sum(
+                    float(pyo.value(m.solar_public_add[t]))
+                    + float(pyo.value(m.solar_eaas_add[t]))
+                    for t in range(len(years))
+                )
+                storage = float(pyo.value(m.storage_capacity_mwh[len(years) - 1]))
+
+                # Proper discounted LCOE
+                disc_gen = sum(
+                    float(pyo.value(m.DF[t])) * (
+                        float(pyo.value(m.solar_generation[t]))
+                        + float(pyo.value(m.gas_generation[t]))
+                        + float(pyo.value(m.storage_discharge[t]))
+                    )
+                    for t in range(len(years))
+                )
+                # disc_gen is in TWh (discounted), cost is in USD
+                system_lcoe = npv_cost / (disc_gen * 1e6) if disc_gen > 1e-9 else None
+
                 all_rows.append({
                     "case": case["label"], "draw": i,
                     "demand_growth": draw["demand_growth"],
                     "gas_regime": draw["gas_regime"],
                     "status": "optimal",
-                    "det_cost": det_output["costs"]["total"],
-                    "det_unserved": float(np.sum(det_output["unserved"])),
-                    "det_served": float(np.sum(det_output["served"])),
-                    "lp_cost": lp_cost,
-                    "lp_unserved": lp_unserved,
-                    "lp_solar_mw": lp_solar,
+                    "npv_cost": npv_cost,
+                    "real_exp": decomp.get("real_expenditure_npv", None),
+                    "voll_penalty": decomp.get("voll_penalty_npv", None),
+                    "unserved_twh": unserved,
+                    "solar_total_mw": solar_total,
+                    "storage_mwh": storage,
+                    "system_lcoe": system_lcoe,
                 })
+
             except Exception as e:
                 all_rows.append({
                     "case": case["label"], "draw": i,
                     "demand_growth": draw["demand_growth"],
                     "gas_regime": draw["gas_regime"],
                     "status": f"error: {e}",
-                    "det_cost": None, "det_unserved": None,
-                    "det_served": None,
-                    "lp_cost": lp_cost, "lp_unserved": lp_unserved,
-                    "lp_solar_mw": lp_solar,
+                    "npv_cost": None, "real_exp": None,
+                    "voll_penalty": None, "unserved_twh": None,
+                    "solar_total_mw": None, "storage_mwh": None,
+                    "system_lcoe": None,
                 })
 
-            if (i + 1) % 100 == 0:
-                print(f"      ... {i+1}/{N_DRAWS}")
+            if (i + 1) % 50 == 0:
+                print(f"    ... {i+1}/{N_DRAWS} draws")
 
-        print(f"    Done.")
+        print(f"    Done: {case['label']}")
 
-    # ── Save ──────────────────────────────────────────────────────
+    # ── Save raw results ──────────────────────────────────────
     df = pd.DataFrame(all_rows)
     df.to_csv(RESULTS_DIR / "monte_carlo_raw.csv", index=False)
 
     optimal = df[df["status"] == "optimal"].copy()
 
-    # ── Summary statistics ────────────────────────────────────────
+    # ── Summary statistics ────────────────────────────────────
     summary_rows = []
     for case_label in [c["label"] for c in CASES]:
         sub = optimal[optimal["case"] == case_label]
         if len(sub) == 0:
             continue
-        costs = sub["det_cost"].values
-        unserved = sub["det_unserved"].values
-        risk = compute_risk_metrics(costs, alpha=0.95)
+
+        costs = sub["npv_cost"].values
+        unserved = sub["unserved_twh"].values
+        lcoes = sub["system_lcoe"].dropna().values
+
         summary_rows.append({
-            "case": case_label, "n_draws": len(sub),
-            "lp_cost": sub.iloc[0]["lp_cost"],
-            "cost_mean": risk["expected"],
-            "cost_std": np.sqrt(risk["variance"]),
-            "cost_p10": np.percentile(costs, 10),
-            "cost_p50": np.percentile(costs, 50),
-            "cost_p90": np.percentile(costs, 90),
-            "cost_var95": risk["VaR"], "cost_cvar95": risk["CVaR"],
+            "case":          case_label,
+            "n_optimal":     len(sub),
+            "n_infeasible":  len(df[(df["case"] == case_label) & (df["status"] != "optimal")]),
+            "cost_mean":     np.mean(costs),
+            "cost_std":      np.std(costs),
+            "cost_p10":      np.percentile(costs, 10),
+            "cost_p50":      np.percentile(costs, 50),
+            "cost_p90":      np.percentile(costs, 90),
             "unserved_mean": np.mean(unserved),
-            "unserved_p10": np.percentile(unserved, 10),
-            "unserved_p50": np.percentile(unserved, 50),
-            "unserved_p90": np.percentile(unserved, 90),
+            "unserved_p10":  np.percentile(unserved, 10),
+            "unserved_p50":  np.percentile(unserved, 50),
+            "unserved_p90":  np.percentile(unserved, 90),
+            "lcoe_mean":     np.mean(lcoes) if len(lcoes) else None,
+            "lcoe_p10":      np.percentile(lcoes, 10) if len(lcoes) else None,
+            "lcoe_p50":      np.percentile(lcoes, 50) if len(lcoes) else None,
+            "lcoe_p90":      np.percentile(lcoes, 90) if len(lcoes) else None,
+            "real_exp_mean": np.mean(sub["real_exp"].dropna().values),
+            "voll_mean":     np.mean(sub["voll_penalty"].dropna().values),
         })
+
     summary_df = pd.DataFrame(summary_rows)
     summary_df.to_csv(RESULTS_DIR / "monte_carlo_summary.csv", index=False)
 
-    # ── EaaS necessity ────────────────────────────────────────────
+    # ── EaaS necessity ────────────────────────────────────────
     eaas_necessity = {}
     for ndc_label in ["NDC3 uncond", "NDC3 cond"]:
         pub_label = f"{ndc_label} (public)"
@@ -250,32 +266,40 @@ def main():
         common = pub_sub.index.intersection(eaas_sub.index)
         if len(common) == 0:
             continue
-        pub_u = pub_sub.loc[common, "det_unserved"].values
-        eaas_u = eaas_sub.loc[common, "det_unserved"].values
-        pub_c = pub_sub.loc[common, "det_cost"].values
-        eaas_c = eaas_sub.loc[common, "det_cost"].values
+        pub_u = pub_sub.loc[common, "unserved_twh"].values
+        eaas_u = eaas_sub.loc[common, "unserved_twh"].values
+        pub_c = pub_sub.loc[common, "npv_cost"].values
+        eaas_c = eaas_sub.loc[common, "npv_cost"].values
+        pub_l = pub_sub.loc[common, "system_lcoe"].dropna().values
+        eaas_l = eaas_sub.loc[common, "system_lcoe"].dropna().values
+
         eaas_necessity[ndc_label] = {
             "prob_eaas_reduces_unserved": round(float(np.mean(eaas_u < pub_u)), 3),
             "prob_eaas_reduces_cost": round(float(np.mean(eaas_c < pub_c)), 3),
-            "mean_savings_usd": round(float(np.mean(pub_c - eaas_c)), 0),
-            "mean_savings_pct": round(float(np.mean(
+            "mean_cost_savings_usd": round(float(np.mean(pub_c - eaas_c)), 0),
+            "mean_cost_savings_pct": round(float(np.mean(
                 (pub_c - eaas_c) / np.where(pub_c > 0, pub_c, 1)) * 100), 1),
+            "mean_lcoe_pub": round(float(np.mean(pub_l)), 2) if len(pub_l) else None,
+            "mean_lcoe_eaas": round(float(np.mean(eaas_l)), 2) if len(eaas_l) else None,
             "n_draws": int(len(common)),
         }
+
     with open(RESULTS_DIR / "eaas_necessity.json", "w") as f:
         json.dump(eaas_necessity, f, indent=2)
 
-    # ── Console ───────────────────────────────────────────────────
-    print(f"\n{'='*85}")
-    print(f"  MONTE CARLO SUMMARY ({N_DRAWS} draws)")
-    print(f"{'='*85}")
-    print(f"  {'Case':<30} {'LP cost':>10} {'MC Mean':>10} {'P10':>10} "
-          f"{'P50':>10} {'P90':>10} {'VaR95':>10}")
-    print(f"  {'-'*85}")
+    # ── Console summary ───────────────────────────────────────
+    print(f"\n{'='*95}")
+    print(f"  MONTE CARLO SUMMARY ({N_DRAWS} draws, LP-based)")
+    print(f"{'='*95}")
+    print(f"  {'Case':<30} {'Mean($B)':>10} {'P10($B)':>10} {'P50($B)':>10} "
+          f"{'P90($B)':>10} {'LCOE mean':>10} {'LCOE P90':>10}")
+    print(f"  {'-'*92}")
     for _, r in summary_df.iterrows():
-        print(f"  {r['case']:<30} ${r['lp_cost']/1e9:>8.1f}B ${r['cost_mean']/1e9:>8.1f}B "
-              f"${r['cost_p10']/1e9:>8.1f}B ${r['cost_p50']/1e9:>8.1f}B "
-              f"${r['cost_p90']/1e9:>8.1f}B ${r['cost_var95']/1e9:>8.1f}B")
+        lcoe_m = f"${r['lcoe_mean']:.1f}" if r['lcoe_mean'] else "n/a"
+        lcoe_90 = f"${r['lcoe_p90']:.1f}" if r['lcoe_p90'] else "n/a"
+        print(f"  {r['case']:<30} ${r['cost_mean']/1e9:>8.1f}B ${r['cost_p10']/1e9:>8.1f}B "
+              f"${r['cost_p50']/1e9:>8.1f}B ${r['cost_p90']/1e9:>8.1f}B "
+              f"{lcoe_m:>10} {lcoe_90:>10}")
 
     print(f"\n  UNSERVED ENERGY (TWh):")
     print(f"  {'Case':<30} {'Mean':>8} {'P10':>8} {'P50':>8} {'P90':>8}")
@@ -285,36 +309,57 @@ def main():
               f"{r['unserved_p50']:>8.1f} {r['unserved_p90']:>8.1f}")
 
     print(f"\n  EaaS NECESSITY:")
-    for ndc, m in eaas_necessity.items():
-        print(f"    {ndc}: P(reduces unserved)={m['prob_eaas_reduces_unserved']*100:.0f}%  "
-              f"P(reduces cost)={m['prob_eaas_reduces_cost']*100:.0f}%  "
-              f"savings=${m['mean_savings_usd']/1e9:.1f}B ({m['mean_savings_pct']:.0f}%)")
+    for ndc, met in eaas_necessity.items():
+        print(f"    {ndc}:")
+        print(f"      P(reduces unserved): {met['prob_eaas_reduces_unserved']*100:.0f}%")
+        print(f"      P(reduces cost):     {met['prob_eaas_reduces_cost']*100:.0f}%")
+        print(f"      Mean savings:        ${met['mean_cost_savings_usd']/1e9:.1f}B "
+              f"({met['mean_cost_savings_pct']:.0f}%)")
+        if met['mean_lcoe_pub'] and met['mean_lcoe_eaas']:
+            print(f"      LCOE public:         ${met['mean_lcoe_pub']:.1f}/MWh")
+            print(f"      LCOE EaaS:           ${met['mean_lcoe_eaas']:.1f}/MWh")
 
-    # ── Box plots ─────────────────────────────────────────────────
-    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+    # ── Box plots ─────────────────────────────────────────────
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
     labels_short = [c["label"].replace(" (", "\n(") for c in CASES]
     colors = ["#FF5722", "#2196F3", "#FF9800", "#4CAF50"]
 
-    cost_data = [optimal[optimal["case"] == c["label"]]["det_cost"].values / 1e9 for c in CASES]
-    bp1 = axes[0].boxplot(cost_data, labels=labels_short, patch_artist=True)
+    # Panel 1: NPV Cost
+    cost_data = [optimal[optimal["case"] == c["label"]]["npv_cost"].dropna().values / 1e9
+                 for c in CASES]
+    bp1 = axes[0].boxplot(cost_data, tick_labels=labels_short, patch_artist=True)
     for p, col in zip(bp1["boxes"], colors):
         p.set_facecolor(col); p.set_alpha(0.7)
-    axes[0].set_ylabel("Deterministic Cost (USD Billions)")
+    axes[0].set_ylabel("NPV System Cost (USD Billions)")
     axes[0].set_title("System Cost Distribution")
     axes[0].tick_params(axis="x", rotation=15, labelsize=8)
 
-    uns_data = [optimal[optimal["case"] == c["label"]]["det_unserved"].values for c in CASES]
-    bp2 = axes[1].boxplot(uns_data, labels=labels_short, patch_artist=True)
+    # Panel 2: Unserved
+    uns_data = [optimal[optimal["case"] == c["label"]]["unserved_twh"].dropna().values
+                for c in CASES]
+    bp2 = axes[1].boxplot(uns_data, tick_labels=labels_short, patch_artist=True)
     for p, col in zip(bp2["boxes"], colors):
         p.set_facecolor(col); p.set_alpha(0.7)
     axes[1].set_ylabel("Unserved Energy (TWh)")
     axes[1].set_title("Reliability Distribution")
     axes[1].tick_params(axis="x", rotation=15, labelsize=8)
 
-    plt.suptitle(f"Monte Carlo Uncertainty Analysis ({N_DRAWS} draws)", fontsize=14, fontweight="bold")
+    # Panel 3: LCOE
+    lcoe_data = [optimal[optimal["case"] == c["label"]]["system_lcoe"].dropna().values
+                 for c in CASES]
+    bp3 = axes[2].boxplot(lcoe_data, tick_labels=labels_short, patch_artist=True)
+    for p, col in zip(bp3["boxes"], colors):
+        p.set_facecolor(col); p.set_alpha(0.7)
+    axes[2].set_ylabel("System LCOE (USD/MWh)")
+    axes[2].set_title("LCOE Distribution")
+    axes[2].tick_params(axis="x", rotation=15, labelsize=8)
+
+    plt.suptitle(f"Monte Carlo Uncertainty Analysis ({N_DRAWS} draws, LP-based)",
+                 fontsize=14, fontweight="bold")
     plt.tight_layout()
     fig.savefig(RESULTS_DIR / "monte_carlo_boxplots.png", dpi=200, bbox_inches="tight")
     fig.savefig(RESULTS_DIR / "monte_carlo_boxplots.pdf", bbox_inches="tight")
+    plt.show()
     print(f"\nSaved: {RESULTS_DIR}")
 
 
