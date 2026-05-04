@@ -51,7 +51,7 @@ from src.optimize_experiments import extract_planning_diagnostics
 from src.utils import json_safe
 
 CANONICAL_VOLL = "voll_mid"
-N_DRAWS = 200       # 200 draws × 4 cases = 800 LP solves (~30 seconds)
+N_DRAWS = 500       # 500 draws × 4 cases = 2000 LP solves (~90 seconds)
 SEED = 42
 
 RESULTS_DIR = ROOT / "results" / "monte_carlo"

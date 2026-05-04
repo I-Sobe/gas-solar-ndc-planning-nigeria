@@ -1,5 +1,5 @@
 from_case,to_case,delta_cost_usd,note
-ndc2_unconditional,ndc2_unconditional_eaas,-451039634347.1607,"Same emissions level — EaaS vs non-EaaS financing comparison. MAC undefined. This represents the cost difference from switching financing regime, not from abating emissions."
+ndc2_unconditional,ndc2_unconditional_eaas,-429171478664.7205,"Same emissions level — EaaS vs non-EaaS financing comparison. MAC undefined. This represents the cost difference from switching financing regime, not from abating emissions."
 ndc3_unconditional,ndc3_unconditional_eaas,-449892916817.9278,"Same emissions level — EaaS vs non-EaaS financing comparison. MAC undefined. This represents the cost difference from switching financing regime, not from abating emissions."
 ndc3_conditional,ndc3_conditional_eaas,-98478148727.83566,"Same emissions level — EaaS vs non-EaaS financing comparison. MAC undefined. This represents the cost difference from switching financing regime, not from abating emissions."
-ndc2_conditional,ndc2_conditional_eaas,-229256199828.1439,"Same emissions level — EaaS vs non-EaaS financing comparison. MAC undefined. This represents the cost difference from switching financing regime, not from abating emissions."
+ndc2_conditional,ndc2_conditional_eaas,-221211226073.24377,"Same emissions level — EaaS vs non-EaaS financing comparison. MAC undefined. This represents the cost difference from switching financing regime, not from abating emissions."

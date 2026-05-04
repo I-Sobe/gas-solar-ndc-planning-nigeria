@@ -2,15 +2,19 @@
   "NDC3 uncond": {
     "prob_eaas_reduces_unserved": 1.0,
     "prob_eaas_reduces_cost": 1.0,
-    "mean_savings_usd": 504211342822.0,
-    "mean_savings_pct": 85.8,
+    "mean_cost_savings_usd": 478150525344.0,
+    "mean_cost_savings_pct": 97.5,
+    "mean_lcoe_pub": 1974.58,
+    "mean_lcoe_eaas": 35.88,
     "n_draws": 500
   },
   "NDC3 cond": {
-    "prob_eaas_reduces_unserved": 1.0,
-    "prob_eaas_reduces_cost": 1.0,
-    "mean_savings_usd": 112820738533.0,
-    "mean_savings_pct": 73.3,
+    "prob_eaas_reduces_unserved": 0.838,
+    "prob_eaas_reduces_cost": 0.88,
+    "mean_cost_savings_usd": 141468616660.0,
+    "mean_cost_savings_pct": 73.0,
+    "mean_lcoe_pub": 531.48,
+    "mean_lcoe_eaas": 37.49,
     "n_draws": 500
   }
 }
