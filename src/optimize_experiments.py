@@ -240,7 +240,17 @@ def run_annual_cap_case(
 # ============================================================
 
 def run_deterministic_scenario(scenario, econ, capacity_paths):
+    """
+    LEGACY NON-LP SIMULATOR — NOT for thesis result tables.
 
+    This evaluates a HAND-SUPPLIED capacity path with must-run gas, undiscounted
+    costs, and the fixed 2025 solar CAPEX scalar. Its cost basis is therefore
+    NOT comparable to build_model()'s discounted NPV. It is retained only for
+    quick feasibility sketches. Any headline cost/emissions/reliability result
+    must come from build_model()/extract_planning_diagnostics(), not from here.
+    The Monte Carlo path no longer uses this function (see stochastic.py, which
+    now uses fixed-plan re-dispatch through build_model()).
+    """
     years = scenario["years"]
     n_years = len(years)
 
@@ -770,6 +780,142 @@ def run_rel3_financing_frontier(
     return all_rows
 
 
+def run_fin2_blended_bankability_sweep(
+    base_scenario,
+    econ,
+    tariff_grid,
+    blend_scenarios,           # dict from blended_finance_scenarios()
+    ndc_cap_scenario,
+    concessional_envelope_npv=None,   # None => Level 1 (rate only, no scarcity)
+    cap_path="data/cost/processed/emissions_cap.csv",
+):
+    """
+    FIN-2 (blended): bankability as a function of BOTH tariff and capital
+    structure (concessional share -> blended WACC).
+
+    For each (blend_scenario, tariff) cell, derives the blended private rate,
+    solves the NDC-constrained EaaS LP, and records self-financing status,
+    realised subsidy, EaaS deployment, and — if a concessional envelope is
+    supplied (Level 2) — the concessional shadow price.
+
+    Returns list[dict], one row per (blend, tariff) cell.
+    """
+    import copy as _copy
+    from src.blended_finance import blended_wacc
+
+    years = [int(y) for y in base_scenario["years"]]
+
+    # Caps
+    if ndc_cap_scenario is None:
+        caps = None
+    else:
+        cap_df = pd.read_csv(cap_path)
+        cap_df = cap_df[(cap_df["scenario"] == ndc_cap_scenario)
+                        & (cap_df["year"].isin(years))].sort_values("year")
+        if len(cap_df) != len(years):
+            raise ValueError(
+                f"Cap length {len(cap_df)} != model years {len(years)} "
+                f"for '{ndc_cap_scenario}'. Run 00_build_emissions_cap.py first."
+            )
+        caps = cap_df["cap_tco2"].astype(float).tolist()
+
+    solar_capex_tv = load_solar_capex_by_year(
+        scenario_name="solar_low",
+        start_year=years[0], end_year=years[-1],
+    )
+    solar_cf = base_scenario["solar_cf"]
+    solar_energy_per_mw = solar_cf * 8760 / 1_000_000
+    required_margin = base_scenario["required_margin"]
+    # Use the 2025 time-varying CAPEX value for the analytical threshold, to
+    # match what the LP prices in the first build year (fixes stale-scalar bug).
+    capex_2025 = float(solar_capex_tv[years[0]])
+
+    results = []
+
+    for blend_label, (share, r_conc, r_comm) in blend_scenarios.items():
+
+        r_private = blended_wacc(share, r_conc, r_comm)
+
+        # Analytical threshold at THIS blended rate
+        npv_energy = sum(
+            solar_energy_per_mw / (1.0 + r_private) ** t
+            for t in range(len(years))
+        )
+        threshold_usd_per_twh = capex_2025 * required_margin / (npv_energy)
+        # (threshold in USD/TWh: capex[USD/MW]*margin / (npv_energy[TWh/MW]))
+
+        for tariff in tariff_grid:
+            sc = _copy.deepcopy(base_scenario)
+            sc["financing_regime"] = "eaas"
+            sc["solar_service_tariff_usd_per_twh"] = tariff
+            sc["solar_min_build_mw_per_year"] = 100.0
+            # Inject the blended-finance structure so build_model derives r_private
+            sc["concessional_share"] = share
+            sc["r_concessional"] = r_conc
+            sc["r_commercial"] = r_comm
+            if concessional_envelope_npv is not None:
+                sc["concessional_envelope_npv"] = concessional_envelope_npv
+
+            max_bankable = tariff * npv_energy / required_margin
+            financing_gap_per_mw = max(0.0, capex_2025 - max_bankable)
+            is_self_financing = financing_gap_per_mw < 1.0
+
+            build_kwargs = dict(scenario=sc, econ=econ,
+                                solar_capex_by_year=solar_capex_tv)
+            if caps is not None:
+                build_kwargs["emissions_cap_by_year"] = caps
+            else:
+                build_kwargs["emissions_cap"] = 1e18
+            m = build_model(**build_kwargs)
+            status = solve_model(m)
+
+            row = {
+                "blend_scenario": blend_label,
+                "concessional_share": share,
+                "r_concessional": r_conc,
+                "r_commercial": r_comm,
+                "blended_wacc": r_private,
+                "tariff_usd_per_twh": tariff,
+                "tariff_m_usd_per_twh": tariff / 1e6,
+                "threshold_usd_per_twh": threshold_usd_per_twh,
+                "threshold_m_usd_per_twh": threshold_usd_per_twh / 1e6,
+                "financing_gap_per_mw": financing_gap_per_mw,
+                "is_self_financing": is_self_financing,
+            }
+
+            if not status["optimal"]:
+                row["status"] = "infeasible"
+                results.append(row)
+                continue
+
+            diag = extract_planning_diagnostics(m, sc, econ,
+                                                solar_capex_series=solar_capex_tv)
+            eaas_subsidy_npv = sum(
+                float(pyo.value(m.DF[t])) * float(pyo.value(m.eaas_subsidy[t]))
+                for t in range(len(years))
+            )
+            solar_eaas_total_mw = sum(
+                float(pyo.value(m.solar_eaas_add[t])) for t in range(len(years))
+            )
+            row.update({
+                "status": "optimal",
+                "eaas_subsidy_npv_usd": eaas_subsidy_npv,
+                "solar_eaas_total_mw": solar_eaas_total_mw,
+                "realised_subsidy_per_mw": (
+                    eaas_subsidy_npv / solar_eaas_total_mw
+                    if solar_eaas_total_mw > 1e-3 else 0.0
+                ),
+                "system_cost_npv_usd": float(pyo.value(m.system_cost_npv)),
+                # Level 2 shadow price (None if no envelope was set)
+                "concessional_shadow_usd_per_usd":
+                    diag.get("concessional_shadow_usd_per_usd"),
+                "concessional_utilisation":
+                    diag.get("concessional_utilisation"),
+            })
+            results.append(row)
+
+    return results
+
 def compute_frontier_shift(df):
     """
     From the output of run_rel3_financing_frontier(), compute:
@@ -1001,7 +1147,11 @@ def run_dem1_demand_sensitivity(
                         diag["gas_shadow_price_usd_per_twh_th_by_year"].values()
                         if v is not None
                     ]
-
+                    # LEVEL 2: concessional envelope diagnostics now come from
+                    # extract_planning_diagnostics (single source of truth).
+                    concessional_shadow = diag.get("concessional_shadow_usd_per_usd")
+                    concessional_drawdown = diag.get("concessional_drawdown_npv_usd")
+                    concessional_utilisation = diag.get("concessional_utilisation")
                     results.append({
                         "demand_level":              demand_level,
                         "ndc_label":                 ndc_label,
@@ -1013,6 +1163,9 @@ def run_dem1_demand_sensitivity(
                         "cumulative_unserved_twh":   sum(
                             diag["unserved_twh_by_year"].values()
                         ),
+                        "concessional_shadow_usd_per_usd": concessional_shadow,
+                        "concessional_drawdown_npv_usd": concessional_drawdown,
+                        "concessional_utilisation": concessional_utilisation,
                         "cumulative_emissions_tco2": float(pyo.value(m.emissions)),
                         "horizon_reliability":       diag["horizon_reliability"],
                         "solar_total_mw":            sum(
@@ -1665,10 +1818,20 @@ def extract_planning_diagnostics(m, scenario, econ=None, solar_capex_series=None
 
     solar_energy_per_mw = scenario["solar_cf"] * 8760 / 1_000_000
 
+    # Social-rate energy NPV: use ONLY for social-cost diagnostics
+    # (e.g. solar_beats_gas_year, a system-cost comparison).
     npv_energy = sum(
         pyo.value(m.DF[t]) * solar_energy_per_mw
         for t in range(len(years))
     )
+
+    # Private/blended-rate energy NPV: use for ALL reported bankability
+    # quantities so the reporting layer matches what the LP actually enforces
+    # in the bankability constraint (which discounts at the private rate via
+    # m.remaining_npv_factor). m.remaining_npv_factor[0] is the horizon-from-0
+    # discount sum at the private/blended rate.
+    remaining_npv_factor_0 = float(pyo.value(m.remaining_npv_factor[0]))
+    npv_energy_priv = remaining_npv_factor_0 * solar_energy_per_mw
 
     # solar_lcoe = econ["SOLAR_CAPEX_PER_MW"] / npv_energy if npv_energy > 0 else None
     # Solar LCOE: annualized over remaining horizon from each year t
@@ -1854,7 +2017,10 @@ def extract_planning_diagnostics(m, scenario, econ=None, solar_capex_series=None
     public_budget_utilisation = None
     realised_public_spend = None
 
-    if getattr(m, "has_public_budget_constraint", False):
+    # Gate on the CONSTRAINT's existence, not on a flag attribute that the
+    # model never sets. (The prior `has_public_budget_constraint` flag was
+    # never assigned in build_model, so this dual was always None.)
+    if hasattr(m, "public_budget_constraint"):
         raw_dual = m.dual.get(m.public_budget_constraint, None)
         if raw_dual is not None:
             public_budget_shadow = max(0.0, float(-raw_dual))
@@ -1952,6 +2118,26 @@ def extract_planning_diagnostics(m, scenario, econ=None, solar_capex_series=None
         },
     }
 
+    # ============================================================
+    # LEVEL 2: Concessional envelope shadow price
+    # ============================================================
+    # Marginal value of concessional capital (USD per USD of envelope).
+    # Extracted HERE so every consumer of the diagnostics dict (FIN-2 blended
+    # sweep, DEM-1, etc.) gets it. None when no concessional envelope was set.
+    concessional_shadow = None
+    concessional_drawdown = None
+    concessional_utilisation = None
+    if hasattr(m, "concessional_envelope_constraint"):
+        raw_conc_dual = m.dual.get(m.concessional_envelope_constraint, None)
+        if raw_conc_dual is not None:
+            # <= constraint: dual sign convention gives a non-positive raw value;
+            # report magnitude as the marginal value of relaxing the envelope.
+            concessional_shadow = abs(float(raw_conc_dual))
+        concessional_drawdown = float(pyo.value(m.concessional_drawdown_npv))
+        env = scenario.get("concessional_envelope_npv", None)
+        if env and env > 0:
+            concessional_utilisation = concessional_drawdown / env
+
     return {
         # Cost decomposition
         "cost_decomposition": cost_decomposition,
@@ -1970,11 +2156,13 @@ def extract_planning_diagnostics(m, scenario, econ=None, solar_capex_series=None
         "storage_charge_twh_e_by_year":
             {int(y): float(pyo.value(m.storage_charge[t]))
              for t, y in enumerate(years)},
+        # Reported at the PRIVATE/blended rate (consistent with the LP's
+        # bankability constraint). Units: USD/TWh.
         "bankability_threshold":
             scenario["required_margin"] *
             (
                 float(pyo.value(m.solar_capex_param[0])) /
-                sum(pyo.value(m.DF[t]) for t in range(len(years)))
+                npv_energy_priv
             ),
         "solar_generation_share": solar_share,
         "gas_scarcity_value_usd": gas_scarcity_value,
@@ -2000,9 +2188,10 @@ def extract_planning_diagnostics(m, scenario, econ=None, solar_capex_series=None
             {int(y): float(pyo.value(m.emissions_by_year[t])) for t, y in enumerate(years)},
         "carbon_shadow_price_usd_per_tco2_by_year": carbon_shadow,
         "gas_avail_twh_th_by_year": _series_dict_by_year(gas_avail, years),
+        # Bankable CAPEX headroom at the PRIVATE/blended rate (matches the LP).
         "bankable_capex_per_mw":
             scenario["solar_service_tariff_usd_per_twh"] *
-            npv_energy
+            npv_energy_priv
             / scenario["required_margin"],
         "gas_to_power_twh_th_by_year":
             {int(y): float(pyo.value(m.gas_to_power[t])) for t, y in enumerate(years)},
@@ -2024,6 +2213,10 @@ def extract_planning_diagnostics(m, scenario, econ=None, solar_capex_series=None
         "public_budget_shadow_usd_per_usd": public_budget_shadow,
         "public_budget_utilisation": public_budget_utilisation,
         "public_budget_realised_spend_usd": realised_public_spend,
+        # LEVEL 2: concessional envelope diagnostics
+        "concessional_shadow_usd_per_usd": concessional_shadow,
+        "concessional_drawdown_npv_usd": concessional_drawdown,
+        "concessional_utilisation": concessional_utilisation,
         # STR-1: storage utilisation and constraint binding diagnostics
         # storage_throughput_twh: total energy discharged over the horizon.
         #   Measures how much work storage actually does in the optimal plan.
@@ -2496,7 +2689,12 @@ def run_all_deterministic_scenarios(
     start_year=2025,
     end_year=2045,
 ):
-
+    """
+    LEGACY batch wrapper around run_deterministic_scenario (non-LP simulator).
+    Outputs are undiscounted and use must-run gas + fixed 2025 CAPEX; they are
+    NOT comparable to LP results and must NOT populate thesis tables. Use the
+    LP-based runners (build_model + extract_planning_diagnostics) instead.
+    """
     results = []
 
     for demand_level_case in demand_level_scenarios():
@@ -2543,186 +2741,21 @@ def run_all_deterministic_scenarios(
 
 
 # frontier Experiment
-def run_tariff_bankability_sweep(
-    base_scenario,
-    econ,
-    tariff_grid,
-    ndc_cap_scenario,
-    cap_path="data/cost/processed/emissions_cap.csv",
-):
+def run_tariff_bankability_sweep(*args, **kwargs):
     """
-    FIN-2: Tariff bankability sweep.
+    DEPRECATED — superseded by run_fin2_blended_bankability_sweep.
 
-    For each tariff level in tariff_grid, solves the NDC-constrained EaaS
-    optimisation and records:
-      - whether EaaS is self-financing (financing_gap_per_mw == 0)
-      - total eaas_subsidy deployed (USD NPV)
-      - subsidy per MW of EaaS solar built
-      - total EaaS solar deployed (MW)
-      - system NPV cost
-      - cumulative unserved energy
-
-    Called once per NDC scenario (unconditional / conditional) so that
-    the required_margin and capital_case already embedded in base_scenario
-    are respected — the sweep varies ONLY the tariff.
-
-    Parameters
-    ----------
-    base_scenario : dict
-        Fully configured scenario dict with financing_regime="eaas",
-        required_margin, capital_case, etc. already set.
-        solar_service_tariff_usd_per_twh will be overwritten per tariff.
-    econ : dict
-        Economics dict from load_econ().
-    tariff_grid : list[float]
-        Tariff levels to sweep (USD/TWh). Use TARIFF_SWEEP_GRID from scenarios.py.
-    ndc_cap_scenario : str
-        Scenario name in emissions_cap.csv, e.g. "ndc3_unconditional".
-    cap_path : str
-        Path to emissions_cap.csv.
-
-    Returns
-    -------
-    list[dict]  — one row per tariff level.
+    The old single-rate FIN-2 sweep priced its analytical self-financing
+    threshold off econ["SOLAR_CAPEX_PER_MW"] (fixed 2025 scalar) while the LP
+    prices solar off the time-varying NREL ATB trajectory, and it predates the
+    blended-finance capital structure. Use run_fin2_blended_bankability_sweep,
+    which derives the private rate from the blend and uses the 2025 CAPEX from
+    the time-varying trajectory consistently.
     """
-    import copy as _copy
-
-    years = [int(y) for y in base_scenario["years"]]
-
-    # Load annual caps — if ndc_cap_scenario is None, no emissions cap is applied
-    # (baseline_no_policy arm). Otherwise load from CSV.
-    if ndc_cap_scenario is None:
-        caps = None
-    else:
-        cap_df = pd.read_csv(cap_path)
-        cap_df = cap_df[
-            (cap_df["scenario"] == ndc_cap_scenario)
-            & (cap_df["year"].isin(years))
-        ].sort_values("year")
-
-        if len(cap_df) != len(years):
-            raise ValueError(
-                f"Cap length {len(cap_df)} != model years {len(years)} "
-                f"for scenario '{ndc_cap_scenario}'. Run 00_build_emissions_cap.py first."
-            )
-
-        caps = cap_df["cap_tco2"].astype(float).tolist()
-
-    # Pre-compute the analytical self-financing threshold for this scenario
-    # so we can annotate each row without re-solving.
-    solar_cf = base_scenario["solar_cf"]
-    solar_energy_per_mw = solar_cf * 8760 / 1_000_000
-    r = float(base_scenario.get("discount_rate", 0.10))
-    npv_energy = sum(
-        solar_energy_per_mw / (1.0 + r) ** t
-        for t in range(len(years))
+    raise NotImplementedError(
+        "run_tariff_bankability_sweep is deprecated. "
+        "Use run_fin2_blended_bankability_sweep instead."
     )
-    required_margin = base_scenario["required_margin"]
-    capex = econ["SOLAR_CAPEX_PER_MW"]
-    threshold_usd_per_twh = capex * required_margin / npv_energy
-
-    results = []
-
-    # Load time-varying solar CAPEX from NREL ATB (solar_low scenario).
-    # solar_low declines from $1,456k/MW (2025) to $603k/MW (2045).
-    solar_capex_tv = load_solar_capex_by_year(
-        scenario_name="solar_low",
-        start_year=int(years[0]),
-        end_year=int(years[-1]),
-    )
-
-    for tariff in tariff_grid:
-
-        scenario_t = _copy.deepcopy(base_scenario)
-        scenario_t["solar_service_tariff_usd_per_twh"] = tariff
-        
-        # Activate minimum build floor when time-varying CAPEX is in use.
-        # This prevents, the optimizer from delaying all solar to the cheapest years
-        # (2040-2045) creating unrealistic 2025-2030 supply gaps.
-        scenario_t["solar_min_build_mw_per_year"] = 100.0
-        # Analytical financing gap for this tariff (does not require solving)
-        max_bankable = tariff * npv_energy / required_margin
-        financing_gap_per_mw = max(0.0, capex - max_bankable)
-        is_self_financing = financing_gap_per_mw < 1.0   # < 1 USD/MW = effectively zero
-
-        if caps is not None:
-            m = build_model(
-                scenario=scenario_t,
-                econ=econ,
-                emissions_cap_by_year=caps,
-                solar_capex_by_year=solar_capex_tv,
-            )
-        else:
-            m = build_model(
-                scenario=scenario_t,
-                econ=econ,
-                emissions_cap=1e18,
-                solar_capex_by_year=solar_capex_tv
-            )
-
-        status = solve_model(m)
-
-        if not status["optimal"]:
-            results.append({
-                "ndc_scenario":           ndc_cap_scenario if ndc_cap_scenario is not None else "baseline_no_policy",
-                "tariff_usd_per_twh":     tariff,
-                "tariff_m_usd_per_twh":   tariff / 1e6,
-                "required_margin":        required_margin,
-                "threshold_usd_per_twh":  threshold_usd_per_twh,
-                "financing_gap_per_mw":   financing_gap_per_mw,
-                "is_self_financing":      is_self_financing,
-                "status": "infeasible",
-            })
-            continue
-
-        diag = extract_planning_diagnostics(m, scenario_t, econ)
-
-        # Total discounted eaas_subsidy actually deployed by the optimizer
-        eaas_subsidy_npv = sum(
-            float(pyo.value(m.DF[t])) * float(pyo.value(m.eaas_subsidy[t]))
-            for t in range(len(years))
-        )
-
-        solar_eaas_total_mw = sum(
-            float(pyo.value(m.solar_eaas_add[t]))
-            for t in range(len(years))
-        )
-
-        # Realised subsidy per MW (zero if no EaaS built)
-        realised_subsidy_per_mw = (
-            eaas_subsidy_npv / solar_eaas_total_mw
-            if solar_eaas_total_mw > 1e-3
-            else 0.0
-        )
-
-        results.append({
-            "ndc_scenario":                ndc_cap_scenario,
-            "tariff_usd_per_twh":          tariff,
-            "tariff_m_usd_per_twh":        tariff / 1e6,
-            "required_margin":             required_margin,
-            # Analytical fields (no solve needed — here for cross-check)
-            "threshold_usd_per_twh":       threshold_usd_per_twh,
-            "financing_gap_per_mw":        financing_gap_per_mw,
-            "is_self_financing":           is_self_financing,
-            # Solved results
-            "npv_total_cost_usd":          float(pyo.value(m.system_cost_npv)),
-            "cumulative_unserved_twh":     sum(diag["unserved_twh_by_year"].values()),
-            "cumulative_emissions_tco2":   float(pyo.value(m.emissions)),
-            "solar_eaas_total_mw":         solar_eaas_total_mw,
-            "solar_public_total_mw":       sum(
-                float(pyo.value(m.solar_public_add[t])) for t in range(len(years))
-            ),
-            "eaas_subsidy_npv_usd":        eaas_subsidy_npv,
-            "realised_subsidy_per_mw_usd": realised_subsidy_per_mw,
-            "horizon_reliability":         diag["horizon_reliability"],
-            "gas_shadow_avg_usd_per_twh_th": float(np.mean(
-                [v for v in diag["gas_shadow_price_usd_per_twh_th_by_year"].values()
-                 if v is not None]
-            )),
-            "status": "optimal",
-        })
-
-    return results
 
 
 def run_tariff_public_capital_frontier(

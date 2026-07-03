@@ -12,11 +12,10 @@ Non-scope:
 - Pareto orchestration
 """
 
-import math
 import pyomo.environ as pyo
 from src.demand import project_baseline_demand
 from src.gas_supply import gas_available_power
-
+from src.blended_finance import resolve_private_rate
 
 # ============================================================
 # MODEL CONSTRUCTION
@@ -31,6 +30,7 @@ def build_model(
     emissions_cap_by_year=None,
     reliability_max_unserved_fraction=None,
     reliability_mode="annual",
+    fixed_plan = None,
     solar_capex_by_year=None,
 ):
     """
@@ -71,15 +71,22 @@ def build_model(
     # --------------------------
     # Discounting 
     # --------------------------
-    r = float(scenario.get("discount_rate", 0.10))
+    r_social = float(scenario.get("social_discount_rate", 0.08))
     # t=0 at start year
-    df = {t: 1.0 / ((1.0 + r) ** t) for t in T}
-    # Remaining-horizon NPV factor for each year t
-    remaining_npv = {}
+    df = {t: 1.0 / ((1.0 + r_social) ** t) for t in T}
+    r_private = resolve_private_rate(scenario)
+    remaining_npv_priv = {}
     for t in T:
-        remaining_npv[t] = sum(df[k] / df[t] for k in range(t, len(T)))
+        remaining_npv_priv[t] = sum(
+            (1.0/((1.0+r_private)**(k-t))) for k in range(t, len(T))
+        )
+    m.remaining_npv_factor = pyo.Param(T, initialize=remaining_npv_priv, within=pyo.PositiveReals)
+    
+    concessional_share = scenario.get("concessional_share", 0.0)
+    # Finite concessional envelope (NPV, USD). None => concessional capital
+    # unconstrained (Level-1 behaviour: blended rate applied, no scarcity).
+    concessional_envelope_npv = scenario.get("concessional_envelope_npv", None)
 
-    m.remaining_npv_factor = pyo.Param(T, initialize=remaining_npv, within=pyo.PositiveReals)
     m.DF = pyo.Param(T, initialize=df, within=pyo.PositiveReals)
 
     # ------------------------------------------------------------
@@ -110,10 +117,10 @@ def build_model(
     # Storage parameters
     # ------------------------------------------------------------
     storage_deployable_hours = scenario.get("storage_deployable_hours_per_year", 700.0)
-    storage_solar_surplus_frac = scenario.get("storage_solar_surplus_frac", 0.20)
+    #storage_solar_surplus_frac = scenario.get("storage_solar_surplus_frac", 0.20)
     storage_round_trip_eff = scenario.get("storage_round_trip_eff", 0.90)
     storage_duration_hours = scenario.get("storage_duration_hours", 4.0)  # kept for storage_power_mw only
-
+    
     tariff = scenario.get("solar_service_tariff_usd_per_twh", None)
     financing_regime = scenario.get("financing_regime", "traditional")
     required_margin = scenario.get("required_margin", 1.0)
@@ -122,8 +129,6 @@ def build_model(
 
     if storage_deployable_hours <= 0 or storage_deployable_hours > 8760:
         raise ValueError("storage_deployable_hours_per_year must be in (0, 8760]")
-    if not (0.0 <= storage_solar_surplus_frac <= 1.0):
-        raise ValueError("storage_solar_surplus_frac must be in [0, 1]")
     if not (0.0 < storage_round_trip_eff <= 1.0):
         raise ValueError("storage_round_trip_eff must be in (0, 1]")
 
@@ -131,13 +136,18 @@ def build_model(
     m.solar_public_add = pyo.Var(T, domain=pyo.NonNegativeReals)
     m.solar_eaas_add = pyo.Var(T, domain=pyo.NonNegativeReals)
     m.eaas_subsidy = pyo.Var(T, domain=pyo.NonNegativeReals)
-     
     # No new gas plant construction: fuel availability is always the binding constraint.
     # New gas capacity is structurally non-optimal across all scenarios (verified).
     # gas_add is fixed at zero to make this assumption explicit.
     m.gas_add = pyo.Param(T, initialize=0.0, within=pyo.NonNegativeReals)
     # Storage:
     m.storage_add = pyo.Var(T, domain=pyo.NonNegativeReals)
+    if fixed_plan is not None:
+        # eaas_subsidy is excluded 
+        for t in T:
+            m.solar_public_add[t].fix(fixed_plan["solar_public_add"][t])
+            m.solar_eaas_add[t].fix(fixed_plan["solar_eaas_add"][t])
+            m.storage_add[t].fix(fixed_plan["storage_add"][t]) 
     
     gas_baseline = scenario["gas_baseline_mw"]
 
@@ -156,10 +166,9 @@ def build_model(
 
     m.gas_capacity_mw = pyo.Expression(T, rule=gas_cap_rule)
 
-    storage_baseline = scenario.get("storage_baseline_mwh", 0.0)
-
-    # Storage always starts from zero — no brownfield BESS baseline in Nigeria (2025).
-    # storage_baseline_mwh is set to 0.0 in all scenarios and is intentionally excluded.
+    # Storage always starts from zero -- no brownfield BESS baseline in Nigeria
+    # (2025). storage_baseline_mwh is 0.0 in all scenarios and is intentionally
+    # excluded from the cumulative-capacity rule below.
     def storage_cap_rule(m, t):
         return sum(m.storage_add[k] for k in range(0, t+1))
 
@@ -193,17 +202,47 @@ def build_model(
     )["available_twh_th"]
 
     # ------------------------------------------------------------
+    # Hydro generation (exogenous fixed series, TWh_e/year)
+    # ------------------------------------------------------------
+    
+    hydro_baseline_twh = scenario.get("hydro_baseline_twh", None)
+    if hydro_baseline_twh is None:
+        raise ValueError(
+            "hydro_baseline_twh is unset. Provide a verified Nigerian grid "
+            "hydro figure (TWh_e/year, ~6-9 expected from NERC/NBS) in the "
+            "scenario before building the model. A numeric default is "
+            "deliberately not supplied to avoid a mis-scaled hydro slab "
+            "silently corrupting gas/emissions/NDC results."
+        )
+    hydro_growth = scenario.get("hydro_growth", 0.0)  # 0.0 = flat; set if new hydro commissions
+    hydro = {
+        t: hydro_baseline_twh * ((1.0 + hydro_growth) ** t)
+        for t in T
+    }
+
+    # ------------------------------------------------------------
     # Generation Expressions
     # ------------------------------------------------------------
     m.gas_generation = pyo.Expression(
         T, rule=lambda m, t: eta * m.gas_to_power[t]
     )
+    # Gas capacity constraint: annual electrical energy from gas cannot exceed
+    # installed gas capacity operating at its availability factor.
+    gas_availability_factor = scenario.get("gas_availability_factor", None)
+    if gas_availability_factor is None:
+        raise ValueError(
+            "gas_availability_factor is unset. Provide FUEL-AGNOSTIC gas fleet "
+            "availability (mechanical + atmospheric only; exclude feedstock, "
+            "which gas_balance already carries). Do NOT use NERC Plant Load "
+            "Factor or the headline Availability Factor. See scenarios.py."
+        )
+    if not (0.0 < gas_availability_factor <= 1.0):
+        raise ValueError("gas_availability_factor must be in (0, 1]")
     m.gas_capacity_constraint = pyo.Constraint(
         T,
         rule=lambda m, t:
             m.gas_generation[t]
-            <= m.gas_capacity_mw[t] * 8760 / 1e6
-
+            <= m.gas_capacity_mw[t] * 8760 * gas_availability_factor / 1e6
     )
     
     m.gas_balance = pyo.Constraint(
@@ -213,47 +252,65 @@ def build_model(
     )
 
     solar_energy_per_mw = scenario["solar_cf"] * 8760 / 1_000_000
-    npv_energy_per_mw = sum(
-        pyo.value(m.DF[t]) * solar_energy_per_mw
-        for t in T
-    )
     baseline_mw = scenario["solar_baseline_mw"]
-    # NPV of 1 MW solar generation over horizon
-    npv_energy = sum(df[t] * solar_energy_per_mw for t in T)
 
-    solar_lcoe = econ["SOLAR_CAPEX_PER_MW"] / npv_energy
-    # Maximum CAPEX investors can support given tariff
-    # max_bankable_capex = tariff * npv_energy / required_margin    
-    # choose between private or public based on voll > tariff
-    if tariff is None:
-        eaas_trigger_strength = 0.0
-    else:
-        eaas_trigger_strength = max(0.0, voll - tariff)
-    # Financing Regime Adjustment (EaaS)
-    # effective_solar_capex = econ["SOLAR_CAPEX_PER_MW"]
-
+    # EaaS regime requires a defined service tariff (used by the bankability test).
     if financing_regime == "eaas":
         if tariff is None:
             raise ValueError("Tariff must be defined under EaaS regime.")
-        
-    # Public solar CAPEX — priced at each year's NREL ATB value if available
+
+    # Public solar CAPEX -- priced at each year's NREL ATB value (time-varying).
     public_solar_capex_npv = pyo.quicksum(
         m.DF[t] * m.solar_public_add[t]
         * m.solar_capex_param[t]
         for t in T
     )
 
-    # Private (EaaS) solar CAPEX with premium
-    private_capex_multiplier = 1.0
-    if financing_regime == "eaas":
-        private_capex_multiplier = required_margin
-
+    # EaaS (private) solar CAPEX.
+    # MODELLING CHOICE (state explicitly in the thesis): EaaS-financed and
+    # publicly-financed solar are priced at the SAME unit CAPEX -- they are the
+    # same physical assets. The private cost of capital is represented NOT by an
+    # objective-side CAPEX premium but by the bankability constraint, which
+    # discounts EaaS revenue at the private/blended rate via remaining_npv_factor.
+    # Applying a required_margin multiplier here would double-count: required_margin
+    # is the bankability coverage cushion, a distinct object from the cost of
+    # capital. The EaaS mechanism's effect in this model is therefore structural
+    # (budget decoupling + a harder bankability test), not a cheaper sticker price.
     eaas_solar_capex_npv = pyo.quicksum(
         m.DF[t] * m.solar_eaas_add[t]
         * m.solar_capex_param[t]
         for t in T
     )
-        
+    # ============================================================
+    # CONCESSIONAL CAPITAL ENVELOPE (scarcity constraint)
+    # ============================================================
+    # Concessional capital is finite and rationed. The concessional-funded
+    # portion of EaaS solar CAPEX (concessional_share of each year's EaaS build,
+    # discounted) must not exceed the concessional envelope. The DUAL on this
+    # constraint is the marginal value of concessional finance (USD per USD) —
+    # a shadow price directly analogous to the public-budget (FIN-3) dual.
+    #
+    # Economic reading: when binding, one additional dollar of concessional
+    # capital would reduce system NPV cost by (1 + dual) dollars — the premium
+    # is the concessional relief the EaaS mechanism is capturing.
+    #
+    # If concessional_envelope_npv is None, no constraint is added: concessional
+    # capital is treated as unconstrained (Level 1 — blended rate only).
+    if (concessional_envelope_npv is not None
+            and concessional_share > 0.0
+            and financing_regime == "eaas"):
+
+        m.concessional_drawdown_npv = pyo.Expression(
+            expr=concessional_share * pyo.quicksum(
+                m.DF[t] * m.solar_eaas_add[t] * m.solar_capex_param[t]
+                for t in T
+            )
+        )
+
+        m.concessional_envelope_constraint = pyo.Constraint(
+            expr=m.concessional_drawdown_npv <= concessional_envelope_npv
+        )
+
     # Solar capacity = baseline + cumulative sum of annual additions
     def solar_cap_rule(m, t):
         return (
@@ -276,7 +333,7 @@ def build_model(
             capex = m.solar_capex_param[t] * m.solar_eaas_add[t]
 
             effective_private_cost = capex - m.eaas_subsidy[t]
-            bankable_revenue = (tariff * m.remaining_npv_factor[t] * m.solar_eaas_add[t]) / required_margin
+            bankable_revenue = (tariff * solar_energy_per_mw * m.remaining_npv_factor[t] * m.solar_eaas_add[t]) / required_margin
 
             return effective_private_cost <= bankable_revenue
 
@@ -312,8 +369,11 @@ def build_model(
     # so the bankability test is consistent per year.
     if tariff is not None:
         def subsidy_limit_rule(m, t):
-            max_bankable_at_t = tariff * m.remaining_npv_factor[t] / required_margin
-            gap_at_t = pyo.value(m.solar_capex_param[t]) - max_bankable_at_t
+            # remaining_npv_factor is a fixed Param, so this arithmetic resolves
+            # to a numeric constant; capex_init[t] is read as a plain float to
+            # avoid any dependence on Param evaluation inside the rule.
+            max_bankable_at_t = tariff * solar_energy_per_mw * m.remaining_npv_factor[t] / required_margin
+            gap_at_t = capex_init[t] - max_bankable_at_t
             gap_at_t = max(0.0, gap_at_t)
             return m.eaas_subsidy[t] <= gap_at_t * m.solar_eaas_add[t]
     else:
@@ -362,13 +422,14 @@ def build_model(
     # ------------------------------------------------------------
 
     
-    # Charge limited to solar surplus fraction
-    m.storage_charge_limit = pyo.Constraint(
-        T,
-        rule=lambda m, t:
-            m.storage_charge[t]
-            <= storage_solar_surplus_frac * m.solar_generation[t],
-    )
+    # NOTE: the solar-surplus charge-coupling constraint
+    # (storage_charge <= surplus_frac * solar_generation) was intentionally
+    # DROPPED. Storage is now governed by power and throughput limits only. The
+    # surplus fraction was an unsourced 0.20 that could not be justified at
+    # annual resolution; if reinstated it must be derived from an 8760
+    # solar-vs-load surplus calculation. With the charge now debited in the
+    # electricity balance, storage must "pay" for what it stores, so the coupling
+    # is no longer needed to prevent phantom-energy arbitrage.
 
     # Charge bounded by annualized power capacity (charge side)
     m.storage_charge_power_limit = pyo.Constraint(
@@ -427,7 +488,9 @@ def build_model(
         rule=lambda m, t:
             m.gas_generation[t]
             + m.solar_generation[t]
+            + hydro[t]
             + m.storage_discharge[t]
+            - m.storage_charge[t]
             + m.unserved[t]
             >= demand[t],
     )
@@ -551,6 +614,11 @@ def build_model(
                 for t in T
             ) <= public_budget_npv
         )
+        # Explicit flag so diagnostics can detect the constraint's presence
+        # without relying solely on hasattr. (This flag was previously read by
+        # extract_planning_diagnostics but never set, so the FIN-3 shadow price
+        # always returned None.)
+        m.has_public_budget_constraint = True
 
     # ------------------------------------------------------------
     # Objective & Emissions Constraints

@@ -22,11 +22,19 @@ Base-year demand anchors (2024)
 -------------------------------
 Anchored from NBS Q1 2024 served energy:
 - Q1 served energy = 5,770 GWh = 5.770 TWh
-- Annualized served demand = 4 × 5.770 = 23.08 TWh/year
+- Annualized served demand = 4 x 5.770 = 23.08 TWh/year
 
-Latent demand reconstruction via suppression factor λ:
+Latent demand reconstruction via suppression factor lambda:
 - latent_low  = served / 0.60 = 38.47 TWh/year
 - latent_high = served / 0.30 = 76.93 TWh/year
+
+UNITS CONVENTION (read before editing any value)
+------------------------------------------------
+- Demand, hydro, solar/gas generation entering the electricity balance are in
+  TWh_e (electrical energy) per year.
+- Gas *deliverability* (gas_scenario data) is in TWh_th (thermal); it is
+  converted to electrical via gas_eta inside build_model. Hydro is ALREADY
+  electrical and must NOT be multiplied by gas_eta.
 """
 
 from __future__ import annotations
@@ -35,21 +43,50 @@ import numpy as np
 
 
 # ============================================================
+# BLENDED CONCESSIONAL FINANCE (single source of truth)
+# ============================================================
+
+def blended_finance_scenarios():
+    """
+    Blended concessional finance capital-structure scenarios for EaaS solar.
+
+    The blended WACC fed to the bankability test is DERIVED from these tuples,
+    not asserted. 'blended_central' is the adopted working case.
+
+    Tuple order: (concessional_share, r_concessional, r_commercial)
+
+    ALL RATES ARE PLACEHOLDERS pending primary-source verification:
+      - r_commercial   : Nigerian commercial power-sector WACC.
+                         Anchor: IEA / CCSI 'Africa power-sector WACC > 18%
+                         (2023)'. VERIFY a Nigeria-specific value from the
+                         Nature (2025) global CoC dataset (s41597-025-05912-x).
+      - r_concessional : DFI / climate-fund concessional senior debt. Sits below
+                         the Kenya/Senegal *blended* 8.5-9% because it is the
+                         concessional tranche alone. SOURCE to a named facility.
+      - concessional_share : from an actual blend / mobilisation ratio. SOURCE.
+
+    NOTE: blended_central here is the SINGLE definition of the adopted capital
+    structure. load_scenario() pulls its defaults from this entry so the whole
+    codebase has one source of truth for the central blend. Do not hard-code
+    these three numbers anywhere else.
+    """
+    return {
+        # label:              (conc_share, r_conc, r_comm)   blended WACC
+        "commercial_only":    (0.00, 0.06, 0.18),   # 18.0% (unblended benchmark)
+        "blended_central":    (0.30, 0.06, 0.18),   # 14.4% (ADOPTED working case)
+        "blended_optimistic": (0.50, 0.06, 0.18),   # 12.0% (deeper concessional)
+        "concessional_heavy": (0.75, 0.06, 0.18),   #  9.0% (near-intervention)
+    }
+
+
+# ============================================================
 # PLANNING HORIZON
 # ============================================================
 
 def planning_horizon(start_year: int = 2025, end_year: int = 2045) -> np.ndarray:
-    """
-    Define the planning horizon.
-
-    Returns
-    -------
-    np.ndarray
-        Array of simulation years (annual resolution).
-    """
+    """Define the planning horizon (annual resolution)."""
     if end_year < start_year:
         raise ValueError("end_year must be >= start_year")
-
     return np.arange(start_year, end_year + 1)
 
 
@@ -61,16 +98,11 @@ def demand_level_scenarios() -> dict[str, float]:
     """
     Base-year demand level scenarios (TWh/year).
 
-    Interpretation
-    --------------
-    - served: observed served demand (lower bound), annualized from NBS Q1 2024.
-    - latent_low: reconstructed latent demand using λ = 0.60.
-    - latent_high: reconstructed latent demand using λ = 0.30.
+    - served     : observed served demand (lower bound), annualized NBS Q1 2024.
+    - latent_low : reconstructed latent demand using lambda = 0.60.
+    - latent_high: reconstructed latent demand using lambda = 0.30.
 
-    Notes
-    -----
-    These values are intended to be traceable to the data layer:
-    data/demand/demand_base_annualized_2024.csv
+    Traceable to: data/demand/demand_base_annualized_2024.csv
     """
     return {
         "served": 23.08,
@@ -80,14 +112,7 @@ def demand_level_scenarios() -> dict[str, float]:
 
 
 def demand_growth_scenarios() -> dict[str, float]:
-    """
-    Annual electricity demand growth assumptions (fraction per year).
-
-    Notes
-    -----
-    These are scenario envelopes for long-term planning. They are not
-    econometrically estimated from historical consumption.
-    """
+    """Annual electricity demand growth assumptions (fraction/year)."""
     return {
         "low": 0.025,
         "baseline": 0.04,
@@ -96,6 +121,7 @@ def demand_growth_scenarios() -> dict[str, float]:
 
 
 def solar_build_scenarios():
+    """Annual solar build-rate caps (MW/year)."""
     return {
         "conservative": 500,
         "baseline": 1000,
@@ -104,11 +130,7 @@ def solar_build_scenarios():
 
 
 def carbon_policy_scenarios() -> dict[str, dict[str, float | bool]]:
-    """
-    Carbon policy stances (deterministic).
-
-    Carbon price anchor is applied elsewhere via economics.
-    """
+    """Carbon policy stances (deterministic). Price in USD/tCO2."""
     return {
         "no_policy": {
             "carbon_active": False,
@@ -129,42 +151,43 @@ def gas_deliverability_scenarios() -> dict[str, str]:
     """
     Gas deliverability-to-power scenario labels.
 
-    These labels must match the 'scenario' column in:
+    Must match the 'scenario' column in:
     data/gas/processed/gas_available_power_annual_twh_th.csv
 
-    Structural scenarios (used in all RQs):
-      downside, baseline, upside, shock_recovery
-
-    Level-equivalent flat scenarios (GAS-3 only):
-      flat_downside, flat_upside, flat_shock_recovery
-      These hold cumulative gas supply identical to the paired structural
-      scenario but remove shape variation. Used to isolate whether cost
-      and feasibility differences are driven by SHAPE or LEVEL.
+    Structural (all RQs): downside, baseline, upside, shock_recovery
+    Level-equivalent flat controls (GAS-3 only): flat_downside, flat_upside,
+      flat_shock_recovery -- identical cumulative supply, no shape variation,
+      to isolate SHAPE vs LEVEL effects.
     """
     return {
         "downside":            "downside",
         "baseline":            "baseline",
         "upside":              "upside",
         "shock_recovery":      "shock_recovery",
-        # Level-equivalent controls for GAS-3 shape isolation
         "flat_downside":       "flat_downside",
         "flat_upside":         "flat_upside",
         "flat_shock_recovery": "flat_shock_recovery",
     }
 
+
 def land_scenarios():
+    """Land availability envelopes (km2)."""
     return {
         "tight": 1000,
         "moderate": 3000,
         "loose": 6000,
     }
 
+
 def capital_envelope_scenarios():
     """
-    Public capital envelopes (NPV over full planning horizon).
+    Public capital envelopes (NPV over full planning horizon, USD).
 
-    Calibrated from unconstrained adequacy requirement:
-    B* ≈ 6.13B USD
+    Fractions are applied to B_star, the adequacy capital requirement.
+
+    STALE-DOC: an earlier docstring quoted 'B* ~ 6.13B USD'. The coded value is
+    9.104B. Reconcile and restate B_star from a single documented derivation in
+    the final calibration pass. Do not cite 6.13B in the thesis until resolved.
     """
     B_star = 9_104_000_000
 
@@ -176,24 +199,18 @@ def capital_envelope_scenarios():
         "unconstrained": None,
     }
 
+
 def solar_tariff_scenarios():
     """
-    EaaS service tariff scenarios (USD per TWh).
+    EaaS service tariff scenarios (USD per TWh). Named levels low/baseline/high.
 
-    Three named levels for general use (low/baseline/high).
-
-    Self-financing threshold analysis (FIN-2):
-      At solar_low CAPEX (1,456,000 USD/MW), discount rate 4%, 21-year horizon:
-        NPV energy per MW = 0.03451 TWh
-        T* (unconditional, required_margin=1.10) = 46.4 M USD/TWh
-        T* (conditional,   required_margin=1.05) = 44.3 M USD/TWh
-
-      Below T*: financing_gap_per_mw > 0  → eaas_subsidy is required
-      Above T*: financing_gap_per_mw = 0  → EaaS is fully self-financing
-
-      The named levels are used by load_scenario() via solar_tariff_case.
-      The FIN-2 sweep (run_tariff_bankability_sweep) uses the TARIFF_SWEEP_GRID
-      constant defined below and bypasses load_scenario() directly.
+    STALE-DOC (deferred to final calibration pass): the previous threshold note
+    ('discount rate 4%, T* = 44.3-46.4M') is NO LONGER VALID. The model now uses
+    a social discount rate for the objective and a private/blended rate for the
+    bankability test, under which T* is materially higher and is a FUNCTION of
+    the blended-finance scenario (one T* per blend). Recompute T*(blend) and the
+    tariff grid once the financing rates are frozen. Until then, treat the grid
+    below as provisional.
     """
     return {
         "low":      45_000_000,
@@ -202,55 +219,34 @@ def solar_tariff_scenarios():
     }
 
 
-# Tariff sweep grid for FIN-2 bankability analysis.
-# Spans sub-threshold (30M) through well-above-threshold (110M),
-# with fine resolution around the T* = 44-46M crossing point.
-# Units: USD per TWh.
+# Tariff sweep grid for FIN-2 bankability analysis (USD per TWh).
+# STALE-DOC: fine resolution was placed around the old 44-46M crossing. Under
+# the blended-finance rates the crossing moves (higher, and blend-dependent).
+# Widen and re-centre this grid in the final pass once rates are frozen.
 TARIFF_SWEEP_GRID = [
-    30_000_000,   # well below threshold — large subsidy required
+    30_000_000,
     35_000_000,
     40_000_000,
-    44_000_000,   # just below T* (conditional threshold ~44.3M)
-    46_000_000,   # just above T* (unconditional threshold ~46.4M)
+    44_000_000,
+    46_000_000,
     50_000_000,
     60_000_000,
     75_000_000,
-    95_000_000,   # existing canonical run value
-    110_000_000,  # well above threshold — no subsidy required
+    95_000_000,
+    110_000_000,
 ]
+
 
 def gas_probability_weights():
     """
-    Probabilistic prior over gas deliverability regimes for Monte Carlo analysis.
+    Prior over gas deliverability regimes for Monte Carlo robustness diagnostics.
 
-    These weights represent a plausible scenario prior consistent with Nigerian
-    gas-to-power sector risk assessments. They are not probabilistic forecasts;
-    they are weighted sensitivity priors used for robustness diagnostics.
+    Not a forecast -- a weighted sensitivity prior. Report headline results under
+    symmetric weights (0.25 each) as a robustness check as well.
 
-    Justification:
-    --------------
-    baseline (0.50) — Central expectation aligned with NGC's Decade of Gas
-        roadmap and the NDC 3.0 power-sector planning assumption of sustained
-        current deliverability levels.
-
-    downside (0.25) — Reflects the historical pattern of gas-to-power supply
-        underperforming nameplate deliverability since 2015 (IEA Nigeria
-        Energy Outlook 2023). Vandalism, pipeline integrity failures, and
-        upstream pricing disputes have repeatedly suppressed available gas.
-
-    upside (0.20) — Reflects the probability of successful execution of
-        upstream gas investments and flare-capture under the 2060 net-zero
-        framework (Nigerian Gas Master Plan, PIA 2021).
-
-    shock_recovery (0.05) — Reflects tail-risk events such as the 2022
-        vandalism-driven gas supply crash, where deliverability fell sharply
-        before recovering. Low probability, high consequence.
-
-    Sensitivity:
-    ------------
-    Headline results in this study should also be reported under symmetric
-    weights (0.25 each) as a robustness check. Where findings are sensitive
-    to weight specification, both are reported.
+    SOURCING NOTE: the justifications reference NGC Decade of Gas, IEA Nigeria
+    Outlook 2023, Nigerian Gas Master Plan / PIA 2021. Confirm each citation
+    against a primary source before submission (standing verification rule).
     """
     return {
         "baseline":       0.50,
@@ -258,6 +254,8 @@ def gas_probability_weights():
         "upside":         0.20,
         "shock_recovery": 0.05,
     }
+
+
 # ============================================================
 # SCENARIO CONSTRUCTOR
 # ============================================================
@@ -266,45 +264,31 @@ def load_scenario(
     demand_level_case: str = "served",
     demand_case: str = "baseline",
     land_case: str = "moderate",
-    capital_case: str = "moderate", 
+    capital_case: str = "moderate",
     gas_deliverability_case: str = "baseline",
-    #solar_case: str = "baseline",
     solar_build_case: str = "baseline",
-    solar_tariff_case= "baseline",
+    solar_tariff_case: str = "baseline",
     carbon_case: str = "no_policy",
+    blend_case: str = "blended_central",
     start_year: int = 2025,
     end_year: int = 2045,
 ) -> dict:
     """
+    Build a scenario parameter dictionary consumed by the optimization model.
+
     Parameters
     ----------
-    demand_level_case : str
-        Base-year demand level. One of {"served", "latent_low", "latent_high"}.
-        Anchored from NBS Q1 2024 served energy (23.08 TWh/year).
-    demand_case : str
-        Annual demand growth rate. One of demand_growth_scenarios() keys.
-    land_case : str
-        Land availability constraint. One of land_scenarios() keys.
-    capital_case : str
-        Public capital budget envelope. One of capital_envelope_scenarios() keys.
-    gas_deliverability_case : str
-        Gas deliverability-to-power scenario. One of gas_deliverability_scenarios() keys.
-    solar_build_case : str
-        Annual solar build rate cap. One of solar_build_scenarios() keys.
-    solar_tariff_case : str
-        EaaS service tariff level. One of solar_tariff_scenarios() keys.
-    carbon_case : str
-        Carbon policy stance. One of carbon_policy_scenarios() keys.
-    start_year : int
-        First year of planning horizon (default 2025).
-    end_year : int
-        Final year of planning horizon (default 2045).
-
-    Returns
-    -------
-    dict
-        Scenario parameter dictionary consumed by downstream evaluation
-        and optimization modules.
+    demand_level_case : {"served", "latent_low", "latent_high"}
+    demand_case       : key of demand_growth_scenarios()
+    land_case         : key of land_scenarios()
+    capital_case      : key of capital_envelope_scenarios()
+    gas_deliverability_case : key of gas_deliverability_scenarios()
+    solar_build_case  : key of solar_build_scenarios()
+    solar_tariff_case : key of solar_tariff_scenarios()
+    carbon_case       : key of carbon_policy_scenarios()
+    blend_case        : key of blended_finance_scenarios() (default central).
+                        Sets the EaaS capital structure -> blended private rate.
+    start_year, end_year : planning horizon bounds.
     """
 
     # ---- Validate labels
@@ -312,8 +296,6 @@ def load_scenario(
         raise ValueError(f"Unknown demand_level_case: {demand_level_case}")
     if demand_case not in demand_growth_scenarios():
         raise ValueError(f"Unknown demand_case: {demand_case}")
-    #if solar_case not in solar_capacity_scenarios():
-        #raise ValueError(f"Unknown solar_case: {solar_case}")
     if carbon_case not in carbon_policy_scenarios():
         raise ValueError(f"Unknown carbon_case: {carbon_case}")
     if gas_deliverability_case not in gas_deliverability_scenarios():
@@ -324,73 +306,125 @@ def load_scenario(
         raise ValueError(f"Unknown capital_case: {capital_case}")
     if solar_build_case not in solar_build_scenarios():
         raise ValueError(f"Unknown solar_build_case: {solar_build_case}")
-    
+    if solar_tariff_case not in solar_tariff_scenarios():
+        raise ValueError(f"Unknown solar_tariff_case: {solar_tariff_case}")
+    if blend_case not in blended_finance_scenarios():
+        raise ValueError(f"Unknown blend_case: {blend_case}")
+
     years = planning_horizon(start_year, end_year)
+
+    # ---- Blended finance: single source of truth (no hard-coded duplicates)
+    conc_share, r_conc, r_comm = blended_finance_scenarios()[blend_case]
 
     scenario = {
         # ---- Temporal
         "years": years,
 
-        # ---- Demand (planning-level, annual)
+        # ---- Demand (TWh_e, annual)
         "base_demand_twh": demand_level_scenarios()[demand_level_case],
         "demand_growth": demand_growth_scenarios()[demand_case],
-    
-        # ---- Gas deliverability to power (optimization Phase 1: thermal energy)
+
+        # ---- Gas deliverability to power (TWh_th; converted by gas_eta)
         "gas_scenario": gas_deliverability_scenarios()[gas_deliverability_case],
         "gas_eta": 0.43,
-        
-        # ---- Gas capacity baseline
-        "gas_baseline_mw": 13600,
-        # ---- Gas fleet derating (brownfield retirement proxy)
-        # Baseline fleet avg commissioning ~2005–2015. Assume linear retirement
-        # begins 2035 (year 10 of horizon), 680 MW/yr through 2045.
-        # Set to 0.0 to disable (e.g., upside gas scenarios with new builds).
+
+        # ---- Gas capacity baseline (gas-only fleet, MW)
+        "gas_baseline_mw": 11000,
+        # Brownfield retirement proxy: linear retirement from 2035.
+        # (Comment corrected: 680 MW/yr x 11 years = 7,480 MW retired by 2045
+        #  from an 11,000 MW gas-only base -- NOT the whole fleet.)
         "gas_baseline_retirement_start_year": 2035,
-        "gas_baseline_retirement_mw_per_year": 680.0,  # ~13600/20 years remaining
-        # ---- Gas CAPEX
+        "gas_baseline_retirement_mw_per_year": 680.0,
         "gas_capex_per_mw": 900000,
+
+        # ---- Gas fleet availability ceiling (fraction of installed capacity) ---
+        # This scales INSTALLED gas capacity to a realistic ENERGY ceiling. It is
+        # a capacity ceiling, not a dispatch prediction: the optimiser sets actual
+        # utilisation below it, subject to fuel (gas_balance) and demand.
+        #
+        # CRITICAL -- this must be FUEL-AGNOSTIC availability: mechanical +
+        # atmospheric availability only (NERC Availability Factor clauses (i) and
+        # (ii)). It must EXCLUDE clause (iii) feedstock availability, because gas-
+        # supply scarcity is already carried by gas_balance / the deliverability
+        # scenarios. Using NERC's headline Availability Factor here would double-
+        # count fuel scarcity and contaminate the gas shadow prices.
+        
+        # Source: fuel-agnostic mechanical/maintenance availability, reconstructed
+        # from NERC outage cause-decomposition, or an OCGT/CCGT engineering
+        # benchmark derated for Nigerian plant condition (~0.75-0.85). REPLACE.
+        "gas_availability_factor": 0.80,   # <-- set from fuel-agnostic availability
+
+        # ---- Hydro (exogenous must-run, TWh_e/year, already electrical)
+        # -------------------------------------------------------------------
+        "hydro_baseline_twh": 8.01,   # hydro is held flat at the 4-year mean.
+        "hydro_growth": 0.0,          # flat unless modelling new hydro (e.g. Zungeru ramp)
 
         # ---- Land policy
         "land_available_km2": land_scenarios()[land_case],
         "land_intensity_solar_km2_per_mw": 0.025,
         "land_intensity_gas_km2_per_mw": 0.001,
         "land_intensity_storage_km2_per_mwh": 0.00001,
-        "storage_baseline_mwh": 0.0,  # No existing utility-scale BESS (brownfield baseline)
+        "storage_baseline_mwh": 0.0,
+
         # ---- Solar
         "solar_cf": 0.27,
-        "solar_baseline_mw": 500,  # 2025 installed base (MW); brownfield anchor
+        "solar_baseline_mw": 500,
         "solar_max_build_mw_per_year": solar_build_scenarios()[solar_build_case],
-        # Minimum annual solar build rate (MW/yr).
-        # Prevents pathological all-delay when time-varying CAPEX is active.
-        # Default 100 MW/yr when time-varying CAPEX used; 0 otherwise.
-        # Override in runner scripts: scenario["solar_min_build_mw_per_year"] = 100.
+        # Min annual build floor: set to 100 MW/yr in runners when time-varying
+        # CAPEX is active (prevents pathological all-delay). 0 = disabled here.
         "solar_min_build_mw_per_year": 0.0,
-        "solar_capex_scenario": "solar_low",  # NREL ATB scenario for LCOE diagnostic
+        "solar_capex_scenario": "solar_low",
+
         # ---- Public capital constraint (NPV, USD)
         "public_solar_budget_npv": capital_envelope_scenarios()[capital_case],
-        "disco_collection_rate": 1.0,
-        # ---- Storage reduced-form (optimization; annual, energy-neutral)
-        # Equivalent full cycles/year (dimensionless). Typical planning proxy: 150–350.
+
+        # ---- Storage reduced-form (annual)
         "storage_deployable_hours_per_year": 700.0,
-        # Fraction of solar generation available for charging storage
-        "storage_solar_surplus_frac": 0.20,
-        # Round-trip efficiency used as a limiter on usable discharge in reduced-form constraint.
+        # storage_solar_surplus_frac: coupling cap intentionally DROPPED.
+        # Storage is governed by power + throughput limits only. If reinstated,
+        # it must be sourced from an 8760 solar-vs-load surplus calculation, not
+        # a bare 0.20 default. Left commented as an explicit record of the choice.
+        # "storage_solar_surplus_frac": 0.20,
         "storage_round_trip_eff": 0.90,
 
-        # Financing regime
+        # ---- Financing regime
         "financing_regime": "traditional",  # or "eaas"
 
-        # Tariff (USD per TWh)
+        # ---- EaaS service tariff (USD per TWh)
         "solar_service_tariff_usd_per_twh":
             solar_tariff_scenarios()[solar_tariff_case],
 
-        # Required NPV margin
+        # ---- Discounting
+        "social_discount_rate": 0.08,   # objective DF (society's time preference)
+
+        # ---- EaaS capital structure (blended concessional finance)
+        # Pulled from blended_finance_scenarios()[blend_case] above -- single
+        # source of truth. build_model derives the private/bankability rate from
+        # these via resolve_private_rate(). private_discount_rate is the fallback
+        # used ONLY if the three keys below are absent.
+        "blend_case": blend_case,
+        "concessional_share": conc_share,
+        "r_concessional": r_conc,
+        "r_commercial": r_comm,
+        "private_discount_rate": r_comm,   # fallback == unblended commercial rate
+
+        # Optional Level-2 concessional envelope (NPV, USD). None => no scarcity
+        # constraint (Level 1: blended rate only). Set in FIN runners to activate
+        # the concessional shadow-price diagnostic.
+        "concessional_envelope_npv": None,
+
+        # ---- Required NPV margin (bankability coverage cushion, distinct from WACC)
         "required_margin": 1.10,
-        "peak_demand_multiple": 2.5,
-        # ---- Carbon policy
+
+        # ---- Diagnostic-only inputs (consumed by specific runners, not the LP)
+        # Confirm these are read where intended; they do not affect the core solve.
+        "disco_collection_rate": 1.0,   # used by FIN-3 runner
+        "peak_demand_multiple": 2.5,    # used by peak-adequacy diagnostic
+
+        # ---- Carbon policy (spreads carbon_active / carbon_price)
         **carbon_policy_scenarios()[carbon_case],
 
-        # ---- Labels (for reporting)
+        # ---- Labels (reporting)
         "labels": {
             "demand_level": demand_level_case,
             "demand": demand_case,
@@ -398,6 +432,7 @@ def load_scenario(
             "gas_deliverability": gas_deliverability_case,
             "land": land_case,
             "solar_build": solar_build_case,
+            "blend": blend_case,
         },
     }
 
