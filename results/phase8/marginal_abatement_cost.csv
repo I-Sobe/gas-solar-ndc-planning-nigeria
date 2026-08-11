@@ -1,5 +1,0 @@
-from_case,to_case,delta_cost_usd,delta_emissions_tco2,implied_mac_usd_per_tco2
-baseline_no_policy,ndc2_unconditional,446749143649.07074,31753316.96654001,14069.369323520807
-ndc2_unconditional_eaas,ndc3_unconditional,449655279431.37836,3898875.6953999847,115329.47304831895
-ndc3_unconditional_eaas,ndc3_conditional,101486137037.59932,16057556.874460012,6320.148066796875
-ndc3_conditional_eaas,ndc2_conditional,248899962948.6725,16733962.254269972,14873.94074198782

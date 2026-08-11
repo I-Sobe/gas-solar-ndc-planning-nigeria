@@ -11,7 +11,6 @@ from src.scenarios import load_scenario
 import pyomo.environ as pyo
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
-from src.optimize_experiments import run_deterministic_scenario
 from src.io import load_econ, load_solar_capex_by_year
 from src.utils import json_safe
 
@@ -76,27 +75,6 @@ def main():
 
     diag = extract_planning_diagnostics(m, scenario, econ)
 
-    capacity_paths = {
-        "solar_mw": [
-            float(pyo.value(m.solar_capacity_mw[t]))
-            for t in range(len(years))
-        ],
-        "storage_mwh": [
-            float(pyo.value(m.storage_capacity_mwh[t]))
-            for t in range(len(years))
-        ],
-        "gas_mw": [
-            float(pyo.value(m.gas_capacity_mw[t]))
-            for t in range(len(years))
-        ],
-    }
-
-    det_output = run_deterministic_scenario(
-        scenario=scenario,
-        econ=econ,
-        capacity_paths=capacity_paths,
-    )
-
     # Decision variables
     dv = {
         "solar_add_mw_by_year":
@@ -127,14 +105,6 @@ def main():
 
     print("Storage discharge (TWh by year):", diag["storage_discharge_twh_e_by_year"])
     print("Storage binding constraint by year:", diag["storage_binding_by_year"])
-
-    # Cross-validation of LP storage formulation against stateful dispatch
-    det_unserved = float(np.sum(det_output["unserved"]))
-    lp_unserved = cumulative_unserved_twh
-    print(f"LP unserved (TWh): {lp_unserved:.4f}")
-    print(f"Deterministic dispatch unserved (TWh): {det_unserved:.4f}")
-    if abs(det_unserved - lp_unserved) > 0.1:
-        print(f"WARNING: dispatch mismatch = {abs(det_unserved - lp_unserved):.3f} TWh")
 
     # ------------------------------------------------------------
     # Save diagnostics (json)

@@ -1,3 +1,0 @@
-ambition_level,ndc3_pub_status,ndc3_eaas_status,eaas_necessary_for_ndc3,eaas_cost_improvement_usd,interpretation
-unconditional,optimal,optimal,False,27873327007.39499,EaaS saves 27.87B USD vs public-only under NDC 3.0 unconditional.
-conditional,optimal,optimal,False,-1.9073486328125e-06,EaaS saves -0.00B USD vs public-only under NDC 3.0 conditional.

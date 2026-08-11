@@ -1947,23 +1947,21 @@ def extract_planning_diagnostics(m, scenario, econ=None, solar_capex_series=None
             pyo.value(m.storage_discharge[t])
             - scenario["storage_round_trip_eff"] * pyo.value(m.storage_charge[t])
         ) <= 1e-6
-        # Note: binding is checked by primal slack < 1e-6 TWh (≈ 1 MWh).
-        # This is a primal check, not a dual check. For LP post-processing,
-        # this is for diagnostic purposes.
-        charge_bind = abs(
-            pyo.value(m.storage_charge[t])
-            - scenario["storage_solar_surplus_frac"] * pyo.value(m.solar_generation[t])
-        ) <= 1e-6
-
-        if power_bind:
+        
+        # Guard: when no storage is built, no constraint is meaningfully binding.
+        # Without this, 0 <= 0 slack tests register as "power_limit" on a
+        # zero-capacity battery, producing a misleading diagnostic.
+        if pyo.value(m.storage_capacity_mwh[t]) <= 1e-6:
+            storage_binding[int(y)] = "none"
+        elif power_bind:
             storage_binding[int(y)] = "power_limit"
         elif energy_bind:
             storage_binding[int(y)] = "energy_limit"
-        elif charge_bind:
-            storage_binding[int(y)] = "charge_limit"
         else:
             storage_binding[int(y)] = "none"
-
+        # charge_limit branch removed: the solar-surplus coupling constraint was
+        # dropped from build_model, so scenario["storage_solar_surplus_frac"]
+        # no longer exists and this diagnostic had no constraint to report on.
     # ---- Peak adequacy heuristic (must be computed before return dict)
     # Peak-to-average demand ratio. Nigerian grid load factor ≈ 0.55
     # (Nigerian System Operator statistics, 2022-2023). 1/0.55 ≈ 1.82.
