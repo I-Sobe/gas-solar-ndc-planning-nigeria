@@ -179,7 +179,12 @@ def load_econ(voll_case="voll_low", gas_price_case="gas_low"):
 
     econ["UNSERVED_ENERGY_PENALTY"] = to_float(voll_row["voll_usd_per_twh"])
 
-    econ["CARBON_EMISSION_FACTOR"] = 0.421
-
+    # Thermal-basis emission factor (tCO2 per MWh_th), HHV basis to match the
+    # HHV calorific value used in the gas-to-power volume->energy conversion.
+    # IPCC default 56.1 kgCO2/GJ (NCV) = 0.2020 tCO2/MWh_th (LHV), converted to
+    # HHV basis (/1.108) = 0.1823. EF per MWh_e is DERIVED in build_model as
+    # EF_th / gas_eta, so efficiency and emissions can never drift apart.
+    # [SOURCE: IPCC default, HHV-adjusted. I'd Replace with Nigeria NIR factor if found.]
+    econ["EF_TCO2_PER_MWH_TH"] = 0.1823
     return econ
 

@@ -68,8 +68,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
 # ── Emission factor (consistent with optimize_model.py) ───────────────────────
-EF_TCO2_PER_TWH_TH = 181_100.0   # tCO2 per TWh_th
-
+EF_TCO2_PER_TWH_TH = 182_300.0   # tCO2 per TWh_th (IPCC default, HHV basis = 0.1823 tCO2/MWh_th)
 # ── Time horizon ──────────────────────────────────────────────────────────────
 START_YEAR    = 2025
 TARGET_YEAR   = 2030

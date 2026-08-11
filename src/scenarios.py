@@ -326,7 +326,7 @@ def load_scenario(
 
         # ---- Gas deliverability to power (TWh_th; converted by gas_eta)
         "gas_scenario": gas_deliverability_scenarios()[gas_deliverability_case],
-        "gas_eta": 0.43,
+        "gas_eta": 0.287,
 
         # ---- Gas capacity baseline (gas-only fleet, MW)
         "gas_baseline_mw": 11000,

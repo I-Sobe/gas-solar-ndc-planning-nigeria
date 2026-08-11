@@ -546,11 +546,14 @@ def build_model(
         for t in T
     )
 
+    # EF per MWh_e derived from the thermal factor and THIS scenario's gas_eta,
+    # so emissions accounting uses the same efficiency as dispatch. Sweeping
+    # gas_eta automatically and consistently sweeps the electrical emission factor.
+    ef_e = econ["EF_TCO2_PER_MWH_TH"] / scenario["gas_eta"]
     m.emissions_by_year = pyo.Expression(
         T,
         rule=lambda m, t:
-            m.gas_generation[t] * 1e6
-            * econ["CARBON_EMISSION_FACTOR"],
+            m.gas_generation[t] * 1e6 * ef_e,
     )
 
 
