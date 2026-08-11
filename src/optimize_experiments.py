@@ -2057,7 +2057,7 @@ def extract_planning_diagnostics(m, scenario, econ=None, solar_capex_series=None
 
         # Effective LCOE of EaaS solar at year t (USD per MWh)
         capex_t = float(pyo.value(m.solar_capex_param[t]))  # USD/MW
-        cf_t = scenario.get("solar_cf", 0.27)
+        cf_t = scenario["solar_cf"] # direct index: no silent fallback to a stale default
         hours_per_year = 8760
         eaas_lcoe_mwh = capex_t / (cf_t * hours_per_year * 20)  # simple 20-yr levelization
 

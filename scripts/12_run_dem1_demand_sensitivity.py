@@ -1,4 +1,25 @@
 """
+12_run_dem1_demand_sensitivity.py  —  DEM-1   [SUSPENDED]
+
+⚠ SUSPENDED pending Phase 2 tiered-demand rebuild.
+  - latent_low/latent_high were built as multiples of COLLECTED energy (23.08),
+    which is a revenue quantity, not demand. Wrong base.
+  - All quantified figures below predate the eta correction (eta now 0.287,
+    not 0.43) and the demand-base correction (37.09 TWh gross generation).
+  Do not run or quote. DEM-1 becomes the ACCESS experiment once the tiered
+  demand architecture (Tier 1 grid / Tier 2 self-gen / Tier 3 access-adjusted)
+  and the genset backstop land in Phase 2.
+"""
+
+"""
+12_run_dem1_demand_sensitivity.py  —  DEM-1
+
+⚠ STALE NUMBERS: the quantified examples below (gas cap 17.5 TWh_e, η=0.43,
+"solar covers 24%") predate the Phase 1.1 η correction (η now 0.287, gas cap
+~11.7 TWh_e). The LOGIC is unchanged; the illustrative figures will be
+refreshed in the Phase 5.5 doc-parity pass. Do not quote these numbers.
+...
+
 12_run_dem1_demand_sensitivity.py  —  DEM-1
 ============================================
 
@@ -280,7 +301,10 @@ def compute_eaas_deployment(df):
 # ============================================================
 
 def main():
-
+    raise NotImplementedError(
+        "DEM-1 suspended: latent demand scenarios use a depreciated base."
+        "See module docstring. Rebuild in Phase 2."
+    )
     econ = load_econ(CANONICAL_VOLL)
 
     print(f"\nDEM-1: Demand level sensitivity")

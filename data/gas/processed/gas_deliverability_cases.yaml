@@ -1,6 +1,16 @@
 anchor:
   year: 2025
-  gas_available_twh_th: 40.66
+  # Re-anchored to observed gas-to-power delivery.
+  # Derived: observed 2024 gas generation 25.62 TWh_e (NERC: 37,093.70 GWh
+  # total, 30.92% hydro) / measured eta 0.287 = 89.27 TWh_th.
+  # Cross-check: 89.27 TWh_th = ~805 MMscf/d at HHV 1036 Btu/scf, at the low
+  # end of the sourced NGC range (800-860 MMscf/d). Three independent sources
+  # (NERC generation, NGC volumes, efficiency identity) close to within ~1%.
+  # 2024 observation used as the 2025 anchor: gas delivery was broadly stable
+  # between the two years (2024 total gen 37.09 TWh vs 2025 39.19 TWh).
+  # Previous value 40.66 was calibrated against the old eta=0.43 and the
+  # collected-energy demand base; it understated delivery by ~2.2x.
+  gas_available_twh_th: 89.27
 
 cases:
   downside:

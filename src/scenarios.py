@@ -25,8 +25,29 @@ Anchored from NBS Q1 2024 served energy:
 - Annualized served demand = 4 x 5.770 = 23.08 TWh/year
 
 Latent demand reconstruction via suppression factor lambda:
-- latent_low  = served / 0.60 = 38.47 TWh/year
-- latent_high = served / 0.30 = 76.93 TWh/year
+Base-year demand anchor (2024) — GROSS GENERATION at busbar
+------------------------------------------------------------
+Demand is metered at gross generation sent out. This is the natural boundary
+for a generation capacity-expansion model: capacity serves generation, and the
+NDC emissions caps account against actual grid output.
+
+  [SOURCE: NERC 2024 — gross generation 37,093.70 GWh; hydro share 30.92%]
+    grid gross generation   37.09 TWh   <- Tier 1, the model's demand base
+      of which gas          25.62 TWh
+      of which hydro        11.47 TWh
+
+Loss ladder (NERC 2024) — for reference, NOT applied in the energy balance:
+    gross generation        37.09 TWh
+      -7% TLF            -> 34.50 TWh   delivered to DisCos
+      -36.4% ATC&C       -> 21.97 TWh   collected (billed and paid)
+
+The previous base (23.08 TWh) sat at the bottom of that ladder: it was
+COLLECTED energy, excluding electricity consumed but stolen, unmetered, or
+unpaid — all of which is real demand of real users.
+
+latent_low / latent_high are DEPRECATED: they were built as multiples of the
+collected figure. The tiered demand architecture (Tier 2 self-generation,
+Tier 3 access-adjusted) replaces them in Phase 2.
 
 UNITS CONVENTION (read before editing any value)
 ------------------------------------------------
@@ -105,7 +126,12 @@ def demand_level_scenarios() -> dict[str, float]:
     Traceable to: data/demand/demand_base_annualized_2024.csv
     """
     return {
-        "served": 23.08,
+        # Tier 1 (calibration anchor): observed GROSS GENERATION at busbar, 2024.
+        # Corrected from 23.08, which was COLLECTED energy (a revenue quantity),
+        # not demand. See docstring for the loss ladder.
+        "served": 37.09,
+        # DEPRECATED — wrong base (built as multiples of collected energy).
+        # Rebuilt as the tiered demand architecture in Phase 2. DEM-1 suspended.
         "latent_low": 38.47,
         "latent_high": 76.93,
     }
@@ -356,8 +382,10 @@ def load_scenario(
 
         # ---- Hydro (exogenous must-run, TWh_e/year, already electrical)
         # -------------------------------------------------------------------
-        "hydro_baseline_twh": 8.01,   # hydro is held flat at the 4-year mean.
-        "hydro_growth": 0.0,          # flat unless modelling new hydro (e.g. Zungeru ramp)
+        # Measured 2024: 11.47 TWh (NERC — 30.92% of 37,093.70 GWh).
+        # 2025 ~12.8 TWh as Zungeru (700 MW) ramps.
+        # TODO Phase 2: replace with explicit committed-vs-NDC-aligned trajectory.
+        "hydro_baseline_twh": 11.47,        "hydro_growth": 0.0,          # flat unless modelling new hydro (e.g. Zungeru ramp)
 
         # ---- Land policy
         "land_available_km2": land_scenarios()[land_case],
@@ -367,7 +395,10 @@ def load_scenario(
         "storage_baseline_mwh": 0.0,
 
         # ---- Solar
-        "solar_cf": 0.27,
+        "solar_cf": 0.20,   # fixed-tilt CF, central. Global Solar Atlas PVOUT for
+                            # named N. Nigeria sites / 8760, net of soiling/thermal/
+                            # availability derating. Sweep {0.18, 0.20, 0.22}.
+                            # [SOURCE: Global Solar Atlas, sites: <name them>]
         "solar_baseline_mw": 500,
         "solar_max_build_mw_per_year": solar_build_scenarios()[solar_build_case],
         # Min annual build floor: set to 100 MW/yr in runners when time-varying
