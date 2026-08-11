@@ -1,36 +1,3 @@
-"""
-Gas Supply Module (Planning-Level Physical Decline)
-
-Scope
------
-Implements Arps decline-curve models to generate annual gas-to-power
-supply availability profiles under physical depletion constraints.
-This module represents physical decline only.
-
-Modeling assumptions
---------------------
-- Annual time-step resolution
-- Representative maturing gas field(s)
-- Decline applies to electricity-equivalent gas supply (TWh/year)
-- No new field development, infill drilling, or compression
-- No policy, allocation, pricing, or uncertainty logic (handled elsewhere)
-
-Supported decline forms
------------------------
-- Exponential (b = 0)
-- Hyperbolic (0 < b < 1)
-
-Notes
------
-- Decline rates are assumed non-negative.
-- Hyperbolic decline asymptotically approaches zero production.
-
-Non-scope
----------
-- Field development optimization
-- Domestic gas allocation or export trade-offs
-- Price formation or stochastic sampling
-"""
 import csv
 import os
 import numpy as np
