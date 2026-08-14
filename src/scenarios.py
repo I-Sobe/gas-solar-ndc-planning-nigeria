@@ -386,6 +386,11 @@ def load_scenario(
         # 2025 ~12.8 TWh as Zungeru (700 MW) ramps.
         # TODO Phase 2: replace with explicit committed-vs-NDC-aligned trajectory.
         "hydro_baseline_twh": 11.47,        "hydro_growth": 0.0,          # flat unless modelling new hydro (e.g. Zungeru ramp)
+        # Installed hydro capacity (MW) — required by the sliced model, which
+        # dispatches hydro within a seasonal energy budget subject to a power
+        # limit. Kainji + Jebba + Shiroro + Zungeru + Dadin-Kowa.
+        # [SOURCE: NERC — sum of installed hydro plant ratings]
+        "hydro_capacity_mw": 2678,
 
         # ---- Land policy
         "land_available_km2": land_scenarios()[land_case],
@@ -406,6 +411,29 @@ def load_scenario(
         "solar_min_build_mw_per_year": 0.0,
         "solar_capex_scenario": "solar_low",
 
+        # ---- Intra-annual shape parameters (sliced model only) --------------
+        # ALL are declared assumptions pending sourcing. Each is swept.
+        # Relative average power by season (ratio only; normalised internally).
+        # Dry (Nov-Apr) demand higher: heat, peak Jan-Apr per cited load research.
+        # [SOURCE NEEDED: quantitative seasonal demand ratio]
+        "season_demand_factor": {"dry": 1.08, "wet": 0.92},
+        # Relative average power by period. Flatter than residential: national
+        # aggregate load has C&I daytime offset; night is the genuine trough.
+        # Observed grid data CANNOT settle this (shedding truncates the peak).
+        # [SOURCE NEEDED: quantitative intra-day load shape]
+        "period_demand_factor": {"night": 0.65, "day": 1.05, "peak": 1.20},
+        # Relative solar yield by season, day slices only. Dry = clearer skies
+        # (offset by harmattan dust); wet = monsoon cloud.
+        # [SOURCE NEEDED: Global Solar Atlas MONTHLY PVOUT, named sites]
+        "season_solar_factor": {"dry": 1.15, "wet": 0.85},
+        # Hydro seasonal energy split. 2025 data cannot establish this (Zungeru
+        # ramp masks any seasonal signal). Central 0.90; sweep {0.75,0.90,1.00}.
+        # [SOURCE NEEDED: pre-Zungeru quarterly generation, 2022-2023]
+        "hydro_season_factor": {"dry": 0.90, "wet": 1.10},
+        # Minimum hydro per slice as a fraction of proportional share
+        # (environmental flow, irrigation, downstream obligations).
+        # [SOURCE NEEDED: minimum flow obligations, Kainji/Jebba/Shiroro]
+        "hydro_min_flow_fraction": 0.50,
         # ---- Public capital constraint (NPV, USD)
         "public_solar_budget_npv": capital_envelope_scenarios()[capital_case],
 
