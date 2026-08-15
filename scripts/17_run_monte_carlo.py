@@ -11,14 +11,14 @@ Unlike the deterministic replay approach, this script re-optimises the
 full LP for each draw, ensuring:
     - Capacity plans adapt to each gas/demand realisation
     - Cost accounting uses discounted NPV (consistent with deterministic results)
-    - - LCOE reported per draw [KNOWN DEFECT — plan: denominator omits hydro and
+    - LCOE reported per draw [KNOWN DEFECT — plan: denominator omits hydro and
       double-counts storage discharge; numerator includes the VoLL penalty.
       Not reportable until corrected.]
     - VoLL decomposition is available per draw
 
 UNCERTAINTY DIMENSIONS
 -----------------------
-Demand growth:   Normal(mu, sigma) from scenarios.demand_growth_prior()
+    Demand growth:   Normal(mu, sigma) from scenarios.demand_growth_prior()
                      [SOURCE NEEDED — plan 1.6. Prior is centred on an
                      unsourced value; no MC result reportable until resolved.]
     Gas regime:      Categorical draw from gas_probability_weights()
@@ -98,16 +98,38 @@ CASES = [
 
 
 def generate_draws(N, seed=42):
-    rng = np.random.RandomState(seed)     # modernised in the next commit
+    """
+    Draw N (demand_growth, gas_regime) pairs.
+
+    LIMITATION: the two dimensions are sampled INDEPENDENTLY. Both are driven
+    by the same underlying reform dynamic (payment chain, midstream investment,
+    sector governance), so independent sampling generates incoherent worlds —
+    e.g. 6% demand growth alongside collapsing gas deliverability — and
+    inflates both tails. The infeasibility rate is a tail statistic and is
+    therefore overstated. Correlation structure is plan item 1.6 Step 8.
+    """
+    rng = np.random.default_rng(seed)
     prior = demand_growth_prior()
     gas_probs = gas_probability_weights()
     gas_labels = list(gas_probs.keys())
     gas_weights = list(gas_probs.values())
+
     draws = []
-    for _ in range(N):
-        dg = max(0.005, rng.normal(prior["mean"], prior["sigma"]))
+    n_rejected = 0
+    while len(draws) < N:
+        dg = rng.normal(prior["mean"], prior["sigma"])
+        if dg <= 0.0:
+            n_rejected += 1
+            continue
         gr = rng.choice(gas_labels, p=gas_weights)
-        draws.append({"demand_growth": dg, "gas_regime": gr})
+        draws.append({"demand_growth": float(dg), "gas_regime": str(gr)})
+
+    realised_mean = float(np.mean([d["demand_growth"] for d in draws]))
+    realised_std = float(np.std([d["demand_growth"] for d in draws]))
+    print(f"  Draw check: mean={realised_mean:.5f} (prior {prior['mean']:.5f}), "
+          f"sd={realised_std:.5f} (prior {prior['sigma']:.5f}), "
+          f"rejected={n_rejected}")
+
     return draws
 
 
