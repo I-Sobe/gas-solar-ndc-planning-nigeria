@@ -11,12 +11,16 @@ Unlike the deterministic replay approach, this script re-optimises the
 full LP for each draw, ensuring:
     - Capacity plans adapt to each gas/demand realisation
     - Cost accounting uses discounted NPV (consistent with deterministic results)
-    - LCOE is properly computed as NPV_cost / NPV_generation
+    - - LCOE reported per draw [KNOWN DEFECT — plan: denominator omits hydro and
+      double-counts storage discharge; numerator includes the VoLL penalty.
+      Not reportable until corrected.]
     - VoLL decomposition is available per draw
 
 UNCERTAINTY DIMENSIONS
 -----------------------
-    Demand growth:   Normal(mu=0.04, sigma=0.01), truncated at 0.005
+Demand growth:   Normal(mu, sigma) from scenarios.demand_growth_prior()
+                     [SOURCE NEEDED — plan 1.6. Prior is centred on an
+                     unsourced value; no MC result reportable until resolved.]
     Gas regime:      Categorical draw from gas_probability_weights()
                      {baseline:0.50, downside:0.25, upside:0.20, shock_recovery:0.05}
 
@@ -45,7 +49,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
 from src.io import load_econ, load_solar_capex_by_year
-from src.scenarios import load_scenario, gas_probability_weights
+from src.scenarios import (
+    load_scenario,
+    gas_probability_weights,
+    demand_growth_scenarios,
+    demand_growth_prior,
+)
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
 from src.utils import json_safe
@@ -58,6 +67,10 @@ RESULTS_DIR = ROOT / "results" / "monte_carlo"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 CAP_PATH = ROOT / "data" / "cost" / "processed" / "emissions_cap.csv"
+# load_scenario requires a valid demand_case key, but scenario["demand_growth"]
+# is overwritten with the draw immediately after. Derived from the registry so
+# the Phase 1.6 rename cannot break this call.
+MC_DEMAND_CASE_PLACEHOLDER = next(iter(demand_growth_scenarios()))
 
 
 def load_annual_caps(scenario_name, years):
@@ -74,24 +87,25 @@ def load_annual_caps(scenario_name, years):
 
 CASES = [
     {"label": "NDC3 uncond (public)", "ndc_scenario": "ndc3_unconditional",
-     "capital_case": "tight", "financing_regime": "public", "required_margin": 1.10},
+     "capital_case": "tight", "financing_regime": "traditional", "required_margin": 1.10},
     {"label": "NDC3 uncond (EaaS)", "ndc_scenario": "ndc3_unconditional",
      "capital_case": "tight", "financing_regime": "eaas", "required_margin": 1.10},
     {"label": "NDC3 cond (public)", "ndc_scenario": "ndc3_conditional",
-     "capital_case": "moderate", "financing_regime": "public", "required_margin": 1.05},
+     "capital_case": "moderate", "financing_regime": "traditional", "required_margin": 1.05},
     {"label": "NDC3 cond (EaaS)", "ndc_scenario": "ndc3_conditional",
      "capital_case": "moderate", "financing_regime": "eaas", "required_margin": 1.05},
 ]
 
 
 def generate_draws(N, seed=42):
-    rng = np.random.RandomState(seed)
+    rng = np.random.RandomState(seed)     # modernised in the next commit
+    prior = demand_growth_prior()
     gas_probs = gas_probability_weights()
     gas_labels = list(gas_probs.keys())
     gas_weights = list(gas_probs.values())
     draws = []
     for _ in range(N):
-        dg = max(0.005, rng.normal(0.04, 0.01))
+        dg = max(0.005, rng.normal(prior["mean"], prior["sigma"]))
         gr = rng.choice(gas_labels, p=gas_weights)
         draws.append({"demand_growth": dg, "gas_regime": gr})
     return draws
@@ -116,7 +130,7 @@ def main():
         for i, draw in enumerate(draws):
             scenario = load_scenario(
                 demand_level_case="served",
-                demand_case="baseline",
+                demand_case=MC_DEMAND_CASE_PLACEHOLDER,
                 gas_deliverability_case=draw["gas_regime"],
                 capital_case=case["capital_case"],
                 solar_build_case="aggressive",

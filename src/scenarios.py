@@ -38,10 +38,8 @@ Loss ladder (NERC 2024) — for reference, NOT applied in the energy balance:
 The previous base (23.08 TWh — NBS Q1 2024 served energy of 5.770 TWh,
 annualised as Q1 x 4) sat at the bottom of that ladder: it was COLLECTED
 energy, excluding electricity consumed but stolen, unmetered, or unpaid — all
-
-latent_low / latent_high are DEPRECATED: they were built as multiples of the
-collected figure. The tiered demand architecture (Tier 2 self-generation,
-Tier 3 access-adjusted) replaces them in Phase 2.
+of which is real demand of real users. The Q1 x 4 annualisation is separately
+unsound, ignoring seasonality, and is not used anywhere in the current model.
 
 UNITS CONVENTION (read before editing any value)
 ------------------------------------------------
@@ -122,7 +120,7 @@ def demand_level_scenarios() -> dict[str, float]:
     - latent_high: DEPRECATED (raises in load_scenario) — was lambda = 0.30.
 
     Traceable to: NERC 2024 annual gross generation (37,093.70 GWh).
-    NOTE: data/demand/demand_base_annualized_2024.csv is STALE — it holds the
+    NOTE: data/demand/demand_base_annualized_2024.csv.xlsx is STALE — it holds the
     superseded 23.08 collected-energy base and is not read by this module.
     """
     return {
@@ -148,12 +146,55 @@ def demand_growth_scenarios() -> dict[str, float]:
     }
 
 
+def demand_growth_prior() -> dict[str, float]:
+    """
+    Prior over annual demand growth for Monte Carlo sampling.
+
+    STATUS: [SOURCE NEEDED] — correction plan 1.6.
+
+    mean  : provenance unknown (audited Aug 2026). Inherited from the
+            'baseline' demand_growth_scenarios() key, itself unsourced.
+    sigma : assumed, not estimated. Intended replacement is the observed
+            spread across independent sourcing routes (driver decomposition,
+            per-capita convergence, NIRP 2024 forecast).
+
+    The 'baseline' key is hardcoded here deliberately: Step 5's rename must
+    update this line, and will fail loudly rather than silently drift.
+
+    No Monte Carlo result is reportable until both are sourced.
+    """
+    return {
+        "mean":  demand_growth_scenarios()["baseline"],
+        "sigma": 0.01,
+    }
+
+
 def solar_build_scenarios():
     """Annual solar build-rate caps (MW/year)."""
     return {
         "conservative": 500,
         "baseline": 1000,
         "aggressive": 2000,
+    }
+
+
+def demand_growth_prior() -> dict[str, float]:
+    """
+    Prior over annual demand growth for Monte Carlo sampling.
+
+    STATUS: [SOURCE NEEDED] — correction plan 1.6.
+
+    mean  : provenance unknown (audited Aug 2026). Inherited from the
+            'baseline' demand_growth_scenarios() key, itself unsourced.
+    sigma : assumed, not estimated. Intended replacement is the observed
+            spread across independent sourcing routes (driver decomposition,
+            per-capita convergence, NIRP 2024 forecast).
+
+    No Monte Carlo result is reportable until both are sourced.
+    """
+    return {
+        "mean":  demand_growth_scenarios()["baseline"],
+        "sigma": 0.01,
     }
 
 
