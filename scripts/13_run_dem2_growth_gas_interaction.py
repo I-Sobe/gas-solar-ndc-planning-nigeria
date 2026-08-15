@@ -68,16 +68,16 @@ both objectives simultaneously.
 
 EXPERIMENT STRUCTURE
 --------------------
-  demand_cases:    [low (2.5%), baseline (4%), high (6%)]
+  demand_cases:    from scenarios.demand_growth_scenarios() (3 cases)
   gas_cases:       [baseline, upside, downside, shock_recovery]
   financing_arms:  [public_only, eaas]
-  policy_arms:     [no_policy, ndc3_unconditional]
+  policy_arms:     [no_policy, ndc2_unconditional, ndc3_unconditional]
 
-  Total solves: 3 × 4 × 2 × 2 = 48 LP solves
+  Total solves: 3 × 4 × 2 × 3 = 72 LP solves
 
 OUTPUTS
 --------
-  results/dem2/dem2_results.csv         — all 48 runs
+  results/dem2/dem2_results.csv         — all 72 runs
   results/dem2/gas_premium.csv          — gas scarcity premium per growth rate
   results/dem2/interaction_matrix.csv   — interaction effects (amplification)
   results/dem2/eaas_value.csv           — EaaS value by growth rate and policy
@@ -96,6 +96,7 @@ sys.path.append(str(ROOT))
 
 from src.io import load_econ
 from src.optimize_experiments import run_dem2_growth_gas_matrix
+from src.scenarios import demand_growth_scenarios
 
 # ============================================================
 # CONFIG
@@ -108,7 +109,6 @@ CAP_PATH       = ROOT / "data" / "cost" / "processed" / "emissions_cap.csv"
 CANONICAL_VOLL = "voll_mid"
 CANONICAL_TARIFF = 95_000_000   # USD/TWh
 
-DEMAND_CASES = ["low", "baseline", "high"]   # 2.5%, 4%, 6% growth
 GAS_CASES    = ["baseline", "upside", "downside", "shock_recovery"]
 
 FINANCING_CONFIGS = [
@@ -141,9 +141,11 @@ POLICY_CONFIGS = [
     },
 ]
 
-# Demand growth rates from scenarios.py (for display)
-GROWTH_RATE_MAP = {"low": 0.025, "baseline": 0.04, "high": 0.06}
-
+# Demand growth rates — single source of truth: scenarios.demand_growth_scenarios()
+GROWTH_RATE_MAP = demand_growth_scenarios()
+DEMAND_CASES    = list(GROWTH_RATE_MAP.keys())
+assert len(DEMAND_CASES) == 3, f"13_ assumes three demand cases, got {DEMAND_CASES}"
+LOW_CASE, MID_CASE, HIGH_CASE = DEMAND_CASES
 
 # ============================================================
 # ANALYSIS HELPERS
@@ -213,8 +215,8 @@ def compute_interaction_matrix(gas_premium_df):
     for (gas, fin, pol), grp in gas_premium_df.groupby(
         ["gas_case", "financing_arm", "policy_label"]
     ):
-        low_row  = grp[grp["demand_case"] == "low"]
-        high_row = grp[grp["demand_case"] == "high"]
+        low_row  = grp[grp["demand_case"] == LOW_CASE]
+        high_row = grp[grp["demand_case"] == HIGH_CASE]
 
         low_prem  = low_row["gas_premium_usd"].values[0]  if len(low_row)  else None
         high_prem = high_row["gas_premium_usd"].values[0] if len(high_row) else None
@@ -422,8 +424,9 @@ def main():
     print("\n=== DEM-2: GAS SCARCITY PREMIUM BY DEMAND GROWTH ===")
     print("  (public_only, no_policy — shows raw interaction)")
     print()
-    print(f"  {'Gas case':<18} {'Low (2.5%)':>11} {'Base (4%)':>10} "
-          f"{'High (6%)':>10} {'Interaction':>13} {'Amplifies':>10}")
+    print(f"  {'Gas case':<18} {GROWTH_RATE_MAP[LOW_CASE]:>11.1%} "
+          f"{GROWTH_RATE_MAP[MID_CASE]:>10.1%} {GROWTH_RATE_MAP[HIGH_CASE]:>10.1%} "
+          f"{'Interaction':>13} {'Amplifies':>10}")
     print("  " + "-" * 76)
 
     inter_sub = interaction_df[
@@ -440,13 +443,13 @@ def main():
             continue
         i_row = inter_sub[inter_sub["gas_case"] == gc]
         low_p = prem_sub[
-            (prem_sub["gas_case"] == gc) & (prem_sub["demand_case"] == "low")
+            (prem_sub["gas_case"] == gc) & (prem_sub["demand_case"] == LOW_CASE)
         ]["gas_premium_usd"].values
         base_p = prem_sub[
-            (prem_sub["gas_case"] == gc) & (prem_sub["demand_case"] == "baseline")
+            (prem_sub["gas_case"] == gc) & (prem_sub["demand_case"] == MID_CASE)
         ]["gas_premium_usd"].values
         high_p = prem_sub[
-            (prem_sub["gas_case"] == gc) & (prem_sub["demand_case"] == "high")
+            (prem_sub["gas_case"] == gc) & (prem_sub["demand_case"] == HIGH_CASE)
         ]["gas_premium_usd"].values
 
         lv = f"{low_p[0]/1e9:.2f}B"   if len(low_p)  and pd.notna(low_p[0])  else "—"
@@ -464,9 +467,9 @@ def main():
 
     print("\n=== DEM-2: EAAS VALUE BY DEMAND GROWTH (no_policy) ===")
     print()
-    print(f"  {'Gas case':<18} {'Low':>9} {'Baseline':>9} {'High':>9} "
+    print(f"  {'Gas case':<18} {LOW_CASE:>12} {MID_CASE:>12} {HIGH_CASE:>12} "
           f"{'Monotone':>9}")
-    print("  " + "-" * 58)
+    print("  " + "-" * 67)
 
     eaas_sub = eaas_df[eaas_df["policy_label"] == "no_policy"]
     for gc in GAS_CASES:
@@ -480,7 +483,7 @@ def main():
             vals.append(v)
         mono = gc_rows["eaas_value_monotone_increasing"].values[0] if len(gc_rows) else None
         mono_str = "YES" if mono else ("no" if mono is False else "—")
-        print(f"  {gc:<18} {vals[0]:>9} {vals[1]:>9} {vals[2]:>9} {mono_str:>9}")
+        print(f"  {gc:<18} {vals[0]:>12} {vals[1]:>12} {vals[2]:>12} {mono_str:>9}")
 
 
 if __name__ == "__main__":
