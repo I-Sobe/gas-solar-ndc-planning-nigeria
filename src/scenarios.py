@@ -13,18 +13,12 @@ Demand framing (examiner-safe)
 ------------------------------
 - Demand is treated as an EXOGENOUS planning input, not statistically forecast
   from historical time series.
-- The base-year demand level is scenario-based and may represent:
-    (i) served demand (lower bound), or
-    (ii) reconstructed latent demand (suppressed-demand bounds).
+- The base-year demand level is Tier 1: observed gross generation at busbar.
+  Reconstructed latent-demand bases (latent_low/latent_high) are DEPRECATED
+  and raise in load_scenario; they are superseded by the tiered demand
+  architecture (Tier 2 self-generation, Tier 3 access-adjusted), Phase 2.
 - Growth-rate scenarios remain separate from demand-level scenarios.
 
-Base-year demand anchors (2024)
--------------------------------
-Anchored from NBS Q1 2024 served energy:
-- Q1 served energy = 5,770 GWh = 5.770 TWh
-- Annualized served demand = 4 x 5.770 = 23.08 TWh/year
-
-Latent demand reconstruction via suppression factor lambda:
 Base-year demand anchor (2024) — GROSS GENERATION at busbar
 ------------------------------------------------------------
 Demand is metered at gross generation sent out. This is the natural boundary
@@ -41,9 +35,9 @@ Loss ladder (NERC 2024) — for reference, NOT applied in the energy balance:
       -7% TLF            -> 34.50 TWh   delivered to DisCos
       -36.4% ATC&C       -> 21.97 TWh   collected (billed and paid)
 
-The previous base (23.08 TWh) sat at the bottom of that ladder: it was
-COLLECTED energy, excluding electricity consumed but stolen, unmetered, or
-unpaid — all of which is real demand of real users.
+The previous base (23.08 TWh — NBS Q1 2024 served energy of 5.770 TWh,
+annualised as Q1 x 4) sat at the bottom of that ladder: it was COLLECTED
+energy, excluding electricity consumed but stolen, unmetered, or unpaid — all
 
 latent_low / latent_high are DEPRECATED: they were built as multiples of the
 collected figure. The tiered demand architecture (Tier 2 self-generation,
@@ -119,13 +113,21 @@ def demand_level_scenarios() -> dict[str, float]:
     """
     Base-year demand level scenarios (TWh/year).
 
-    - served     : observed served demand (lower bound), annualized NBS Q1 2024.
-    - latent_low : reconstructed latent demand using lambda = 0.60.
-    - latent_high: reconstructed latent demand using lambda = 0.30.
+    - served     : Tier 1 base — observed GROSS GENERATION at busbar, 2024.
+                   [SOURCE: NERC 2024 — 37,093.70 GWh]. Not a bound; measured.
+                   NOTE: the key name is a misnomer pending rename (plan 1.6
+                   Step 5). Served demand is 21.97 TWh; see loss ladder above.
+    - latent_low : DEPRECATED (raises in load_scenario) — was lambda = 0.60
+                   applied to the collected base.
+    - latent_high: DEPRECATED (raises in load_scenario) — was lambda = 0.30.
 
-    Traceable to: data/demand/demand_base_annualized_2024.csv
+    Traceable to: NERC 2024 annual gross generation (37,093.70 GWh).
+    NOTE: data/demand/demand_base_annualized_2024.csv is STALE — it holds the
+    superseded 23.08 collected-energy base and is not read by this module.
     """
     return {
+        # WARNING: latent_low/latent_high are retained for provenance only and
+        # raise in load_scenario(). Do not iterate this dict without filtering.
         # Tier 1 (calibration anchor): observed GROSS GENERATION at busbar, 2024.
         # Corrected from 23.08, which was COLLECTED energy (a revenue quantity),
         # not demand. See docstring for the loss ladder.
@@ -304,7 +306,9 @@ def load_scenario(
 
     Parameters
     ----------
-    demand_level_case : {"served", "latent_low", "latent_high"}
+    demand_level_case : {"served"} — the only accepted value. "latent_low" and
+                        "latent_high" are retained in the registry for
+                        provenance but raise (see validation below).
     demand_case       : key of demand_growth_scenarios()
     land_case         : key of land_scenarios()
     capital_case      : key of capital_envelope_scenarios()
@@ -320,6 +324,15 @@ def load_scenario(
     # ---- Validate labels
     if demand_level_case not in demand_level_scenarios():
         raise ValueError(f"Unknown demand_level_case: {demand_level_case}")
+    _DEPRECATED_DEMAND_LEVELS = {"latent_low", "latent_high"}
+    if demand_level_case in _DEPRECATED_DEMAND_LEVELS:
+        raise ValueError(
+            f"demand_level_case='{demand_level_case}' is deprecated and must "
+            "not be used. These values were constructed as multiples of "
+            "COLLECTED energy (23.08 TWh, a revenue quantity), not demand. "
+            "Superseded by the tiered demand architecture (correction plan "
+            "2.7). DEM-1 is suspended pending that rebuild."
+        )
     if demand_case not in demand_growth_scenarios():
         raise ValueError(f"Unknown demand_case: {demand_case}")
     if carbon_case not in carbon_policy_scenarios():

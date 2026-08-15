@@ -1,3 +1,16 @@
+> **SUPERSEDED — DO NOT USE (Phase 1.4, correction plan).**
+>
+> Every demand figure below is superseded. The 23.08 TWh base was COLLECTED
+> energy (a revenue quantity at the bottom of the NERC loss ladder), not
+> demand. The current Tier 1 demand base is **37.09 TWh — gross generation at
+> busbar, NERC 2024 (37,093.70 GWh)**; see `src/scenarios.py`.
+>
+> `latent_low` (38.47) and `latent_high` (76.93) were derived as 23.08/λ and
+> therefore inherit the wrong base. They raise in `load_scenario()` and are
+> replaced by the tiered demand architecture in Phase 2.
+>
+> This file is retained **as provenance for the superseded derivation only.**
+
 # data/demand — Nigeria Electricity Demand (Planning-Level, Scenario-Based)
 
 ## Purpose
