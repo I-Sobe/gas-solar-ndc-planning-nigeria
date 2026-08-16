@@ -23,13 +23,13 @@ NDC 3.0 (September 2025) defines economy-wide absolute reduction targets:
     Source: NDC 3.0, Section 3, p.14
 
 The energy sector's share of economy-wide abatement (NDC 3.0, p.15):
-    - 2030: 22.0%  →  37.0 MtCO2e energy-sector abatement
-    - 2035: 26.3%  →  48.6 MtCO2e energy-sector abatement
+    - 2030: 22.0%  ->  37.0 MtCO2e energy-sector abatement
+    - 2035: 26.3%  ->  48.6 MtCO2e energy-sector abatement
 
 Gas-fired power generation's share of energy-sector emissions:
     The model's baseline gas-to-power emissions (E_base) divided by total
     energy-sector emissions (~217 MtCO2e, ~38% of 573.5 MtCO2e economy-wide).
-    E_base ≈ 7.364 MtCO2/yr → gas-power share ≈ 3.39%.
+    E_base ≈ 7.364 MtCO2/yr -> gas-power share ≈ 3.39%.
 
 Gas-power abatement = gas_power_share × energy_sector_abatement
 Power-sector cap    = E_base - gas_power_abatement.
@@ -257,8 +257,8 @@ def main():
           f"({NDC3_ECONOMY_REDUCTION_2035_MTCO2E/NDC3_BASELINE_2018_MTCO2E*100:.1f}%)")
 
     print(f"\nEnergy sector abatement share (NDC 3.0 p.15):")
-    print(f"  2030: {ENERGY_SECTOR_SHARE_2030*100:.1f}% → {energy_abatement_2030:.1f} MtCO2e")
-    print(f"  2035: {ENERGY_SECTOR_SHARE_2035*100:.1f}% → {energy_abatement_2035:.1f} MtCO2e")
+    print(f"  2030: {ENERGY_SECTOR_SHARE_2030*100:.1f}% -> {energy_abatement_2030:.1f} MtCO2e")
+    print(f"  2035: {ENERGY_SECTOR_SHARE_2035*100:.1f}% -> {energy_abatement_2035:.1f} MtCO2e")
 
     print(f"\nGas-power share of energy-sector emissions:")
     print(f"  E_base = {E_BASE_MTCO2:.3f} MtCO2/yr")
@@ -267,13 +267,13 @@ def main():
 
     print(f"\nGas-power abatement targets:")
     print(f"  Unconditional 2030: {gas_abatement_uncond_2030:.3f} MtCO2e "
-          f"→ cap = {ndc3_uncond_cap_2030/1e6:.3f} MtCO2/yr")
+          f"-> cap = {ndc3_uncond_cap_2030/1e6:.3f} MtCO2/yr")
     print(f"  Unconditional 2035: {gas_abatement_uncond_2035:.3f} MtCO2e "
-          f"→ cap = {ndc3_uncond_cap_2035/1e6:.3f} MtCO2/yr")
+          f"-> cap = {ndc3_uncond_cap_2035/1e6:.3f} MtCO2/yr")
     print(f"  Conditional 2030:   {gas_abatement_cond_2030:.3f} MtCO2e "
-          f"→ cap = {ndc3_cond_cap_2030/1e6:.3f} MtCO2/yr")
+          f"-> cap = {ndc3_cond_cap_2030/1e6:.3f} MtCO2/yr")
     print(f"  Conditional 2035:   {gas_abatement_cond_2035:.3f} MtCO2e "
-          f"→ cap = {ndc3_cond_cap_2035/1e6:.3f} MtCO2/yr")
+          f"-> cap = {ndc3_cond_cap_2035/1e6:.3f} MtCO2/yr")
 
     print(f"\nConditional multipliers (ambition scaling):")
     print(f"  2030: {CONDITIONAL_MULTIPLIER_2030:.3f}×  "

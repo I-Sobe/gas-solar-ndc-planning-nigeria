@@ -143,9 +143,9 @@ def main():
     #
     #   capital_case — public capital ceiling passed to load_scenario().
     #     unconditional: "moderate" (0.85 × B* = 5.2B USD)
-    #       → domestically self-funded floor, budget is binding.
+    #       -> domestically self-funded floor, budget is binding.
     #     conditional:   "expansion" (1.20 × B* = 7.4B USD)
-    #       → international finance supplements domestic capital;
+    #       -> international finance supplements domestic capital;
     #         apportioned power-sector share of $270bn is ~$19.8bn,
     #         expansion (7.4B) sits within that envelope while keeping
     #         the constraint economically meaningful (not unconstrained).

@@ -137,7 +137,7 @@ def main():
                         "arm": arm["label"], "carbon_price": cp,
                         "status": "infeasible",
                     })
-                    print(f"    ${cp:>3}/tCO2 → INFEASIBLE")
+                    print(f"    ${cp:>3}/tCO2 -> INFEASIBLE")
                     continue
 
                 diag = extract_planning_diagnostics(m, scenario, econ)
@@ -199,7 +199,7 @@ def main():
                     "gas_share_2045":   gas_share_2045,
                 })
 
-                print(f"    ${cp:>3}/tCO2 → cost=${total_cost/1e9:.1f}B  "
+                print(f"    ${cp:>3}/tCO2 -> cost=${total_cost/1e9:.1f}B  "
                       f"emit={cum_emissions/1e6:.1f}Mt  "
                       f"solar2035={solar_share_2035:.0%}  "
                       f"gas2035={gas_share_2035:.0%}")
@@ -209,7 +209,7 @@ def main():
                     "arm": arm["label"], "carbon_price": cp,
                     "status": f"error: {e}",
                 })
-                print(f"    ${cp:>3}/tCO2 → ERROR: {e}")
+                print(f"    ${cp:>3}/tCO2 -> ERROR: {e}")
 
     # ── Save ──────────────────────────────────────────────────
     df = pd.DataFrame(all_rows)

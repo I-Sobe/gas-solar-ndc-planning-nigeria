@@ -1,5 +1,9 @@
 import matplotlib.pyplot as plt
 import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]  # repo root
+sys.path.append(str(ROOT))
 
 from src.optimize_experiments import run_bottleneck_sensitivity
 from pathlib import Path
@@ -11,8 +15,6 @@ from src.optimize_experiments import (
 from src.io import load_econ
 
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.append(str(ROOT))
 # ------------------------------------------------------------
 # PLOTTING FUNCTIONS
 # ------------------------------------------------------------
@@ -66,6 +68,15 @@ def plot_marginal_cost(df):
 
 def main():
 
+    raise NotImplementedError(
+        "run_reliability.py is SUSPENDED (relic). Superseded by "
+        "09_run_rel1_feasibility.py, 10_run_rel2_marginal_cost.py and "
+        "11_run_rel3_financing_frontier.py. It also imports "
+        "run_bottleneck_sensitivity, which no longer exists, and contains a "
+        "bug: the gas-case loop assigns all_results[g] = df (the initial "
+        "sweep) instead of baseline_df, so every output it produced was wrong. "
+        "Retained for provenance only."
+    )
     scenario = load_scenario(
         demand_level_case="served",
         demand_case="organic_central",

@@ -10,7 +10,7 @@ with simplified charge/discharge behavior.
 Modeling assumptions
 --------------------
 - Annual time-step resolution
-- Power limits are annualized (MW × 8760 → MWh/year)
+- Power limits are annualized (MW × 8760 -> MWh/year)
 - Round-trip efficiency is applied symmetrically:
     √η on charge, √η on discharge
 - Minimum state of charge (SOC) is fixed at 0 MWh
@@ -114,7 +114,7 @@ class BatteryStorage:
 
         assert_non_negative([energy_mwh], "charge energy")
 
-        # Annualized power constraint (MW × 8760 → MWh/year)
+        # Annualized power constraint (MW × 8760 -> MWh/year)
         max_charge = self.power_capacity * 8760
         charge_energy = min(energy_mwh, max_charge)
 
@@ -150,7 +150,7 @@ class BatteryStorage:
 
         assert_non_negative([energy_mwh], "discharge energy")
 
-        # Annualized power constraint (MW × 8760 → MWh/year)
+        # Annualized power constraint (MW × 8760 -> MWh/year)
         max_discharge = self.power_capacity * 8760
         requested = min(energy_mwh, max_discharge)
 

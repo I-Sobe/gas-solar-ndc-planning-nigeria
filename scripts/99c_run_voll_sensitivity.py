@@ -248,7 +248,7 @@ def main():
         binding_rows = pd.DataFrame()
     if len(binding_rows):
         min_binding_voll = binding_rows["voll_usd_per_mwh"].min()
-        print(f"\n  Reliability constraint becomes binding at VoLL ≤ ${min_binding_voll:,.0f}/MWh")
+        print(f"\n  Reliability constraint becomes binding at VoLL <= ${min_binding_voll:,.0f}/MWh")
     else:
         print(f"\n  Reliability constraint is NON-BINDING at all tested VoLL levels")
         print(f"  (VoLL penalty alone drives reliability even at ${min(VOLL_LEVELS):,}/MWh)")

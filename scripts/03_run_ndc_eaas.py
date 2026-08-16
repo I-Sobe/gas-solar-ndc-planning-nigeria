@@ -158,8 +158,8 @@ def main():
     #     blended finance structures. required_margin feeds directly
     #     into the bankability constraint:
     #       bankable_revenue = tariff * remaining_npv_factor / required_margin
-    #     Lower required_margin → higher bankable revenue → more EaaS
-    #     solar is deployable without gap-funding → lower subsidy need.
+    #     Lower required_margin -> higher bankable revenue -> more EaaS
+    #     solar is deployable without gap-funding -> lower subsidy need.
     #
     #   public_solar_budget_npv: set to None (unconstrained) for EaaS
     #   cases because at tariff=95M USD/TWh the financing_gap is zero

@@ -54,7 +54,7 @@ The demand base affects:
    Under served demand (23 TWh_e): solar must cover 24% of demand.
    Under latent_low (38 TWh_e):   solar must cover 55% of demand.
    Under latent_high (77 TWh_e):  solar must cover 77% of demand.
-   More solar requires more capital → capital bottleneck worsens.
+   More solar requires more capital -> capital bottleneck worsens.
 
 2. NDC COMPLIANCE COST:
    The emissions cap (built from the baseline served-demand run) applies the

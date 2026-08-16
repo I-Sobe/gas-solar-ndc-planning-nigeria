@@ -36,7 +36,7 @@ This is the marginal cost of improving reliability by 1 percentage point
 
 WHAT THE COST CURVE LOOKS LIKE
 -------------------------------
-As eps tightens from 0.20 → 0.05:
+As eps tightens from 0.20 -> 0.05:
   - At loose eps levels, the constraint may be non-binding (slack).
     The system achieves better reliability than required WITHOUT the
     constraint forcing it. Dual = 0, slack > 0.
@@ -60,10 +60,10 @@ gas deliverability regime drives the cost of reliability.
 WHAT IS DIFFERENT FROM REL-1
 ------------------------------
 REL-1 asked: does gas regime determine FEASIBILITY (can the standard
-be met at all)?  → binary: feasible/infeasible at each eps.
+be met at all)?  -> binary: feasible/infeasible at each eps.
 
 REL-2 asks: what is the MARGINAL COST of meeting the standard?
-→ continuous: how steeply does cost rise as eps tightens?
+-> continuous: how steeply does cost rise as eps tightens?
 
 REL-1 uses the primal (feasibility) as its signal.
 REL-2 uses the dual (shadow price) as its signal.
@@ -120,7 +120,7 @@ CAPITAL_CASE   = "moderate"    # Fixed — same as REL-1 for comparability
 
 GAS_CASES = ["baseline", "upside", "downside", "shock_recovery"]
 
-# Eps grid: 0.20 → 0.05 (loose to tight)
+# Eps grid: 0.20 -> 0.05 (loose to tight)
 EPS_LEVELS = [0.20, 0.15, 0.10, 0.08, 0.06, 0.05]
 
 

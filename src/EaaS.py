@@ -18,7 +18,7 @@ Energy-as-a-Service ecosystem framing.
 Implemented Phases
 ------------------
 Phase 1: Deployment lever (capacity rollout)
-Phase 2: Financing lever (CAPEX → service payments)
+Phase 2: Financing lever (CAPEX -> service payments)
 
 Deferred Phases
 ---------------

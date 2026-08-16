@@ -2007,9 +2007,9 @@ def extract_planning_diagnostics(m, scenario, econ=None, solar_capex_series=None
     # Public capital budget shadow price (FIN-3)
     # Dual on public_budget_constraint: the marginal NPV cost reduction
     # per additional USD of public capital made available.
-    # Positive → constraint is binding (capital is the bottleneck).
-    # Zero     → constraint is slack (budget not exhausted).
-    # None     → no budget constraint was applied this run.
+    # Positive -> constraint is binding (capital is the bottleneck).
+    # Zero     -> constraint is slack (budget not exhausted).
+    # None     -> no budget constraint was applied this run.
     # ------------------------------------------------------------
     public_budget_shadow = None
     public_budget_utilisation = None

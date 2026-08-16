@@ -23,11 +23,11 @@ capital budget as the sole varying dimension while holding all else constant:
 
 By running across all five capital levels without EaaS, we can show:
     (a) At what B* does unserved energy drop to zero?
-        → This is the budget level where the capital bottleneck disappears.
+        -> This is the budget level where the capital bottleneck disappears.
     (b) Does the carbon shadow price remain positive above that B*?
-        → If yes, the NDC constraint (not capital) becomes the binding limit.
+        -> If yes, the NDC constraint (not capital) becomes the binding limit.
     (c) What is the shadow price of the budget constraint at each level?
-        → Positive shadow = budget is binding; zero = budget is slack.
+        -> Positive shadow = budget is binding; zero = budget is slack.
 
 ANSWERING THE "WHAT IF YOU JUST SPENT MORE?" EXAMINER QUESTION
 ---------------------------------------------------------------
@@ -385,10 +385,10 @@ def main():
             ).iterrows():
 
             nom_b  = envelopes[r["capital_case"]]
-            nom_str = f"{nom_b/1e9:.2f}" if nom_b else "∞"
+            nom_str = f"{nom_b/1e9:.2f}" if nom_b else "inf"
 
             eff_b  = r.get("budget_usd")
-            eff_str = f"{eff_b/1e9:.2f}" if eff_b else "∞"
+            eff_str = f"{eff_b/1e9:.2f}" if eff_b else "inf"
 
             unser = (f"{r['cumulative_unserved_twh']:.3f}"
                      if r.get("cumulative_unserved_twh") is not None
@@ -405,10 +405,10 @@ def main():
 
         print(f"\n  Bottleneck disappears at: {bottleneck_at}")
         if bottleneck_at == "not_reached":
-            print("  → Public capital alone CANNOT eliminate unserved energy.")
+            print("  -> Public capital alone CANNOT eliminate unserved energy.")
             print("    EaaS is NECESSARY under this collection rate scenario.")
         else:
-            print("  → Public capital sufficient at this collection rate.")
+            print("  -> Public capital sufficient at this collection rate.")
             print("    EaaS is CONVENIENT but not strictly necessary.")
 
     # ── Cross-scenario comparison: does bottleneck point shift? ───────────────

@@ -163,7 +163,7 @@ def main():
                         "annual_cap_tco2": annual_cap,
                         "status": "infeasible",
                     })
-                    print(f"    {frac:.0%} cap → INFEASIBLE")
+                    print(f"    {frac:.0%} cap -> INFEASIBLE")
                     continue
 
                 diag = extract_planning_diagnostics(m, scenario, econ)
@@ -220,7 +220,7 @@ def main():
                     ),
                 })
 
-                print(f"    {frac:>4.0%} cap → cost=${total_cost/1e9:.1f}B  "
+                print(f"    {frac:>4.0%} cap -> cost=${total_cost/1e9:.1f}B  "
                       f"emit={cum_emissions/1e6:.1f}Mt  "
                       f"unserved={cum_unserved:.1f}TWh  "
                       f"solar={solar_total/1e3:.1f}GW")
@@ -230,7 +230,7 @@ def main():
                     "arm": arm["label"], "cap_fraction": frac,
                     "annual_cap_tco2": annual_cap, "status": f"error: {e}",
                 })
-                print(f"    {frac:.0%} cap → ERROR: {e}")
+                print(f"    {frac:.0%} cap -> ERROR: {e}")
 
     # ── Save ──────────────────────────────────────────────────
     df = pd.DataFrame(all_rows)

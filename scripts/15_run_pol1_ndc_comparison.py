@@ -584,7 +584,7 @@ def main():
 
     print("\n=== POL-1: TRAJECTORY DIFFERENCE (NDC3 - NDC2) ===")
     print(f"  {'Ambition':<16} {'Arm':<12} {'Cap tight (tCO2)':>18} "
-          f"{'ΔSolar (MW)':>12} {'ΔCost (B$)':>11} {'NDC3 infeas':>12}")
+          f"{'DSolar (MW)':>12} {'DCost (B$)':>11} {'NDC3 infeas':>12}")
     print("  " + "-" * 76)
     for _, row in diff_df.iterrows():
         ct  = f"{row['cap_tightening_tco2']:.0f}" if pd.notna(row.get("cap_tightening_tco2")) else "—"

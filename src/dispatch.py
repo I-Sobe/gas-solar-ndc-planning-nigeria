@@ -13,7 +13,7 @@ constraints or decision variables.
 Modeling assumptions
 --------------------
 - Annual time-step resolution (no intra-annual dispatch)
-- Merit-order supply: gas + solar → storage → unmet load
+- Merit-order supply: gas + solar -> storage -> unmet load
 - Storage modeled as a stateful energy buffer with internal SOC
 - No ramping, reserve, or power-flow constraints
 - Intended for ex post feasibility and reliability assessment
@@ -106,7 +106,7 @@ def dispatch_energy(
             excess_energy = supply - demand[t]
 
             if storage is not None:
-                # Convert TWh → MWh for storage interface
+                # Convert TWh -> MWh for storage interface
                 stored_mwh = storage.charge(excess_energy * 1e6)
                 excess[t] = excess_energy - stored_mwh / 1e6
                 storage_soc[t] = storage.soc
