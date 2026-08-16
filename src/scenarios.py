@@ -139,43 +139,202 @@ def demand_level_scenarios() -> dict[str, float]:
 
 def demand_growth_scenarios() -> dict[str, float]:
     """
-    Annual demand growth arms (fraction/year), applied to the Tier 1 base.
+    Annual demand growth arms (fraction/year), applied to the Tier 1 base
+    (37.09 TWh gross generation at busbar, NERC 2024).
 
-    KEYS RENAMED (plan 1.6 Step 5a). Old keys low/baseline/high are NOT
-    aliased: load_scenario raises on unknown keys, so any missed call site
-    fails loudly rather than silently running the wrong arm.
+    SOURCING: correction plan Phase 1.6, Steps 1-4. Every value below is
+    triangulated from at least two independent routes. Workbook and full
+    provenance: data/demand/step1_per_capita_diagnostic.xlsx and
+    data/demand/README_step1_per_capita.md.
 
-    VALUES IN THIS COMMIT ARE THE LEGACY UNSOURCED SET. They are replaced
-    with the triangulated values in Step 5b. Do not cite anything from a run
-    made at this commit.
+    WHY NOT HISTORICAL GENERATION CAGR
+    ----------------------------------
+    Nigerian grid generation is a SUPPLY series, not a demand series. Over
+    2010-2025 it grew 3.14%/yr while population grew 2.39%/yr — i.e. 76% of
+    observed growth is demographic. Per CONNECTED person, generation FELL
+    1.66%/yr (327 -> 258 kWh, 2010-2024). Calibrating demand growth to this
+    series would assume the supply constraint persists and then report modest
+    capacity needs because demand was assumed not to grow. Same error class as
+    the superseded 23.08 TWh base. NIRP 2024 (Table 14) reaches the same
+    conclusion and forecasts bottom-up from drivers instead.
+
+    THE THREE SOURCING ROUTES
+    -------------------------
+    Route A - driver decomposition.  g = eps*g_GDP + (1-eps)*g_pop
+        eps    = 0.76-0.90, long-run income elasticity of electricity demand,
+                 middle-income NON-SSA panel [Liddle, Smyth & Zhang, Energy
+                 Economics]. SSA-estimated elasticities (0.60-0.76) are
+                 rejected as a central source: they are estimated on
+                 supply-rationed systems and inherit the same contamination
+                 as the Nigerian series. Retained as a lower bound only.
+        g_pop  = 1.77%/yr, 2024-2045 average [UN WPP: 232.68m -> 336.66m].
+                 NOTE: g is INSENSITIVE to this. The population coefficient is
+                 (1-eps) ~ 0.15, so a 0.3pp change in g_pop moves g by <0.05pp.
+                 g is approximately eps x GDP growth. The GDP assumption is the
+                 load-bearing choice, not the population assumption.
+        g_GDP  = declared arms, not forecast. See table below.
+
+    Route B - per-capita convergence.  Nigeria 2024 = 161 kWh/cap.
+        Nigeria is ~15 years behind Kenya (Kenya crossed 161 kWh/cap in 2009).
+        Ghana is unusable as a target: Nigeria's 2024 level is BELOW Ghana's
+        worst year since 2000, and converging to Ghana's 2024 level (705
+        kWh/cap) would require 9.24%/yr.
+
+    Route C - NIRP 2024, Nigeria's official Integrated Resource Plan.
+        Total demand (grid + off-grid) 59.6 TWh (2022) -> 328.6 (2045) = 7.70%.
+        This is TIER 2 SCOPE, not Tier 1: the base already includes
+        self-generation. NIRP's grid-only rate (11.0%) is organic growth PLUS
+        absorption of self-generation and must NOT be applied here — in this
+        architecture suppression closure is the Tier1->Tier2 gap, not a growth
+        rate. Applying it would double-count.
+        NIRP's implied elasticity is 1.19 (= (7.7-2.1)/(6.8-2.1)), ~35% above
+        the credible literature; its GDP path (6.8%/yr to 2045) is roughly the
+        pre-2015 oil-boom rate. Aggressive on both terms simultaneously.
+
+    THE ARMS
+    --------
+    constrained_continuation = 0.0314
+        Ember 2010-2025 grid generation CAGR. This is a CONSTRAINT-PERSISTENCE
+        arm ("what if the constraints hold"), NOT organic demand growth, and
+        must never be presented as such. Window range 1.53%-3.22%.
+        Clears the floor test (>1.77% population growth) and implies 1.35%/yr
+        per-capita growth — above the 0.73% actually observed, so even the
+        pessimistic arm is mildly optimistic against the record.
+
+    organic_central = 0.040
+        Route A: eps 0.83, GDP 4.5% -> 4.04%.
+        Route B: converge to Kenya's 2024 level by 2045 -> 3.67%.
+        GDP 4.5% is a DECLARED ASSUMPTION: above the post-2015 average
+        (two recessions, weak diversification), materially below the oil-boom
+        rate. It does NOT assume a commodity boom returns. Verify the two
+        historical averages against WDI NY.GDP.MKTP.KD; IMF WEO covers only
+        ~5 years, so beyond 2030 this is an assumption, not a forecast.
+
+    organic_high = 0.060
+        Route A: eps 0.90, GDP 6.8% -> 6.30%.
+        Route B: converge to Ghana's 2015 level by 2045 -> 6.40%.
+        Route C: NIRP low case -> 5.9%.
+
+    NOT AN ARM: NIRP's 7.7% base case. See demand_growth_benchmark().
+
+    KNOWN LIMITATIONS (must be disclosed in the thesis)
+    ---------------------------------------------------
+    1. AMPLIFICATION. Gas is deliverability-bound and hydro is exogenous, so
+       solar is an accounting residual: solar_TWh(2045) ~ D(2045) - 39.9. The
+       amplification factor D/(D-39.9) is ~2x. A 1pp error in g moves the
+       headline solar build by roughly 20%.
+    2. CONSTANT g. NIRP's trajectory is front-loaded (10.8%/yr to 2030, then
+       6.9%). A constant g reaching the same D(2045) understates near-term
+       build pressure and therefore near-term financing stress. Piecewise g
+       (break at 2030) requires changing demand.project_baseline_demand, which
+       takes a scalar. Deferred deliberately — one structural change at a time.
+    3. CONSTRAINT-RELIEF ASYMMETRY. These arms are sourced from UNCONSTRAINED
+       drivers while gas deliverability is anchored to OBSERVED CONSTRAINED
+       throughput (89.27 TWh_th, a commercial not a geological constraint).
+       That asymmetry is what generates the solar residual. It is a scenario
+       design choice and must be declared, not inherited. See the demand-arm x
+       gas-regime coherence cross-tab (plan 1.6 Step 8).
+    4. GDP IS EXOGENOUS. Electricity supply constrains GDP in reality; that
+       feedback is not modelled. High-GDP arms paired with high unserved energy
+       are internally incoherent. Excluding those cells is CONSERVATIVE (it
+       removes demand, not adds it). NIRP has the identical omission and does
+       not flag it.
     """
     return {
-        "constrained_continuation": 0.025,   # legacy value — replaced in 5b
-        "organic_central":          0.04,    # legacy value — replaced in 5b
-        "organic_high":             0.06,    # legacy value — replaced in 5b
+        "constrained_continuation": 0.0314,
+        "organic_central":          0.040,
+        "organic_high":             0.060,
     }
+
+
+def demand_growth_benchmark() -> dict[str, float]:
+    """
+    External demand-growth benchmarks from other models. NOT scenario arms.
+
+    Deliberately kept OUT of demand_growth_scenarios() so that consumers
+    iterating that registry (optimize_experiments.run_all_deterministic_
+    scenarios, scripts/13_) are unaffected, and so the three-arm structure
+    stays intact.
+
+    nirp_2024_base = 0.077
+        NIRP 2024 total-demand CAGR, 59.6 TWh (2022) -> 328.6 TWh (2045).
+        Tier 2 scope. Rests on eps = 1.19 and GDP 6.8%/yr, both above the
+        credible ranges used for the arms above. Used only for the NIRP
+        benchmark comparison run.
+    """
+    return {"nirp_2024_base": 0.077}
 
 
 def demand_growth_prior() -> dict[str, float]:
     """
-    Prior over annual demand growth for Monte Carlo sampling.
+    Prior over annual demand growth for Monte Carlo sampling (scripts/17_).
 
-    STATUS: [SOURCE NEEDED] — correction plan 1.6.
+    SOURCED — correction plan Phase 1.6 Step 5b. Supersedes the previous
+    N(0.04, 0.01), in which BOTH parameters were unsourced: the mean was
+    inherited from a placeholder of unknown provenance, and sigma was assumed.
 
-    mean  : provenance unknown (audited Aug 2026). Inherited from the
-            'organic_central' demand_growth_scenarios() key, itself unsourced.
-    sigma : assumed, not estimated. Intended replacement is the observed
-            spread across independent sourcing routes (driver decomposition,
-            per-capita convergence, NIRP 2024 forecast).
+    MEAN = demand_growth_scenarios()["organic_central"] = 0.040
+        Triangulated from three independent routes; see
+        demand_growth_scenarios() for the full derivation and sources. The key
+        is referenced, not hardcoded, so the prior cannot drift from the arms.
 
-    The 'organic_central' key is hardcoded here deliberately: Step 5's rename must
-    update this line, and will fail loudly rather than silently drift.
+    SIGMA = 0.0120
+        Derived from the SPREAD BETWEEN THE ARMS rather than assumed. It is the
+        equal-weighted standard deviation of the three sourced arms:
 
-    No Monte Carlo result is reportable until both are sourced.
+            arms          : 0.0314, 0.0400, 0.0600
+            arm mean      : 0.0438
+            deviations    : -0.0124, -0.0038, +0.0162
+            sigma         : sqrt(mean of squared deviations) = 0.01198 -> 0.0120
+
+        This is the defensible construction: the dispersion now reflects the
+        observed disagreement between the driver decomposition, the per-capita
+        convergence path and the NIRP forecast, rather than an analyst's guess
+        about how uncertain the parameter feels.
+
+    KNOWN LIMITATION — THE PRIOR IS SYMMETRIC BUT THE ARMS ARE NOT
+    ---------------------------------------------------------------
+    The arms are right-skewed around organic_central:
+
+        constrained_continuation  0.0314   = central - 0.86 pp
+        organic_central           0.0400   = central
+        organic_high              0.0600   = central + 2.00 pp
+
+    The upside arm is 2.3x further from centre than the downside arm, because
+    the downside is bounded by the observed historical record (a
+    constraint-persistence scenario cannot fall far below what actually
+    happened) while the upside is bounded only by the GDP assumption, which is
+    genuinely open. The equal-weighted arm mean is 0.0438, ABOVE
+    organic_central.
+
+    A symmetric normal therefore:
+      - understates the probability of high-growth outcomes, and
+      - overstates the probability of growth below the historical record.
+
+    Because of the ~2x amplification into the solar build (see
+    demand_growth_scenarios(), limitation 1), this is not cosmetic: it biases
+    the cost and infeasibility distributions DOWNWARD. MC results are
+    conservative in this respect, which is the safer direction, but the
+    asymmetry must be disclosed.
+
+    Candidate replacements, deferred to plan 5.1 rather than fixed here:
+      (a) an explicit three-point discrete prior over the arms with declared
+          weights — simplest, fully transparent, and matches how the arms were
+          actually constructed;
+      (b) a lognormal calibrated to the arm quantiles.
+    Option (a) is preferred: it makes the prior an exact restatement of the
+    sourcing work rather than a smooth approximation to it.
+
+    ALSO UNRESOLVED (plan 1.6 Step 8): scripts/17_ samples this prior
+    INDEPENDENTLY of the gas regime. Both are driven by the same underlying
+    reform dynamic, so independent sampling generates incoherent worlds and
+    inflates both tails. No MC tail statistic — including the headline
+    infeasibility rate — is reportable until the correlation structure is
+    imposed.
     """
     return {
         "mean":  demand_growth_scenarios()["organic_central"],
-        "sigma": 0.01,
+        "sigma": 0.0120,
     }
 
 
