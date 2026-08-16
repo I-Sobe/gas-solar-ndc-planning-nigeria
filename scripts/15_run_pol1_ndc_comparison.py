@@ -176,7 +176,7 @@ def run_one(ndc_cfg, fin_cfg, econ):
 
     scenario = load_scenario(
         demand_level_case="served",
-        demand_case="baseline",
+        demand_case="organic_central",
         gas_deliverability_case="baseline",
         capital_case=capital,
         solar_build_case="aggressive",

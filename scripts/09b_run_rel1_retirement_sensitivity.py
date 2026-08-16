@@ -103,7 +103,7 @@ def main():
 
             scenario = load_scenario(
                 demand_level_case="served",
-                demand_case="baseline",
+                demand_case="organic_central",
                 gas_deliverability_case=gas_case,
                 capital_case=CAPITAL_CASE,
                 solar_build_case=SOLAR_BUILD_CASE,

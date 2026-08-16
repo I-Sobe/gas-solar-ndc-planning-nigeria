@@ -138,11 +138,21 @@ def demand_level_scenarios() -> dict[str, float]:
 
 
 def demand_growth_scenarios() -> dict[str, float]:
-    """Annual electricity demand growth assumptions (fraction/year)."""
+    """
+    Annual demand growth arms (fraction/year), applied to the Tier 1 base.
+
+    KEYS RENAMED (plan 1.6 Step 5a). Old keys low/baseline/high are NOT
+    aliased: load_scenario raises on unknown keys, so any missed call site
+    fails loudly rather than silently running the wrong arm.
+
+    VALUES IN THIS COMMIT ARE THE LEGACY UNSOURCED SET. They are replaced
+    with the triangulated values in Step 5b. Do not cite anything from a run
+    made at this commit.
+    """
     return {
-        "low": 0.025,
-        "baseline": 0.04,
-        "high": 0.06,
+        "constrained_continuation": 0.025,   # legacy value — replaced in 5b
+        "organic_central":          0.04,    # legacy value — replaced in 5b
+        "organic_high":             0.06,    # legacy value — replaced in 5b
     }
 
 
@@ -153,18 +163,18 @@ def demand_growth_prior() -> dict[str, float]:
     STATUS: [SOURCE NEEDED] — correction plan 1.6.
 
     mean  : provenance unknown (audited Aug 2026). Inherited from the
-            'baseline' demand_growth_scenarios() key, itself unsourced.
+            'organic_central' demand_growth_scenarios() key, itself unsourced.
     sigma : assumed, not estimated. Intended replacement is the observed
             spread across independent sourcing routes (driver decomposition,
             per-capita convergence, NIRP 2024 forecast).
 
-    The 'baseline' key is hardcoded here deliberately: Step 5's rename must
+    The 'organic_central' key is hardcoded here deliberately: Step 5's rename must
     update this line, and will fail loudly rather than silently drift.
 
     No Monte Carlo result is reportable until both are sourced.
     """
     return {
-        "mean":  demand_growth_scenarios()["baseline"],
+        "mean":  demand_growth_scenarios()["organic_central"],
         "sigma": 0.01,
     }
 
@@ -175,26 +185,6 @@ def solar_build_scenarios():
         "conservative": 500,
         "baseline": 1000,
         "aggressive": 2000,
-    }
-
-
-def demand_growth_prior() -> dict[str, float]:
-    """
-    Prior over annual demand growth for Monte Carlo sampling.
-
-    STATUS: [SOURCE NEEDED] — correction plan 1.6.
-
-    mean  : provenance unknown (audited Aug 2026). Inherited from the
-            'baseline' demand_growth_scenarios() key, itself unsourced.
-    sigma : assumed, not estimated. Intended replacement is the observed
-            spread across independent sourcing routes (driver decomposition,
-            per-capita convergence, NIRP 2024 forecast).
-
-    No Monte Carlo result is reportable until both are sourced.
-    """
-    return {
-        "mean":  demand_growth_scenarios()["baseline"],
-        "sigma": 0.01,
     }
 
 
@@ -331,7 +321,7 @@ def gas_probability_weights():
 
 def load_scenario(
     demand_level_case: str = "served",
-    demand_case: str = "baseline",
+    demand_case: str = "organic_central",
     land_case: str = "moderate",
     capital_case: str = "moderate",
     gas_deliverability_case: str = "baseline",
@@ -350,7 +340,10 @@ def load_scenario(
     demand_level_case : {"served"} — the only accepted value. "latent_low" and
                         "latent_high" are retained in the registry for
                         provenance but raise (see validation below).
-    demand_case       : key of demand_growth_scenarios()
+    demand_case       : key of demand_growth_scenarios() —
+                        {"constrained_continuation", "organic_central",
+                         "organic_high"}. NIRP's 7.7% benchmark is NOT here;
+                        see demand_growth_benchmark().
     land_case         : key of land_scenarios()
     capital_case      : key of capital_envelope_scenarios()
     gas_deliverability_case : key of gas_deliverability_scenarios()

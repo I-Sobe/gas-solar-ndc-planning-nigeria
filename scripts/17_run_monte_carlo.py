@@ -11,9 +11,8 @@ Unlike the deterministic replay approach, this script re-optimises the
 full LP for each draw, ensuring:
     - Capacity plans adapt to each gas/demand realisation
     - Cost accounting uses discounted NPV (consistent with deterministic results)
-    - LCOE reported per draw [KNOWN DEFECT — plan: denominator omits hydro and
-      double-counts storage discharge; numerator includes the VoLL penalty.
-      Not reportable until corrected.]
+    - LCOE reported per draw [KNOWN DEFECT — numerator includes the VoLL penalty; 
+    denominator omits hydro and double-counts storage discharge. Not reportable until corrected.
     - VoLL decomposition is available per draw
 
 UNCERTAINTY DIMENSIONS

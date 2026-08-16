@@ -35,7 +35,7 @@ rows = []
 for mode in ["annual", "total"]:
     for eps in reliability_levels_log():  # [0.20, 0.15, 0.10, 0.08, 0.06, 0.05]
         scenario = load_scenario(
-            demand_level_case="served", demand_case="baseline",
+            demand_level_case="served", demand_case="organic_central",
             gas_deliverability_case="baseline", capital_case="moderate",
             carbon_case="no_policy", start_year=2025, end_year=2045,
         )

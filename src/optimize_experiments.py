@@ -596,7 +596,7 @@ def run_bottleneck_sensitivity(scenario, econ):
 
         scenario_mod = load_scenario(
             demand_level_case="served",
-            demand_case="baseline",
+            demand_case="organic_central",
             gas_deliverability_case=g,
             carbon_case="no_policy",
             start_year=int(scenario["years"][0]),
@@ -734,7 +734,7 @@ def run_rel3_financing_frontier(
             # ── Arm A: Public-only (traditional financing) ─────────────────
             scenario_pub = load_scenario(
                 demand_level_case="served",
-                demand_case="baseline",
+                demand_case="organic_central",
                 gas_deliverability_case=gas_case,
                 capital_case=pub_capital,
                 carbon_case="no_policy",
@@ -756,7 +756,7 @@ def run_rel3_financing_frontier(
             # ── Arm B: EaaS ────────────────────────────────────────────────
             scenario_eaas = load_scenario(
                 demand_level_case="served",
-                demand_case="baseline",
+                demand_case="organic_central",
                 gas_deliverability_case=gas_case,
                 capital_case=eaas_capital,
                 carbon_case="no_policy",
@@ -1093,7 +1093,7 @@ def run_dem1_demand_sensitivity(
             ]:
                 scenario = load_scenario(
                     demand_level_case=demand_level,
-                    demand_case="baseline",
+                    demand_case="organic_central",
                     gas_deliverability_case="baseline",
                     capital_case=fin_params["capital_case"],
                     solar_build_case="aggressive",
@@ -1254,7 +1254,7 @@ def run_dem2_growth_gas_matrix(
     Parameters
     ----------
     econ            : dict
-    demand_cases    : list[str] — e.g. ["low", "baseline", "high"]
+    demand_cases    : list[str] —keys of scenarios.demand_growth_scenarios()
     gas_cases       : list[str] — e.g. ["baseline", "upside", "downside", "shock_recovery"]
     financing_configs : list[dict], each with:
         "label"              : str — "public_only" or "eaas"
@@ -1488,7 +1488,7 @@ def run_str1_storage_parameter_sweep(
 
                     scenario = load_scenario(
                         demand_level_case="served",
-                        demand_case="baseline",
+                        demand_case="organic_central",
                         gas_deliverability_case="baseline",
                         capital_case=fin_cfg["capital_case"],
                         solar_build_case="aggressive",
@@ -1625,7 +1625,7 @@ def run_rel2_marginal_cost_curves(
 
         scenario = load_scenario(
             demand_level_case="served",
-            demand_case="baseline",
+            demand_case="organic_central",
             gas_deliverability_case=gas_case,
             capital_case=capital_case,
             carbon_case="no_policy",
@@ -2312,7 +2312,7 @@ def run_rel1_feasibility_matrix(
 
             scenario = load_scenario(
                 demand_level_case="served",
-                demand_case="baseline",
+                demand_case="organic_central",
                 gas_deliverability_case=gas_case,
                 capital_case=capital_case,
                 solar_build_case=solar_build_case,
@@ -2532,7 +2532,7 @@ def run_gas_regime_ndc_matrix(
 
         scenario = load_scenario(
             demand_level_case="served",
-            demand_case="baseline",
+            demand_case="organic_central",
             gas_deliverability_case=gas_case,
             capital_case=capital_case,
             carbon_case="no_policy",
@@ -2844,7 +2844,7 @@ def run_financing_vs_resource_test(econ):
 
             scenario = load_scenario(
                 demand_level_case="served",
-                demand_case="baseline",
+                demand_case="organic_central",
                 gas_deliverability_case=case["gas"],
                 capital_case=case["capital"],
                 solar_tariff_case="low",

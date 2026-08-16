@@ -32,7 +32,7 @@ def main():
 
     scenario = load_scenario(
         demand_level_case="served",
-        demand_case="baseline",
+        demand_case="organic_central",
         capital_case="moderate",
         gas_deliverability_case="baseline",
         #solar_case="baseline",

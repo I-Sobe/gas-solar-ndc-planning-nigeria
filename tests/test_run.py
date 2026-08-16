@@ -7,7 +7,7 @@ def to_float(x):
 
 scenario = load_scenario(
     demand_level_case="served",
-    demand_case="baseline",
+    demand_case="organic_central",
     gas_deliverability_case="baseline",
     carbon_case="no_policy",
     start_year=2025,

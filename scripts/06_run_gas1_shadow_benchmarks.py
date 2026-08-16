@@ -121,7 +121,7 @@ def run_no_policy_gas_matrix(econ, gas_cases, cap_path):
     for gas_case in gas_cases:
         scenario = load_scenario(
             demand_level_case="served",
-            demand_case="baseline",
+            demand_case="organic_central",
             gas_deliverability_case=gas_case,
             capital_case="moderate",
             carbon_case="no_policy",

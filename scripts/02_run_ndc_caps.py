@@ -165,7 +165,7 @@ def main():
     for c, cfg in NDC_CASES.items():
         scenario = load_scenario(
             demand_level_case="served",
-            demand_case="baseline",
+            demand_case="organic_central",
             gas_deliverability_case="baseline",
             capital_case=cfg["capital_case"],
             carbon_case="no_policy",
