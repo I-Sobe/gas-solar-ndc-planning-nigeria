@@ -142,7 +142,7 @@ def run_stochastic_simulation(
         emissions_cap_by_year=caps,
         solar_capex_by_year=solar_capex_tv,
     )
-    base_status = solve_model(m_base)
+    base_status = solve_model(m_base, scenario=base_scenario)
     if not base_status["optimal"]:
         raise RuntimeError(
             "Base scenario solve was not optimal "
@@ -173,7 +173,7 @@ def run_stochastic_simulation(
             solar_capex_by_year=solar_capex_tv,
             fixed_plan=fixed_plan,
         )
-        status = solve_model(m)
+        status = solve_model(m, scenario=scenario)
         if status["optimal"]:
             outcomes.append(
                 (scenario["gas_scenario"], float(pyo.value(m.system_cost_npv)))

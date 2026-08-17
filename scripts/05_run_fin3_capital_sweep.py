@@ -218,7 +218,7 @@ def main():
                 solar_capex_by_year=solar_capex_tv,
             )
 
-            status = solve_model(m)
+            status = solve_model(m, scenario=scenario)
             # -------------------------------------------
             # Collect results 
             # ------------------------------------------

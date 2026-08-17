@@ -214,7 +214,7 @@ def run_one(ndc_cfg, fin_cfg, econ):
     )
 
     try:
-        status = solve_model(m)
+        status = solve_model(m, scenario=scenario)
         if not status["optimal"]:
             raise RuntimeError("non-optimal")
     except RuntimeError as e:

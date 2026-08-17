@@ -197,7 +197,7 @@ def run_annual_cap_case(
         emissions_cap_by_year=emissions_cap_by_year,
     )
 
-    status = solve_model(m)
+    status = solve_model(m, scenario=scenario)
     
     if not status["optimal"]:
         raise RuntimeError(
@@ -477,7 +477,7 @@ def run_reliability_sweep(
 
         kwargs["solar_capex_by_year"] = solar_capex_tv
         m = build_model(**kwargs)
-        status = solve_model(m)
+        status = solve_model(m, scenario=scenario)
         if not status["optimal"]:
             raise RuntimeError("non-optimal termination")
         return m
@@ -611,7 +611,7 @@ def run_bottleneck_sensitivity(scenario, econ):
         )
 
         try:
-            solve_model(m)
+            solve_model(m, scenario=scenario_mod)
             diag = extract_planning_diagnostics(m, scenario_mod, econ)
 
             results.append({
@@ -867,7 +867,7 @@ def run_fin2_blended_bankability_sweep(
             else:
                 build_kwargs["emissions_cap"] = 1e18
             m = build_model(**build_kwargs)
-            status = solve_model(m)
+            status = solve_model(m, scenario=sc)
 
             row = {
                 "blend_scenario": blend_label,
@@ -1131,7 +1131,7 @@ def run_dem1_demand_sensitivity(
                 )
 
                 try:
-                    status = solve_model(m)
+                    status = solve_model(m, scenario=scenario)
                     if not status["optimal"]:
                         raise RuntimeError("non-optimal")
 
@@ -1330,7 +1330,7 @@ def run_dem2_growth_gas_matrix(
                     m = build_model(**build_kwargs)
 
                     try:
-                        status = solve_model(m)
+                        status = solve_model(m, scenario=scenario)
                         if not status["optimal"]:
                             raise RuntimeError("non-optimal")
 
@@ -1518,7 +1518,7 @@ def run_str1_storage_parameter_sweep(
                     m = build_model(**build_kwargs)
 
                     try:
-                        status = solve_model(m)
+                        status = solve_model(m, scenario=scenario)
                         if not status["optimal"]:
                             raise RuntimeError("non-optimal")
 
@@ -2167,6 +2167,9 @@ def extract_planning_diagnostics(m, scenario, econ=None, solar_capex_series=None
         "eaas_public_spending_usd": public_spending,
         "eaas_private_investment_usd": private_investment,
         "eaas_capital_multiplier": eaas_multiplier,
+        "npv_salvage_credit_usd": (
+            float(pyo.value(m.salvage_npv)) if hasattr(m, "salvage_npv") else None
+        ),
         "ndc_finance_public_solar_npv_usd": public_solar_npv_spend,
         "ndc_finance_eaas_subsidy_npv_usd": eaas_subsidy_npv_spend,
         "ndc_finance_total_spend_usd": ndc_finance_total_spend,
@@ -2341,7 +2344,7 @@ def run_rel1_feasibility_matrix(
                 reliability_max_unserved_fraction=None,
                 solar_capex_by_year=solar_capex_tv,
             )
-            solve_model(m_base)
+            solve_model(m_base, scenario=scenario)
             diag_base = extract_planning_diagnostics(m_base, scenario, econ)
 
             all_rows.append({
@@ -2378,7 +2381,7 @@ def run_rel1_feasibility_matrix(
                 )
 
                 try:
-                    status = solve_model(m)
+                    status = solve_model(m, scenario=scenario)
                     if not status["optimal"]:
                         raise RuntimeError("non-optimal")
 
@@ -2582,7 +2585,7 @@ def run_gas_regime_ndc_matrix(
         )
 
         try:
-            status = solve_model(m)
+            status = solve_model(m, scenario=scenario)
             if not status["optimal"]:
                 raise RuntimeError("non-optimal termination")
 
@@ -2797,7 +2800,7 @@ def run_tariff_public_capital_frontier(
                 emissions_cap_by_year=None,
             )
 
-            solve_model(m)
+            solve_model(m, scenario=scenario_copy)
 
             diag = extract_planning_diagnostics(m, scenario_copy, econ)
 
@@ -2859,7 +2862,7 @@ def run_financing_vs_resource_test(econ):
                 emissions_cap=1e18
             )
 
-            solve_model(m)
+            solve_model(m, scenario=scenario)
 
             diagnostics = extract_planning_diagnostics(m, scenario, econ)
             summary = summarize_run(m, diagnostics, scenario)

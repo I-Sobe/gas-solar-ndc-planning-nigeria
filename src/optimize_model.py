@@ -154,6 +154,7 @@ def build_model(
     retirement_start = scenario.get("gas_baseline_retirement_start_year", None)
     retirement_rate = scenario.get("gas_baseline_retirement_mw_per_year", 0.0)
 
+
     def gas_cap_rule(m, t):
         year_t = int(years[t])
         # Cumulative retirement of baseline fleet
@@ -540,6 +541,61 @@ def build_model(
     for t in T
 )
 
+    # ------------------------------------------------------------
+    # End-of-horizon salvage value (correction plan 2.5)
+    # ------------------------------------------------------------
+    # The horizon (21 yr) is shorter than every asset life, so without this
+    # term assets with 9-29 years of remaining service are fully expensed and
+    # system NPV is overstated. Straight-line residual, credited at T_last.
+    #
+    # Salvage is computed on RAW capex for BOTH arms: required_margin is a
+    # financing premium, not asset value. It is subtracted from the objective
+    # ONLY -- the public budget constraint below continues to see gross capex,
+    # because the envelope constrains cash out the door.
+    lives = scenario.get("asset_lifetimes", None)
+    if lives is None:
+        raise ValueError(
+            "scenario['asset_lifetimes'] is required. build_model computes an "
+            "end-of-horizon salvage credit and will not silently assume a "
+            "lifetime. See scenarios.asset_lifetimes()."
+        )
+    for _k in ("solar", "storage", "gas"):
+        if lives.get(_k) is None:
+            raise ValueError(
+                f"asset_lifetimes['{_k}'] is None -- [SOURCE NEEDED]. "
+                "Refusing to compute salvage from a placeholder."
+            )
+
+    T_last = len(T) - 1
+
+    def _salvage_fraction(t, life):
+        """Straight-line residual fraction at end of horizon for vintage t.
+        Vintage t operates years t..T_last inclusive = (T_last - t + 1) years.
+        Returns 0.0 for vintages that retire within the horizon."""
+        served = T_last - t + 1
+        return max(0.0, float(life) - served) / float(life)
+
+    m.salvage_npv = pyo.Expression(
+        expr=m.DF[T_last] * (
+            pyo.quicksum(
+                (m.solar_public_add[t] + m.solar_eaas_add[t])
+                * m.solar_capex_param[t]
+                * _salvage_fraction(t, lives["solar"])
+                for t in T
+            )
+            + pyo.quicksum(
+                m.storage_add[t] * econ["STORAGE_COST_PER_MWH"]
+                * _salvage_fraction(t, lives["storage"])
+                for t in T
+            )
+            + pyo.quicksum(
+                m.gas_add[t] * scenario["gas_capex_per_mw"]
+                * _salvage_fraction(t, lives["gas"])
+                for t in T
+            )
+        )
+    )
+
     # Unserved energy penalty (VoLL in USD/TWh)
     unserved_npv = pyo.quicksum(
         m.DF[t] * m.unserved[t] * econ["UNSERVED_ENERGY_PENALTY"]
@@ -578,6 +634,7 @@ def build_model(
         + storage_capex_npv
         + unserved_npv
         + carbon_cost_npv
+        - m.salvage_npv
     )
     m.system_cost_npv = pyo.Expression(expr=system_cost_npv)
     
@@ -670,7 +727,7 @@ def build_model(
 # SOLVER WRAPPER
 # ============================================================
 
-def solve_model(model, solver="cbc"):
+def solve_model(model, scenario=None, solver="cbc"):
     """
     Solve a Pyomo model and return a minimal status dictionary.
     """
@@ -689,6 +746,42 @@ def solve_model(model, solver="cbc"):
         raise RuntimeError(
             f"Solver failed with termination condition: {tc}"
         )
+
+    # ---- Post-solve guard: in-horizon retirement (plan 2.5)
+    # Storage life (15 yr) is shorter than the horizon (21 yr). Any vintage
+    # built early enough to retire before the horizon ends is still dispatched
+    # by the model, and no replacement capex is charged. Inert as at Phase 2.5
+    # (first storage build 2038) but Phases 2.6/2.7 may shift the optimum
+    # earlier. This warns rather than raises so that exploratory runs proceed.
+    try:
+        _lives = scenario.get("asset_lifetimes", {})
+        _T = list(range(len(scenario["years"])))
+        _T_last = _T[-1]
+        _checks = [
+            ("storage", _lives.get("storage"), lambda t: pyo.value(model.storage_add[t])),
+            ("solar",   _lives.get("solar"),
+             lambda t: pyo.value(model.solar_public_add[t]) + pyo.value(model.solar_eaas_add[t])),
+            ("gas",     _lives.get("gas"),   lambda t: pyo.value(model.gas_add[t])),
+        ]
+        for _name, _life, _getter in _checks:
+            if not _life:
+                continue
+            for t in _T:
+                if (_T_last - t + 1) > float(_life) and _getter(t) > 1e-6:
+                    print(
+                        f"  WARNING [plan 2.5]: {_name} vintage {scenario['years'][t]} "
+                        f"retires within the horizon (life {_life:.0f} yr < "
+                        f"{_T_last - t + 1} yr served). No replacement capex is "
+                        f"charged and the asset is still dispatched. Salvage for "
+                        f"this vintage is 0. Replacement capex is now required."
+                    )
+                    break
+    except AttributeError as _e:
+        print(f"  NOTE [plan 2.5]: retirement check skipped -- scenario not passed to "
+              f"solve_model, or model lacks an expected variable ({_e})")
+    except Exception as _e:
+        print(f"  WARNING [plan 2.5]: retirement check FAILED unexpectedly ({_e}). "
+              f"This is a bug, not a skip.")
 
     return {
         "status": str(tc),

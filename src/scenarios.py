@@ -347,6 +347,81 @@ def solar_build_scenarios():
     }
 
 
+def asset_lifetimes() -> dict[str, float]:
+    """
+    Technical SERVICE life by asset class (years). Used for the end-of-horizon
+    salvage credit (correction plan 2.5).
+
+    DEFINITION: technical service life -- how long the asset physically
+    operates. NOT the capital recovery period (a financial assumption used in
+    LCOE, typically shorter) and NOT the performance warranty.
+
+    solar   : 30 yr. [SOURCE: IRENA (2026), Renewable Power Generation Costs in
+              2025.] Cross-checks against NREL ATB, the source of
+              SOLAR_CAPEX_PER_MW.
+    storage : 15 yr, UNAUGMENTED. [SOURCE: NREL ATB, utility-scale battery
+              storage.] ATB's 30-year PV-plus-battery life assumes cell
+              replacement at year 15; this model carries no augmentation capex,
+              so the unaugmented figure is the correct one.
+              WARNING: 15 < the 21-year horizon. Any storage vintage built
+              before 2031 retires WITHIN the horizon, and the model neither
+              charges replacement capex nor stops dispatching it. Inert as at
+              Phase 2.5 (first storage build is 2038), but Phases 2.6/2.7 may
+              shift the optimum earlier. solve_model() carries a post-solve
+              guard that warns if this occurs -- do not ignore it.
+    gas     : 30 yr. [SOURCE: NREL ATB, Gas-CC technical life.] Inert while
+              gas_add is fixed at 0; required for the plan 5.3 experiment.
+
+    DECLARED SIMPLIFICATIONS -- all bias salvage UPWARD, so the corrected NPV
+    is a LOWER bound on system cost:
+      1. Straight-line residual, no degradation (~0.5%/yr for solar).
+      2. No decommissioning or disposal cost.
+      3. Assumes a liquid residual value. The real economic content is
+         continued service beyond 2045, which is a different claim.
+      4. Credited at DF[T_last] rather than DF[T_last + 1], following the
+         model's convention that year t occurs at time t. Marginally
+         understates discounting, i.e. overstates salvage.
+
+    SALVAGE ACCOUNTING DECISIONS (methods chapter):
+      - Salvage enters the OBJECTIVE ONLY, never the capital budget
+        constraint. The envelope constrains cash out the door; an investor
+        cannot fund a 2045 build with residual value realised in 2045.
+        Netting it inside the constraint would inflate the envelope ~25% for
+        free and soften the finding that public capital binds.
+      - Salvage is computed on RAW capex, never on EaaS-marked-up capex.
+        required_margin is a financing premium, not asset value -- a panel
+        bought with expensive capital is not worth more at resale.
+      - Residual value accrues SYSTEM-WIDE. Coherent for a social-planner
+        objective, but it blurs ownership: in reality the EaaS investor holds
+        it. Revisit at 3.2 when the tranche formulation makes ownership
+        explicit.
+    """
+    return {
+        "solar":   30.0,
+        "storage": 15.0,
+        "gas":     30.0,
+    }
+
+
+def asset_lifetime_sweep() -> dict[str, list[float]]:
+    """
+    Sensitivity bands on asset life. Life enters the headline NPV directly
+    through the salvage term, so both are swept.
+
+    [SOURCE NEEDED] for the band WIDTHS -- these are declared assumptions, not
+    sourced ranges.
+
+    Storage matters more than solar despite the narrower absolute band: at a
+    15-year life, +/-3 years is a 20% proportional change against 17% for
+    +/-5 on 30, and it lands directly on the 28.2 GWh sliced-model result
+    that is being reported as a methods finding.
+    """
+    return {
+        "solar":   [25.0, 30.0, 35.0],
+        "storage": [12.0, 15.0, 18.0],
+    }
+
+
 def carbon_policy_scenarios() -> dict[str, dict[str, float | bool]]:
     """Carbon policy stances (deterministic). Price in USD/tCO2."""
     return {
@@ -617,6 +692,7 @@ def load_scenario(
         "solar_min_build_mw_per_year": 0.0,
         "solar_capex_scenario": "solar_low",
 
+        "asset_lifetimes": asset_lifetimes(),   # service life (yrs) by asset class, used for salvage credit
         # ---- Intra-annual shape parameters (sliced model only) --------------
         # ALL are declared assumptions pending sourcing. Each is swept.
         # Relative average power by season (ratio only; normalised internally).

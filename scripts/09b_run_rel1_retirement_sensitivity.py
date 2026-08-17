@@ -131,7 +131,7 @@ def main():
                     reliability_max_unserved_fraction=None,
                     solar_capex_by_year=solar_capex_tv,
                 )
-                status = solve_model(m_base)
+                status = solve_model(m_base, scenario=scenario)
                 if not status["optimal"]:
                     raise RuntimeError("non-optimal")
 
@@ -176,7 +176,7 @@ def main():
                         reliability_mode="total",
                         solar_capex_by_year=solar_capex_tv,
                     )
-                    status = solve_model(m)
+                    status = solve_model(m, scenario=scenario)
                     if not status["optimal"]:
                         raise RuntimeError("non-optimal")
 

@@ -144,7 +144,7 @@ def main():
                     reliability_mode="total",
                     solar_capex_by_year=solar_capex_tv,
                 )
-                status = solve_model(m)
+                status = solve_model(m, scenario=scenario)
 
                 if not status["optimal"]:
                     rows.append({

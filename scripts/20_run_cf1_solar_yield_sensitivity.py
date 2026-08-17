@@ -99,7 +99,7 @@ def main():
             emissions_cap_by_year=None,
             solar_capex_by_year=solar_capex_tv,
         )
-        status = solve_model(m)
+        status = solve_model(m, scenario=scenario)
         if not status["optimal"]:
             raise RuntimeError(f"CF-1 solve failed at cf={cf}: {status}")
 

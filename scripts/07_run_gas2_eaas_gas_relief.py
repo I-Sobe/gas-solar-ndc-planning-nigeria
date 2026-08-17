@@ -143,7 +143,7 @@ def run_no_policy_gas_matrix_eaas(econ, gas_cases, required_margin, cap_path):
             emissions_cap=1e18, 
             solar_capex_by_year=solar_capex_tv,
             )
-        status = solve_model(m)
+        status = solve_model(m, scenario=scenario)
 
         if not status["optimal"]:
             results.append({
@@ -241,7 +241,7 @@ def run_no_policy_gas_matrix(econ, gas_cases, cap_path):
             emissions_cap=1e18, 
             solar_capex_by_year=solar_capex_tv,
             )
-        status = solve_model(m)
+        status = solve_model(m, scenario=scenario)
 
         if not status["optimal"]:
             results.append({

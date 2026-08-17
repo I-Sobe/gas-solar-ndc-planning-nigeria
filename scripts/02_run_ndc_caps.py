@@ -83,7 +83,7 @@ def run_case(cap_scenario_name: str, scenario: dict, econ: dict) -> dict:
         solar_capex_by_year=solar_capex_tv,
     )
 
-    status = solve_model(m)
+    status = solve_model(m, scenario=scenario)
     if not status["optimal"]:
         raise RuntimeError(f"Optimization failed for {cap_scenario_name}: {status}")
 

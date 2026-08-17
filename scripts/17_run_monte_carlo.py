@@ -180,7 +180,7 @@ def main():
                     emissions_cap_by_year=caps,
                     solar_capex_by_year=solar_capex_tv,
                 )
-                status = solve_model(m)
+                status = solve_model(m, scenario=scenario)
 
                 if not status["optimal"]:
                     all_rows.append({
