@@ -57,7 +57,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
 from src.io import load_econ
-from src.scenarios import load_scenario, TARIFF_SWEEP_GRID
+from src.scenarios import load_scenario, TARIFF_SWEEP_GRID, MODEL_END_YEAR
 from src.optimize_experiments import run_tariff_bankability_sweep
 
 # ============================================================
@@ -129,7 +129,7 @@ def main():
             capital_case=cfg["capital_case"],
             carbon_case="no_policy",
             start_year=2025,
-            end_year=2045,
+            end_year=MODEL_END_YEAR,
         )
 
         # Activate EaaS — tariff will be overwritten per point in the sweep.

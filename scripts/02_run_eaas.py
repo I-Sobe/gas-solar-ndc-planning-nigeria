@@ -7,7 +7,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]  # repo root
 sys.path.append(str(ROOT))
 
-from src.scenarios import load_scenario, asset_lifetime_sweep, solar_min_build_default
+from src.scenarios import load_scenario, asset_lifetime_sweep, solar_min_build_default, MODEL_END_YEAR
 import pyomo.environ as pyo
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import run_deterministic_scenario, run_tariff_public_capital_frontier ,extract_planning_diagnostics
@@ -36,11 +36,11 @@ def main():
         capital_case="moderate",
         gas_deliverability_case="baseline",
         #solar_case="baseline",
-        solar_build_case="aggressive",
+        solar_build_case="deployment_unconstrained",
         land_case="loose",
         carbon_case="no_policy",
         start_year=2025,
-        end_year=2045,
+        end_year=MODEL_END_YEAR,
     )
 
     scenario["financing_regime"] = "eaas"
@@ -55,7 +55,7 @@ def main():
     # solar_low declines from $1,456k/MW (2025) to $603k/MW (2045).
     solar_capex_tv = load_solar_capex_by_year(
         scenario_name="solar_low",
-        start_year=2025, end_year=2045,
+        start_year=2025, end_year=MODEL_END_YEAR,
     )
     # Activate minimum build floor when time-varying CAPEX is in use.
     # This prevents, the optimizer from delaying all solar to the cheapest years

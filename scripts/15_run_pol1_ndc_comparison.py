@@ -72,6 +72,7 @@ ndc3_conditional) in a single emissions_cap.csv.
 """
 
 import json
+from operator import sub
 import sys
 from pathlib import Path
 
@@ -83,7 +84,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
 from src.io import load_econ, load_solar_capex_by_year
-from src.scenarios import load_scenario, asset_lifetime_sweep, solar_min_build_default
+from src.scenarios import MODEL_START_YEAR, load_scenario, asset_lifetime_sweep, solar_min_build_default, MODEL_END_YEAR
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
 
@@ -161,7 +162,8 @@ def load_annual_caps(scenario_name, years_list):
             f"Cap length {len(sub)} != {len(years_list)} for '{scenario_name}'. "
             f"Run 00_build_emissions_cap.py first."
         )
-    return sub["cap_tco2"].astype(float).tolist()
+    s = sub.set_index("year")["cap_tco2"].astype(float)
+    return [float(s[int(y)]) for y in years_list]
 
 
 def run_one(ndc_cfg, fin_cfg, econ):
@@ -179,10 +181,10 @@ def run_one(ndc_cfg, fin_cfg, econ):
         demand_case="organic_central",
         gas_deliverability_case="baseline",
         capital_case=capital,
-        solar_build_case="aggressive",
+        solar_build_case="deployment_unconstrained",
         carbon_case="no_policy",
         start_year=2025,
-        end_year=2045,
+        end_year=MODEL_END_YEAR,
     )
 
     scenario["financing_regime"] = fin_cfg["financing_regime"]
@@ -190,7 +192,7 @@ def run_one(ndc_cfg, fin_cfg, econ):
         scenario["required_margin"] = ndc_cfg["eaas_margin"]
         scenario["solar_service_tariff_usd_per_twh"] = CANONICAL_TARIFF
 
-    years_list = list(range(2025, 2046))
+    years_list = list(range(MODEL_START_YEAR, MODEL_END_YEAR + 1))
     caps = load_annual_caps(ndc_label, years_list)
     T    = range(len(scenario["years"]))
     # Load time-varying solar CAPEX from NREL ATB (solar_low scenario).

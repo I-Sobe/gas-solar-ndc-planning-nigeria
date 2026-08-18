@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]  # repo root
 sys.path.append(str(ROOT))
 
 from src.io import (load_econ, load_solar_capex_by_year)
-from src.scenarios import load_scenario, asset_lifetime_sweep, solar_min_build_default
+from src.scenarios import load_scenario, asset_lifetime_sweep, solar_min_build_default, MODEL_END_YEAR
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
 from src.utils import json_safe
@@ -69,7 +69,7 @@ def run_case(cap_scenario_name: str, scenario: dict, econ: dict) -> dict:
     # solar_low declines from $1,456k/MW (2025) to $603k/MW (2045).
     solar_capex_tv = load_solar_capex_by_year(
         scenario_name="solar_low",
-        start_year=2025, end_year=2045,
+        start_year=2025, end_year=MODEL_END_YEAR,
     )
     # Activate minimum build floor when time-varying CAPEX is in use.
     # This prevents, the optimizer from delaying all solar to the cheapest years
@@ -170,7 +170,7 @@ def main():
             capital_case=cfg["capital_case"],
             carbon_case="no_policy",
             start_year=2025,
-            end_year=2045,
+            end_year=MODEL_END_YEAR,
         )
 
         voll_cases = [CANONICAL_VOLL]

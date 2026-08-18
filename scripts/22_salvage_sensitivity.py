@@ -64,7 +64,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
 from src.io import load_econ, load_solar_capex_by_year
-from src.scenarios import load_scenario, asset_lifetimes, solar_min_build_default
+from src.scenarios import load_scenario, asset_lifetimes, solar_min_build_default, MODEL_END_YEAR
 from src.optimize_model import build_model, solve_model
 from src.optimize_model_sliced import build_model_sliced
 
@@ -101,11 +101,11 @@ def run_arm(lives, sliced, econ, capex_tv):
         demand_case="organic_central",
         capital_case="unconstrained",
         gas_deliverability_case="baseline",
-        solar_build_case="aggressive",
+        solar_build_case="deployment_unconstrained",
         land_case="loose",
         carbon_case="no_policy",
         start_year=2025,
-        end_year=2045,
+        end_year=MODEL_END_YEAR,
     )
     scenario["solar_min_build_mw_per_year"] = solar_min_build_default()
     scenario["asset_lifetimes"] = dict(lives)
@@ -197,7 +197,7 @@ def analyse(arms, label):
 def main():
     econ = load_econ(CANONICAL_VOLL)
     capex_tv = load_solar_capex_by_year(scenario_name="solar_low",
-                                        start_year=2025, end_year=2045)
+                                        start_year=2025, end_year=MODEL_END_YEAR)
     arms_def = lifetime_arms()
     out = {"tolerance_mw": TRAJECTORY_TOL, "models": {}}
     all_rows = []

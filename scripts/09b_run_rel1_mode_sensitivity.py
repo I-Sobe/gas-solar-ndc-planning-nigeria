@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
 from src.io import load_econ, load_solar_capex_by_year
-from src.scenarios import load_scenario, asset_lifetime_sweep, solar_min_build_default
+from src.scenarios import load_scenario, asset_lifetime_sweep, solar_min_build_default, MODEL_END_YEAR
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import (
     extract_planning_diagnostics, reliability_levels_log,
@@ -29,7 +29,7 @@ RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 econ = load_econ("voll_mid")
 solar_capex_tv = load_solar_capex_by_year(scenario_name="solar_low",
-                                           start_year=2025, end_year=2045)
+                                           start_year=2025, end_year=MODEL_END_YEAR)
 
 rows = []
 for mode in ["annual", "total"]:
@@ -37,7 +37,7 @@ for mode in ["annual", "total"]:
         scenario = load_scenario(
             demand_level_case="served", demand_case="organic_central",
             gas_deliverability_case="baseline", capital_case="moderate",
-            carbon_case="no_policy", start_year=2025, end_year=2045,
+            carbon_case="no_policy", start_year=2025, end_year=MODEL_END_YEAR,
         )
         scenario["solar_min_build_mw_per_year"] = solar_min_build_default()
         try:

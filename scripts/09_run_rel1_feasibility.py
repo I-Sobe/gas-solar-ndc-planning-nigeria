@@ -28,7 +28,7 @@ If (b) is large and (a) is small, solar investment is the driver —
 EXPERIMENT DESIGN
 -----------------
 Fixed:
-  capital_case = "tight"  
+  capital_case = "moderate"  
   This is the baseline public capital assumption used throughout.
   It constrains solar deployment without being so tight that the
   system is trivially infeasible under all gas regimes.
@@ -36,9 +36,9 @@ Fixed:
 Varied (gas — primary dimension):
   baseline, upside, downside, shock_recovery
 
-Varied (solar build rate — control dimension):
-  aggressive (2000 MW/yr)   — maximum solar flexibility
-  conservative (500 MW/yr)  — minimum solar flexibility
+Varied (solar deployment capability — control dimension):
+  deployment_unconstrained  — no cap; maximum solar flexibility
+  nirp_trajectory           — NIRP 2024 cumulative capacity (61.9 GW by 2045)
 
 Reliability epsilon grid:
   [0.20, 0.15, 0.10, 0.08, 0.06, 0.05]
@@ -46,16 +46,23 @@ Reliability epsilon grid:
 
 Total solves: 4 gas × 2 solar × 7 points = 56 LP solves
 
-WHY AGGRESSIVE vs CONSERVATIVE (not baseline solar)
-----------------------------------------------------
-The comparison must be between conditions where solar investment
-COULD plausibly matter. If both arms use moderate solar build rates,
-the difference is too small to distinguish from solver noise.
-Conservative (500 MW/yr) vs aggressive (2000 MW/yr) is a 4× span —
-enough to produce a detectable difference in solar total_mw if solar
-is the driver. If the feasibility threshold is the same under both,
-the claim that gas regime (not solar level) is the primary determinant
-is strongly supported.
+WHY UNCONSTRAINED vs NIRP TRAJECTORY
+-------------------------------------
+The comparison must span conditions where solar deployment COULD plausibly
+matter. The previous arms (500 vs 2000 MW/yr flat) were two unsourced
+numbers; both were also wrong in shape, permitting more early build than
+NIRP judges achievable and less late build.
+
+The replacement spans a SOURCED national deployment trajectory against no
+constraint at all. NIRP's cumulative path binds this model from 2027 to 2037
+(shortfall peaking at 4,505 MW in 2032), so the arms are genuinely distinct.
+If the feasibility threshold is unchanged across them, the claim that gas
+regime rather than solar deployment is the primary determinant is supported
+against a real deployment constraint rather than an invented one.
+
+CAVEAT: under nirp_trajectory the model cannot serve demand through the 2030s
+and the shortfall is priced at VoLL. Read FEASIBILITY and UNSERVED ENERGY from
+that arm, not NPV, until the genset backstop lands (plan 2.6).
 
 OUTPUTS
 --------
@@ -91,7 +98,7 @@ CANONICAL_VOLL  = "voll_mid"
 CAPITAL_CASE    = "moderate"
 
 GAS_CASES        = ["baseline", "upside", "downside", "shock_recovery"]
-SOLAR_BUILD_CASES = ["aggressive", "conservative"]
+SOLAR_BUILD_CASES = ["deployment_unconstrained", "nirp_trajectory"]
 
 # Eps grid — ordered from loose to tight.
 # run_rel1_feasibility_matrix will use reliability_levels_log() by default,
@@ -155,24 +162,23 @@ def main():
     solar_variation = {}
     for gas_case in GAS_CASES:
         sub = threshold_df[threshold_df["gas_case"] == gas_case]
-        thresholds = sub["threshold_numeric"].dropna()
         solar_variation[gas_case] = {
-            "aggressive_threshold": (
-                sub[sub["solar_build_case"] == "aggressive"]["feasibility_threshold_eps"].values[0]
-                if len(sub[sub["solar_build_case"] == "aggressive"]) else None
+            "unconstrained_threshold": (
+                sub[sub["solar_build_case"] == "deployment_unconstrained"]["feasibility_threshold_eps"].values[0]
+                if len(sub[sub["solar_build_case"] == "deployment_unconstrained"]) else None
             ),
-            "conservative_threshold": (
-                sub[sub["solar_build_case"] == "conservative"]["feasibility_threshold_eps"].values[0]
-                if len(sub[sub["solar_build_case"] == "conservative"]) else None
+            "nirp_threshold": (
+                sub[sub["solar_build_case"] == "nirp_trajectory"]["feasibility_threshold_eps"].values[0]
+                if len(sub[sub["solar_build_case"] == "nirp_trajectory"]) else None
             ),
             "solar_arm_difference": (
                 float(
-                    sub[sub["solar_build_case"] == "aggressive"]["threshold_numeric"].values[0]
-                    - sub[sub["solar_build_case"] == "conservative"]["threshold_numeric"].values[0]
+                    sub[sub["solar_build_case"] == "deployment_unconstrained"]["threshold_numeric"].values[0]
+                    - sub[sub["solar_build_case"] == "nirp_trajectory"]["threshold_numeric"].values[0]
                 )
                 if (
-                    len(sub[sub["solar_build_case"] == "aggressive"]) and
-                    len(sub[sub["solar_build_case"] == "conservative"]) and
+                    len(sub[sub["solar_build_case"] == "deployment_unconstrained"]) and
+                    len(sub[sub["solar_build_case"] == "nirp_trajectory"]) and
                     sub["threshold_numeric"].notna().all()
                 )
                 else None
@@ -195,19 +201,19 @@ def main():
             primary_determinant = "gas_regime"
             interpretation = (
                 f"Gas regime shifts the feasibility threshold by up to {max_gas_range:.2f} "
-                f"(in unserved fraction units), while varying solar build rate shifts it by "
+                f"(in unserved fraction units), while varying solar deployment capability shifts it by "
                 f"at most {max_solar_diff:.2f}. Gas deliverability is the primary determinant."
             )
         elif max_solar_diff > max_gas_range:
             primary_determinant = "solar_investment"
             interpretation = (
-                f"Solar build rate shifts the feasibility threshold by up to {max_solar_diff:.2f}, "
+                f"Solar deployment capability shifts the feasibility threshold by up to {max_solar_diff:.2f}, "
                 f"exceeding the gas regime effect of {max_gas_range:.2f}. "
-                f"Solar investment level is the primary determinant — the hypothesis is not supported."
+                f"Solar deployment capability is the primary determinant — the hypothesis is not supported."
             )
         else:
             primary_determinant = "indeterminate"
-            interpretation = "Gas regime and solar build rate shift the threshold by equal amounts."
+            interpretation = "Gas regime and solar deployment capability shift the threshold by equal amounts."
     else:
         primary_determinant = "indeterminate"
         interpretation = "Insufficient feasible solutions to determine primary driver."

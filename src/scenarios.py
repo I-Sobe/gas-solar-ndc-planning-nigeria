@@ -95,8 +95,44 @@ def blended_finance_scenarios():
 # ============================================================
 # PLANNING HORIZON
 # ============================================================
+# ============================================================
+# HORIZON — model vs reporting (plan 2.5 step 4, end-effect control)
+# ============================================================
+# The model runs ten years beyond the reporting window so that terminal-year
+# effects fall outside the results.
+#
+# WHY: salvage credits a final-year vintage at (life-1)/life of capex --
+# 96.7% for 30-year solar -- discounted at the same factor the capex is paid
+# at, so net cost is ~3.3% of discounted capex, about $11.5/MWh. Below gas
+# SRMC. With no build-rate cap the model exploited this: 2045 solar additions
+# jumped to 17,861 MW (from 1,635 MW in 2044) and 2045 gas generation fell
+# from 24.67 to 0.00 TWh_e. Cumulative solar rose 25.3 -> 39.3 GW while the
+# objective FELL 0.7%. A horizon artefact, not an economic result.
+#
+# It was invisible while an unsourced 2,000 MW/yr build cap was active -- the
+# same lesson as the min-build floor, at the other end of the horizon.
+#
+# THE FIX IS THE HORIZON, NOT THE SALVAGE TERM. Salvage is unchanged: same
+# formula, every vintage. With the edge at 2055, a 2045 vintage serves 11 of
+# 30 years, so its salvage is 63% rather than 97% and net cost is ~37% of
+# capex -- no longer cheaper than gas. 2045 becomes an ordinary interior year.
+# The arbitrage relocates to 2055, outside the reporting window.
+#
+# The edge cannot be removed entirely (a 2045 vintage is not fully depreciated
+# until 2075); it is moved out of the results. Horizon extension is the
+# standard treatment for end-of-horizon effects in capacity-expansion models.
+#
+# 2046-2055 series are EXTRAPOLATIONS, not sourced -- no published Nigerian
+# demand or gas deliverability projection extends past 2045. Acceptable
+# precisely because those years are never reported: their only function is to
+# hold the terminal edge away from the results window.
+MODEL_START_YEAR = 2025
+MODEL_END_YEAR   = 2054
+REPORT_END_YEAR  = 2045
 
-def planning_horizon(start_year: int = 2025, end_year: int = 2045) -> np.ndarray:
+
+def planning_horizon(start_year: int = MODEL_START_YEAR,
+                     end_year: int = MODEL_END_YEAR) -> np.ndarray:
     """Define the planning horizon (annual resolution)."""
     if end_year < start_year:
         raise ValueError("end_year must be >= start_year")
@@ -338,13 +374,85 @@ def demand_growth_prior() -> dict[str, float]:
     }
 
 
-def solar_build_scenarios():
-    """Annual solar build-rate caps (MW/year)."""
+def solar_build_scenarios() -> dict[str, float | None]:
+    """
+    Solar deployment-capability arms, as MULTIPLIERS on the NIRP 2024
+    cumulative capacity trajectory (see nirp_solar_cumulative_mw()).
+
+    The previous flat 2,000 MW/yr annual cap is REMOVED (plan 2.5 step 4). It
+    was unsourced and wrong in shape at both ends: it permitted 2,000 MW in
+    2026, when NIRP judges ~240 MW achievable, and capped 2042-45 at 2,000 when
+    NIRP builds 6.0-8.3 GW/yr. A constant rate against compounding demand must
+    eventually bind at any level, so the terminal build sitting exactly on
+    2,000.0 was an artefact of the constraint's SHAPE, not a deployment limit.
+
+    nirp_trajectory        1.0x  -- NIRP's own schedule. Binds 2027-2037
+                                    against the current solution (cumulative
+                                    shortfall peaks at 4,505 MW in 2032).
+                                    REPORT UNSERVED ENERGY AND FEASIBILITY
+                                    FROM THIS ARM, NOT NPV, until plan 2.6:
+                                    the shortfall is priced at VoLL and the
+                                    objective measures the penalty parameter.
+    nirp_accelerated       2.0x  -- deployment reform succeeds. The coherent
+                                    pairing for constrained-gas regimes, where
+                                    solar must compensate for gas that does
+                                    not recover.
+    deployment_unconstrained None -- no cap. The counterfactual that isolates
+                                    what the deployment limit itself costs.
+                                    The gap to nirp_accelerated is the
+                                    deployment-capability cost -- a quantity
+                                    not reported anywhere in the SSA
+                                    power-planning literature.
+
+    [SOURCE NEEDED] for the 2.0x accelerated multiplier: currently a declared
+    assumption. Candidate anchors are comparator national ramps (Vietnam
+    2019-20, Egypt Benban, South Africa REIPPPP rounds).
+
+    The legacy case names conservative/baseline/aggressive are NOT aliased.
+    load_scenario raises on unknown keys, so every call site fails loudly
+    rather than silently inheriting a different constraint.
+    """
     return {
-        "conservative": 500,
-        "baseline": 1000,
-        "aggressive": 2000,
+        "nirp_trajectory":          1.0,
+        "nirp_accelerated":         2.0,
+        "deployment_unconstrained": None,
     }
+
+
+def nirp_solar_cumulative_mw() -> dict[int, float]:
+    """
+    NIRP 2024 cumulative solar PV capacity by year (MW).
+
+    [SOURCE: NIRP 2024, Annex F Table 19 solar PV generation (TWh), converted
+    to capacity using the Table 8 capacity factor, 19% in 2025 declining
+    linearly to 18% in 2045.]
+
+    Validation: the series reaches 61,898 MW at 2045 against NIRP's published
+    ~61 GW headline, confirming the CF basis.
+
+    NIRP's own annual build rate implied by this series: essentially nothing to
+    2032 (3 MW in 2030), 1.3-1.7 GW/yr 2033-2036, then 2.4-8.3 GW/yr to 2045.
+    Peak 8,302 MW in 2043; mean 2,948 MW/yr over the horizon.
+
+    APPLIED TO CUMULATIVE ADDITIONS, NOT TOTAL CAPACITY. NIRP's 2025 figure
+    (180 MW) is below this model's existing solar baseline (500 MW), so a
+    total-capacity cap would be infeasible in year one. Applying it to
+    additions is mildly generous -- NIRP's total includes existing plant -- and
+    must be declared as such.
+
+    NOTE ON COHERENCE (see docs/scenario_coherence.md): NIRP builds almost no
+    solar before 2032 BECAUSE it assumes gas recovers to 88 TWh_e by 2035. Its
+    solar schedule is downstream of its gas assumption. Pairing this arm with a
+    constrained-gas regime is the pessimistic stress corner, not a central
+    case, and it will produce large unserved energy through the 2030s.
+    """
+    # 2025-2045: the NIRP source series covers exactly these years. Buffer
+    # years past 2045 are extrapolated in _solar_cumulative_cap, not here.
+    years = list(range(2025, 2046))
+    years = list(range(2025, 2046))
+    cum = [180, 422, 664, 848, 1093, 1096, 1099, 1163, 2455, 4123, 5739,
+           7425, 9802, 13748, 19275, 25333, 31361, 37360, 45662, 53947, 61898]
+    return dict(zip(years, cum))
 
 
 def asset_lifetimes() -> dict[str, float]:
@@ -567,6 +675,35 @@ def gas_probability_weights():
     }
 
 
+def _solar_cumulative_cap(solar_build_case: str, years) -> list[float] | None:
+    """
+    Cumulative solar ADDITIONS cap (MW) aligned to the model's year index.
+    Returns None when the arm is unconstrained.
+
+    Years outside the NIRP series carry the nearest endpoint value; the model
+    horizon should not extend beyond 2045 without extending the source series.
+    """
+    mult = solar_build_scenarios()[solar_build_case]
+    if mult is None:
+        return None
+    nirp = nirp_solar_cumulative_mw()
+    lo, hi = min(nirp), max(nirp)
+        # Past the NIRP series, continue at its terminal growth rate. Clamping flat
+    # would freeze deployment capability in the buffer years and could force
+    # unserved energy there, distorting decisions inside the reporting window.
+    g_term = nirp[hi] / nirp[hi - 1] - 1.0
+    out = []
+    for y in years:
+        y = int(y)
+        if y < lo:
+            out.append(mult * nirp[lo])
+        elif y <= hi:
+            out.append(mult * nirp[y])
+        else:
+            out.append(mult * nirp[hi] * (1.0 + g_term) ** (y - hi))
+    return out
+
+
 # ============================================================
 # SCENARIO CONSTRUCTOR
 # ============================================================
@@ -577,12 +714,12 @@ def load_scenario(
     land_case: str = "moderate",
     capital_case: str = "moderate",
     gas_deliverability_case: str = "baseline",
-    solar_build_case: str = "baseline",
+    solar_build_case: str = "nirp_trajectory",
     solar_tariff_case: str = "baseline",
     carbon_case: str = "no_policy",
     blend_case: str = "blended_central",
-    start_year: int = 2025,
-    end_year: int = 2045,
+    start_year: int = MODEL_START_YEAR,
+    end_year: int = MODEL_END_YEAR,
 ) -> dict:
     """
     Build a scenario parameter dictionary consumed by the optimization model.
@@ -704,7 +841,7 @@ def load_scenario(
                             # availability derating. Sweep {0.18, 0.20, 0.22}.
                             # [SOURCE: Global Solar Atlas, sites: <name them>]
         "solar_baseline_mw": 500,
-        "solar_max_build_mw_per_year": solar_build_scenarios()[solar_build_case],
+                "solar_cumulative_cap_mw": _solar_cumulative_cap(solar_build_case, years),
         # Min annual build floor: set to 100 MW/yr in runners when time-varying
         # CAPEX is active (prevents pathological all-delay). 0 = disabled here.
         "solar_min_build_mw_per_year": 0.0,

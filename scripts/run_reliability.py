@@ -7,7 +7,7 @@ sys.path.append(str(ROOT))
 
 from src.optimize_experiments import run_bottleneck_sensitivity
 from pathlib import Path
-from src.scenarios import load_scenario
+from src.scenarios import load_scenario, MODEL_END_YEAR
 from src.optimize_experiments import (
     run_reliability_sweep,
     reliability_results_to_df
@@ -84,7 +84,7 @@ def main():
         solar_build_case="aggressive",
         carbon_case="no_policy",
         start_year=2025,
-        end_year=2045,
+        end_year=MODEL_END_YEAR,
     )
 
     econ = load_econ()
@@ -110,7 +110,7 @@ def main():
             solar_build_case="aggressive",
             carbon_case="no_policy",
             start_year=2025,
-            end_year=2045,
+            end_year=MODEL_END_YEAR,
         )
 
         baseline_results = run_reliability_sweep(scenario_mod, econ)

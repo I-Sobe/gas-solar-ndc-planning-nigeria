@@ -1,6 +1,11 @@
 import os
 import yaml
 import csv
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from src.scenarios import MODEL_START_YEAR, MODEL_END_YEAR, REPORT_END_YEAR
+
 
 def build_series(years, anchor_year, anchor_value, case_cfg):
     typ = case_cfg["type"]
@@ -124,7 +129,10 @@ def main():
     cases = cfg["cases"]
 
     # Planning horizon (keep consistent with your model)
-    start_year, end_year = 2025, 2045
+    # Extends past the reporting window as an end-effect buffer (see
+    # scenarios.MODEL_END_YEAR). Buffer-year deliverability extrapolates the
+    # same functional forms and is never reported.
+    start_year, end_year = MODEL_START_YEAR, MODEL_END_YEAR
     years = list(range(start_year, end_year + 1))
 
     rows = []
@@ -143,7 +151,11 @@ def main():
         flat_name = f"flat_{struct_name}"
         struct_rows = [r for r in rows if r["scenario"] == struct_name]
         if struct_rows:
-            mean_val = sum(r["gas_available_twh_th"] for r in struct_rows) / len(struct_rows)
+            # Mean over the REPORTING window only. Averaging across the buffer
+            # years would change every flat level-equivalent and silently shift
+            # the GAS-3 shape-premium basis.
+            report_rows = [r for r in struct_rows if r["year"] <= REPORT_END_YEAR]
+            mean_val = sum(r["gas_available_twh_th"] for r in report_rows) / len(report_rows)
             for y in years:
                 rows.append({
                     "year": y,

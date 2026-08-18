@@ -7,7 +7,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]  # repo root
 sys.path.append(str(ROOT))
 
-from src.scenarios import load_scenario, asset_lifetime_sweep, solar_min_build_default
+from src.scenarios import load_scenario, asset_lifetime_sweep, solar_min_build_default, MODEL_END_YEAR
 import pyomo.environ as pyo
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
@@ -36,11 +36,11 @@ def main():
         demand_case="organic_central",
         capital_case="unconstrained",
         gas_deliverability_case="baseline",
-        solar_build_case="aggressive",
+        solar_build_case="deployment_unconstrained",
         land_case="loose",
         carbon_case="no_policy",
         start_year=2025,
-        end_year=2045,
+        end_year=MODEL_END_YEAR,
     )
 
     econ = load_econ(CANONICAL_VOLL)
@@ -135,6 +135,10 @@ def main():
         "cap_scenario": "baseline_no_policy",
         "decision_variables": dv,
         "npv_total_cost_usd": npv_total_cost_usd,
+        "npv_gross_capex_report_window_usd": diag.get("npv_gross_capex_report_window_usd"),
+        "npv_gross_capex_full_horizon_usd":  diag.get("npv_gross_capex_full_horizon_usd"),
+        "report_window_end_year":            diag.get("report_window_end_year"),
+        "model_horizon_end_year":            diag.get("model_horizon_end_year"),
         "cumulative_unserved_twh": cumulative_unserved_twh,
         "actual_emissions_tco2_total": actual_emissions_tco2_total,
         "solar_public_npv_spend": solar_public_npv_spend,

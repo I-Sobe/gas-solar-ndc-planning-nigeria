@@ -569,13 +569,31 @@ def build_model_sliced(
     )
 
     # Build caps (annual)
-    max_build = scenario.get("solar_max_build_mw_per_year", None)
-    if max_build is not None:
-        m.solar_build_cap = pyo.Constraint(
-            T,
-            rule=lambda m, t:
-                m.solar_public_add[t] + m.solar_eaas_add[t] <= max_build
-        )
+        # ------------------------------------------------------------
+    # Solar deployment-capability cap (plan 2.5 step 4)
+    # ------------------------------------------------------------
+    # Constrains CUMULATIVE ADDITIONS to a sourced national deployment
+    # trajectory (NIRP 2024) rather than a flat annual rate. Cumulative is the
+    # right object: annual capability is a stock that accumulates, and a flat
+    # annual rate against compounding demand binds eventually at any level.
+    # See scenarios.nirp_solar_cumulative_mw() for provenance and the coherence
+    # caveat on pairing this with gas regimes.
+    solar_cum_cap = scenario.get("solar_cumulative_cap_mw", None)
+    if solar_cum_cap is not None:
+        if len(solar_cum_cap) != len(T):
+            raise ValueError(
+                f"solar_cumulative_cap_mw has {len(solar_cum_cap)} entries for "
+                f"{len(T)} model years. Refusing to build with a misaligned cap."
+            )
+
+        def solar_cum_cap_rule(m, t):
+            return (
+                sum(m.solar_public_add[k] + m.solar_eaas_add[k]
+                    for k in range(0, t + 1))
+                <= solar_cum_cap[t]
+            )
+
+        m.solar_cumulative_cap = pyo.Constraint(T, rule=solar_cum_cap_rule)
 
     min_build = scenario.get("solar_min_build_mw_per_year", 0.0)
     if min_build > 0:

@@ -35,6 +35,7 @@ from src.storage import BatteryStorage
 from src.dispatch import dispatch_energy
 from src.demand import project_baseline_demand
 from src.scenarios import (
+    MODEL_START_YEAR,
     load_scenario,
     demand_level_scenarios,
     demand_growth_scenarios,
@@ -42,6 +43,8 @@ from src.scenarios import (
     solar_build_scenarios,
     carbon_policy_scenarios,
     solar_min_build_default,
+    MODEL_END_YEAR,
+    REPORT_END_YEAR,
 )
 from pathlib import Path
 
@@ -458,7 +461,7 @@ def run_reliability_sweep(
     solar_capex_tv = load_solar_capex_by_year(
         scenario_name="solar_low",
         start_year=2025,
-        end_year=2045,
+        end_year=MODEL_END_YEAR,
     )
 
     def _build_and_solve(eps):
@@ -720,7 +723,7 @@ def run_rel3_financing_frontier(
             # Load annual NDC caps if policy requires them
             caps = None
             if ndc_scenario is not None:
-                years_list = list(range(2025, 2046))
+                years_list = list(range(MODEL_START_YEAR, MODEL_END_YEAR + 1))
                 cap_sub = cap_df[
                     (cap_df["scenario"] == ndc_scenario)
                     & (cap_df["year"].isin(years_list))
@@ -730,7 +733,8 @@ def run_rel3_financing_frontier(
                         f"Cap length {len(cap_sub)} != {len(years_list)} "
                         f"for scenario='{ndc_scenario}'"
                     )
-                caps = cap_sub["cap_tco2"].astype(float).tolist()
+                _s = cap_sub.set_index("year")["cap_tco2"].astype(float)
+                caps = [float(_s[int(y)]) for y in years_list]
 
             # ── Arm A: Public-only (traditional financing) ─────────────────
             scenario_pub = load_scenario(
@@ -740,7 +744,7 @@ def run_rel3_financing_frontier(
                 capital_case=pub_capital,
                 carbon_case="no_policy",
                 start_year=2025,
-                end_year=2045,
+                end_year=MODEL_END_YEAR,
             )
             # financing_regime defaults to "traditional" from load_scenario
 
@@ -762,7 +766,7 @@ def run_rel3_financing_frontier(
                 capital_case=eaas_capital,
                 carbon_case="no_policy",
                 start_year=2025,
-                end_year=2045,
+                end_year=MODEL_END_YEAR,
             )
             scenario_eaas["financing_regime"] = "eaas"
             scenario_eaas["required_margin"]  = eaas_margin
@@ -818,7 +822,8 @@ def run_fin2_blended_bankability_sweep(
                 f"Cap length {len(cap_df)} != model years {len(years)} "
                 f"for '{ndc_cap_scenario}'. Run 00_build_emissions_cap.py first."
             )
-        caps = cap_df["cap_tco2"].astype(float).tolist()
+        _s = cap_df.set_index("year")["cap_tco2"].astype(float)
+        caps = [float(_s[int(y)]) for y in years]
 
     solar_capex_tv = load_solar_capex_by_year(
         scenario_name="solar_low",
@@ -1054,7 +1059,7 @@ def run_dem1_demand_sensitivity(
     list[dict] — one row per (demand_level, ndc_scenario, financing_arm)
     """
     cap_df = pd.read_csv(cap_path)
-    years_list = list(range(2025, 2046))
+    years_list = list(range(MODEL_START_YEAR, MODEL_END_YEAR + 1))
 
     results = []
 
@@ -1076,7 +1081,8 @@ def run_dem1_demand_sensitivity(
                 f"Cap length {len(cap_sub)} != {len(years_list)} "
                 f"for scenario='{ndc_scenario}'"
             )
-        caps = cap_sub["cap_tco2"].astype(float).tolist()
+        _s = cap_sub.set_index("year")["cap_tco2"].astype(float)
+        caps = [float(_s[int(y)]) for y in years_list]
 
         for demand_level in demand_level_cases:
 
@@ -1097,10 +1103,10 @@ def run_dem1_demand_sensitivity(
                     demand_case="organic_central",
                     gas_deliverability_case="baseline",
                     capital_case=fin_params["capital_case"],
-                    solar_build_case="aggressive",
+                    solar_build_case="deployment_unconstrained",
                     carbon_case="no_policy",
                     start_year=2025,
-                    end_year=2045,
+                    end_year=MODEL_END_YEAR,
                 )
                 # Apply financing parameters
                 scenario["financing_regime"] = fin_params["financing_regime"]
@@ -1273,7 +1279,7 @@ def run_dem2_growth_gas_matrix(
     list[dict] — one row per (demand_case, gas_case, financing_arm, policy_arm)
     """
     cap_df = pd.read_csv(cap_path)
-    years_list = list(range(2025, 2046))
+    years_list = list(range(MODEL_START_YEAR, MODEL_END_YEAR + 1))
 
     results = []
 
@@ -1292,12 +1298,13 @@ def run_dem2_growth_gas_matrix(
                 raise ValueError(
                     f"Cap length mismatch for scenario='{ndc_scenario}'"
                 )
-            caps = cap_sub["cap_tco2"].astype(float).tolist()
+            _s = cap_sub.set_index("year")["cap_tco2"].astype(float)
+            caps = [float(_s[int(y)]) for y in years_list]
         
         solar_capex_tv = load_solar_capex_by_year(
             scenario_name="solar_low",
             start_year=2025,
-            end_year=2045,
+            end_year=MODEL_END_YEAR,
         )
         for demand_case in demand_cases:
             for gas_case in gas_cases:
@@ -1310,10 +1317,10 @@ def run_dem2_growth_gas_matrix(
                         demand_case=demand_case,
                         gas_deliverability_case=gas_case,
                         capital_case=capital,
-                        solar_build_case="aggressive",
+                        solar_build_case="deployment_unconstrained",
                         carbon_case="no_policy",
                         start_year=2025,
-                        end_year=2045,
+                        end_year=MODEL_END_YEAR,
                     )
 
                     scenario["financing_regime"] = fin_cfg["financing_regime"]
@@ -1456,7 +1463,7 @@ def run_str1_storage_parameter_sweep(
     list[dict] — one row per (H_d, surplus_frac, financing_arm, policy_arm)
     """
     cap_df = pd.read_csv(cap_path)
-    years_list = list(range(2025, 2046))
+    years_list = list(range(MODEL_START_YEAR, MODEL_END_YEAR + 1))
 
     results = []
 
@@ -1474,12 +1481,13 @@ def run_str1_storage_parameter_sweep(
                 raise ValueError(
                     f"Cap length mismatch for scenario='{ndc_scenario}'"
                 )
-            caps = cap_sub["cap_tco2"].astype(float).tolist()
+            _s = cap_sub.set_index("year")["cap_tco2"].astype(float)
+            caps = [float(_s[int(y)]) for y in years_list]
 
         solar_capex_tv = load_solar_capex_by_year(
             scenario_name="solar_low",
             start_year=2025,
-            end_year=2045,
+            end_year=MODEL_END_YEAR,
         )
 
         for hd in hd_values:
@@ -1492,10 +1500,10 @@ def run_str1_storage_parameter_sweep(
                         demand_case="organic_central",
                         gas_deliverability_case="baseline",
                         capital_case=fin_cfg["capital_case"],
-                        solar_build_case="aggressive",
+                        solar_build_case="deployment_unconstrained",
                         carbon_case="no_policy",
                         start_year=2025,
-                        end_year=2045,
+                        end_year=MODEL_END_YEAR,
                     )
 
                     # Override storage parameters
@@ -1631,7 +1639,7 @@ def run_rel2_marginal_cost_curves(
             capital_case=capital_case,
             carbon_case="no_policy",
             start_year=2025,
-            end_year=2045,
+            end_year=MODEL_END_YEAR,
         )
 
         rows = run_reliability_sweep(
@@ -2136,6 +2144,40 @@ def extract_planning_diagnostics(m, scenario, econ=None, solar_capex_series=None
         env = scenario.get("concessional_envelope_npv", None)
         if env and env > 0:
             concessional_utilisation = concessional_drawdown / env
+    # ------------------------------------------------------------
+    # Reporting-window gross CAPEX (plan 2.5 step 4)
+    # ------------------------------------------------------------
+    # The model optimises over 2025-MODEL_END_YEAR so terminal-year salvage
+    # effects fall outside the results. system_cost_npv therefore spans the
+    # full model horizon: it is an OPTIMISATION OBJECTIVE, not a headline.
+    #
+    # This is the financing-relevant figure: discounted GROSS capital
+    # expenditure over the reporting window only, salvage EXCLUDED. Gross and
+    # window-limited for the same reason the public budget constraint is --
+    # the envelope constrains cash out the door, and an investor cannot fund a
+    # 2045 build with residual value realised in 2045 or later.
+    #
+    # CAPEX only. Fuel and O&M are paid from operating revenue, not mobilised
+    # capital, so they do not belong in a capital-mobilisation figure.
+    #
+    # Uses RAW capex for both arms: the EaaS required_margin is a financing
+    # premium, not capital deployed into assets. Consistent with the salvage
+    # treatment.
+    def _capex_at(t):
+        v = 0.0
+        if hasattr(m, "solar_public_add"):
+            v += float(pyo.value(m.solar_public_add[t])) * float(pyo.value(m.solar_capex_param[t]))
+        if hasattr(m, "solar_eaas_add"):
+            v += float(pyo.value(m.solar_eaas_add[t])) * float(pyo.value(m.solar_capex_param[t]))
+        if hasattr(m, "storage_add") and econ is not None:
+            v += float(pyo.value(m.storage_add[t])) * float(econ["STORAGE_COST_PER_MWH"])
+        if hasattr(m, "gas_add") and "gas_capex_per_mw" in scenario:
+            v += float(pyo.value(m.gas_add[t])) * float(scenario["gas_capex_per_mw"])
+        return v
+
+    _report_T = [t for t, y in enumerate(years) if int(y) <= REPORT_END_YEAR]
+    npv_capex_report = sum(float(pyo.value(m.DF[t])) * _capex_at(t) for t in _report_T)
+    npv_capex_full = sum(float(pyo.value(m.DF[t])) * _capex_at(t) for t in range(len(years)))
 
     return {
         # Cost decomposition
@@ -2256,6 +2298,10 @@ def extract_planning_diagnostics(m, scenario, econ=None, solar_capex_series=None
         "storage_energy_limit_years": sum(
             1 for v in storage_binding.values() if v == "energy_limit"
         ),
+        "npv_gross_capex_report_window_usd": npv_capex_report,
+        "npv_gross_capex_full_horizon_usd":  npv_capex_full,
+        "report_window_end_year":            int(REPORT_END_YEAR),
+        "model_horizon_end_year":            int(years[-1]),        
     }    
 
 # ============================================================
@@ -2322,7 +2368,7 @@ def run_rel1_feasibility_matrix(
                 solar_build_case=solar_build_case,
                 carbon_case="no_policy",
                 start_year=2025,
-                end_year=2045,
+                end_year=MODEL_END_YEAR,
             )
             years = scenario["years"]
             # Load time-varying solar CAPEX from NREL ATB (solar_low scenario).
@@ -2541,7 +2587,7 @@ def run_gas_regime_ndc_matrix(
             capital_case=capital_case,
             carbon_case="no_policy",
             start_year=2025,
-            end_year=2045,
+            end_year=MODEL_END_YEAR,
         )
 
         scenario["financing_regime"] = financing_regime
@@ -2561,7 +2607,8 @@ def run_gas_regime_ndc_matrix(
                 f"Cap length {len(cap_sub)} != {len(years)} for "
                 f"scenario='{ndc_cap_scenario}'"
             )
-        caps = cap_sub["cap_tco2"].astype(float).tolist()
+        _s = cap_sub.set_index("year")["cap_tco2"].astype(float)
+        caps = [float(_s[int(y)]) for y in years]
 
         # Load time-varying solar CAPEX from NREL ATB (solar_low scenario).
         # solar_low declines from $1,456k/MW (2025) to $603k/MW (2045).
@@ -2689,7 +2736,7 @@ def run_gas_regime_ndc_matrix(
 def run_all_deterministic_scenarios(
     econ,
     start_year=2025,
-    end_year=2045,
+    end_year=MODEL_END_YEAR,
 ):
     """
     LEGACY batch wrapper around run_deterministic_scenario (non-LP simulator).

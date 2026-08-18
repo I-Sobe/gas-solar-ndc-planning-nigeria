@@ -39,7 +39,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
 from src.io import load_econ, load_solar_capex_by_year
-from src.scenarios import load_scenario, asset_lifetime_sweep, solar_min_build_default
+from src.scenarios import load_scenario, asset_lifetime_sweep, solar_min_build_default, MODEL_END_YEAR
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
 from src.utils import json_safe
@@ -97,11 +97,11 @@ def main():
                 demand_case="organic_central",
                 gas_deliverability_case="baseline",
                 capital_case=arm["capital_case"],
-                solar_build_case="aggressive",
+                solar_build_case="deployment_unconstrained",
                 land_case="loose",
                 carbon_case="no_policy",
                 start_year=2025,
-                end_year=2045,
+                end_year=MODEL_END_YEAR,
             )
             scenario["solar_min_build_mw_per_year"] = solar_min_build_default()
             scenario["financing_regime"] = arm["financing_regime"]

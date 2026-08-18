@@ -55,6 +55,7 @@ from src.scenarios import (
     demand_growth_prior,
     asset_lifetime_sweep,
     solar_min_build_default,
+    MODEL_END_YEAR,
 )
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
@@ -156,11 +157,11 @@ def main():
                 demand_case=MC_DEMAND_CASE_PLACEHOLDER,
                 gas_deliverability_case=draw["gas_regime"],
                 capital_case=case["capital_case"],
-                solar_build_case="aggressive",
+                solar_build_case="deployment_unconstrained",
                 land_case="loose",
                 carbon_case="no_policy",
                 start_year=2025,
-                end_year=2045,
+                end_year=MODEL_END_YEAR,
             )
             scenario["demand_growth"] = draw["demand_growth"]
             scenario["solar_min_build_mw_per_year"] = solar_min_build_default()

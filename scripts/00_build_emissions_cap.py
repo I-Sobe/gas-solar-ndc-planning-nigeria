@@ -62,10 +62,18 @@ import json
 import sys
 import pandas as pd
 from pathlib import Path
-
+import sys
+from pathlib import Path
 # ── Repo root ──────────────────────────────────────────────────────────────────
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
+
+
+from src.scenarios import MODEL_START_YEAR, MODEL_END_YEAR, REPORT_END_YEAR
+
+#import sys, os
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 
 # ── Emission factor (consistent with optimize_model.py) ───────────────────────
 EF_TCO2_PER_TWH_TH = 182_300.0   # tCO2 per TWh_th (IPCC default, HHV basis = 0.1823 tCO2/MWh_th)
@@ -73,7 +81,7 @@ EF_TCO2_PER_TWH_TH = 182_300.0   # tCO2 per TWh_th (IPCC default, HHV basis = 0.
 START_YEAR    = 2025
 TARGET_YEAR   = 2030
 TARGET_YEAR_2 = 2035
-END_YEAR      = 2045
+END_YEAR      = MODEL_END_YEAR
 
 # ── NDC 3.0 economy-wide numbers (NDC 3.0 Section 3, pp.2, 14) ───────────────
 NDC3_BASELINE_2018_MTCO2E          = 573.5
@@ -210,6 +218,11 @@ def main():
                     cap_y = _lerp(y, START_YEAR, Ebase_2025, TARGET_YEAR, cap_2030)
                 else:
                     cap_y = cap_2030
+                # Buffer years (post-reporting-window) are NON-BINDING. See the
+                # module docstring: a binding cap outside the reporting window
+                # would distort investment inside it.
+                if y > REPORT_END_YEAR:
+                    cap_y = 1e18
 
                 rows.append({
                     "year":     y,
@@ -232,6 +245,12 @@ def main():
                     cap_y = _lerp(y, TARGET_YEAR, cap_2030, TARGET_YEAR_2, cap_2035)
                 else:
                     cap_y = cap_2035     # held flat after 2035
+
+                # Buffer years (post-reporting-window) are NON-BINDING. See the
+                # module docstring: a binding cap outside the reporting window
+                # would distort investment inside it.
+                if y > REPORT_END_YEAR:
+                    cap_y = 1e18
 
                 rows.append({
                     "year":     y,

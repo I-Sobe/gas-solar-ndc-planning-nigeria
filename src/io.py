@@ -73,21 +73,50 @@ def load_solar_capex_by_year(scenario_name="solar_low", start_year=2025, end_yea
         encoding="utf-8-sig" # strips BOM automatically
         )
     df = solar_df[solar_df["Scenario"] == scenario_name].copy()
-    df = df[(df["Year"] >= start_year) & (df["Year"] <= end_year)].sort_values("Year")
+    df = df[df["Year"] >= start_year].sort_values("Year")
 
-    expected_years = set(range(start_year, end_year + 1))
+    # Gaps INSIDE the source coverage are still an error. Gaps PAST it are the
+    # end-effect buffer and are filled by _extend_capex_series.
     found_years = set(int(row["Year"]) for _, row in df.iterrows())
-    missing = expected_years - found_years
-    if missing:
+    if not found_years:
+        raise ValueError(f"solar_capex.csv has no rows for scenario '{scenario_name}'.")
+    last_sourced = max(found_years)
+    missing_inside = set(range(start_year, min(end_year, last_sourced) + 1)) - found_years
+    if missing_inside:
         raise ValueError(
-            f"solar_capex.csv missing years for scenario '{scenario_name}': "
-            f"{sorted(missing)}. Check your NREL ATB data coverage."
+            f"solar_capex.csv missing years INSIDE its coverage for scenario "
+            f"'{scenario_name}': {sorted(missing_inside)}. Check your NREL ATB data."
         )
 
     result = {}
     for _, row in df.iterrows():
         raw = str(row["Solar_capex_usd_per_mw"]).replace("$", "").replace(",", "").strip()
         result[int(row["Year"])] = float(raw)
+    result = {y: v for y, v in result.items() if y <= end_year}
+    return _extend_capex_series(result, end_year)
+
+
+def _extend_capex_series(result, end_year):
+    """
+    Extend a CAPEX series past its source coverage into the end-effect buffer.
+
+    NREL ATB publishes to 2050; the model runs to scenarios.MODEL_END_YEAR
+    (2055) so terminal-year salvage effects fall outside the reporting window.
+
+    Buffer years are HELD FLAT at the final sourced value. Flat is the
+    conservative choice: continuing the ATB decline would make buffer-year
+    solar progressively cheaper and could pull build forward into the
+    reporting window -- precisely the distortion the buffer exists to prevent.
+    Buffer-year CAPEX is never reported.
+    """
+    if not result:
+        return result
+    last_sourced = max(result)
+    if last_sourced >= end_year:
+        return result
+    terminal = result[last_sourced]
+    for y in range(last_sourced + 1, end_year + 1):
+        result[y] = terminal
     return result
 
 
@@ -101,22 +130,27 @@ def load_storage_capex_by_year(scenario_name="Storage_low", start_year=2025, end
         thousands=",",
     )
     df = df[df["Scenario"] == scenario_name].copy()
-    df = df[(df["Year"] >= start_year) & (df["Year"] <= end_year)].sort_values("Year")
+    df = df[df["Year"] >= start_year].sort_values("Year")
 
-    expected_years = set(range(start_year, end_year + 1))
+    # Gaps INSIDE the source coverage are still an error. Gaps PAST it are the
+    # end-effect buffer and are filled by _extend_capex_series.
     found_years = set(int(row["Year"]) for _, row in df.iterrows())
-    missing = expected_years - found_years
-    if missing:
+    if not found_years:
+        raise ValueError(f"storage_capex.csv has no rows for scenario '{scenario_name}'.")
+    last_sourced = max(found_years)
+    missing_inside = set(range(start_year, min(end_year, last_sourced) + 1)) - found_years
+    if missing_inside:
         raise ValueError(
-            f"storage_capex.csv missing years for scenario '{scenario_name}': "
-            f"{sorted(missing)}."
+            f"storage_capex.csv missing years INSIDE its coverage for scenario "
+            f"'{scenario_name}': {sorted(missing_inside)}."
         )
 
     result = {}
     for _, row in df.iterrows():
         raw = str(row["Storage_capex_usd_per_mwh"]).replace("$", "").replace(",", "").strip()
         result[int(row["Year"])] = float(raw)
-    return result
+    result = {y: v for y, v in result.items() if y <= end_year}
+    return _extend_capex_series(result, end_year)
 
 
 def load_econ(voll_case="voll_low", gas_price_case="gas_low"):

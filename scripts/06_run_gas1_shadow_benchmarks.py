@@ -59,7 +59,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 import pyomo.environ as pyo
-from src.scenarios import load_scenario, asset_lifetime_sweep, solar_min_build_default
+from src.scenarios import load_scenario, asset_lifetime_sweep, solar_min_build_default, MODEL_END_YEAR
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
 
@@ -126,7 +126,7 @@ def run_no_policy_gas_matrix(econ, gas_cases, cap_path):
             capital_case="moderate",
             carbon_case="no_policy",
             start_year=2025,
-            end_year=2045,
+            end_year=MODEL_END_YEAR,
         )
 
         years = scenario["years"]

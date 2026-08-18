@@ -46,7 +46,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
 from src.io import load_econ, load_solar_capex_by_year
-from src.scenarios import load_scenario, asset_lifetime_sweep, solar_min_build_default
+from src.scenarios import load_scenario, asset_lifetime_sweep, solar_min_build_default, MODEL_END_YEAR
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
 
@@ -73,7 +73,7 @@ EPS_LEVELS = [0.20, 0.15, 0.10, 0.08, 0.06, 0.05]
 # Use aggressive solar only — gives solar the best chance to compensate.
 # If the threshold still shifts with gas regime under aggressive solar,
 # gas regime dominance is robust to retirement rate.
-SOLAR_BUILD_CASE = "aggressive"
+SOLAR_BUILD_CASE = "deployment_unconstrained"
 
 
 # ============================================================
@@ -109,7 +109,7 @@ def main():
                 solar_build_case=SOLAR_BUILD_CASE,
                 carbon_case="no_policy",
                 start_year=2025,
-                end_year=2045,
+                end_year=MODEL_END_YEAR,
             )
 
             # Override retirement rate
