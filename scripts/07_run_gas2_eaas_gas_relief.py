@@ -51,7 +51,7 @@ import pyomo.environ as pyo
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 import pyomo.environ as pyo
-from src.scenarios import load_scenario, asset_lifetime_sweep
+from src.scenarios import load_scenario, asset_lifetime_sweep, solar_min_build_default
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
 

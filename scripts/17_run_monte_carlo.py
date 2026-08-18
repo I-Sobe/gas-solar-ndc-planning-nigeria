@@ -53,7 +53,8 @@ from src.scenarios import (
     gas_probability_weights,
     demand_growth_scenarios,
     demand_growth_prior,
-    asset_lifetime_sweep
+    asset_lifetime_sweep,
+    solar_min_build_default,
 )
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
