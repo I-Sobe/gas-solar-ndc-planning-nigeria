@@ -437,7 +437,7 @@ def solar_min_build_default() -> float:
     Consolidated here (Step 3a) so the value lives in one place. Set to 0.0 in
     Step 3b, after byte-identity has verified the consolidation.
     """
-    return 100.0
+    return 0.0
 
 
 def carbon_policy_scenarios() -> dict[str, dict[str, float | bool]]:
