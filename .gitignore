@@ -4,3 +4,7 @@ __pycache__/
 *.pyc
 ~$*
 results/
+
+# Verification sweep snapshots (see scripts/run_verification_sweep.sh)
+snapshots/
+pre_*_snapshot/

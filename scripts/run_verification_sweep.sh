@@ -1,7 +1,18 @@
 #!/usr/bin/env bash
 set -u
 export PYTHONIOENCODING=utf-8
-SNAPSHOT_DIR="${1:-}"
+# Snapshot target. A bare name is resolved under ./snapshots/ -- Git Bash
+# maps /tmp to %TEMP%, but python is a native Windows binary and reads /tmp
+# literally as C:\tmp, so /tmp snapshots are unreadable from Python. Keep
+# snapshots repo-relative.
+SNAPSHOT_ARG="${1:-}"
+SNAPSHOT_DIR=""
+if [ -n "$SNAPSHOT_ARG" ]; then
+    case "$SNAPSHOT_ARG" in
+        /*|[A-Za-z]:*) SNAPSHOT_DIR="$SNAPSHOT_ARG" ;;
+        *)             SNAPSHOT_DIR="snapshots/$SNAPSHOT_ARG"; mkdir -p snapshots ;;
+    esac
+fi
 LOG_DIR="/tmp/sweep_logs"
 mkdir -p "$LOG_DIR"; rm -f "$LOG_DIR"/*.log
 RUNNERS="
