@@ -42,7 +42,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
 from src.io import load_econ, load_solar_capex_by_year
-from src.scenarios import load_scenario
+from src.scenarios import load_scenario, asset_lifetime_sweep
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
 from src.utils import json_safe
@@ -137,7 +137,7 @@ def main():
                 start_year=2025,
                 end_year=2045,
             )
-            scenario["solar_min_build_mw_per_year"] = 100.0
+            scenario["solar_min_build_mw_per_year"] = solar_min_build_default()
             scenario["financing_regime"] = arm["financing_regime"]
             scenario["required_margin"] = arm["required_margin"]
 

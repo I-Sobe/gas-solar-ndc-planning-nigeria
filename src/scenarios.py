@@ -422,6 +422,24 @@ def asset_lifetime_sweep() -> dict[str, list[float]]:
     }
 
 
+def solar_min_build_default() -> float:
+    """
+    Minimum annual solar build (MW/yr) applied by runners.
+
+    STATUS: [UNSOURCED] -- an arbitrary floor, plan 2.5. Its docstring in
+    optimize_model.py claims it prevents "pathological all-delay solutions that
+    leave 2025-2030 with no solar". That justification is being tested: the
+    2025 backcast is gas 24.57 + hydro 11.47 + baseline solar 0.88 = 36.9
+    against demand 37.09, so essentially NO new solar is needed in 2025. If
+    removing the floor gives 2025 = 0 MW, that is the CORRECT answer -- a model
+    that builds capacity it does not need is the distorted one.
+
+    Consolidated here (Step 3a) so the value lives in one place. Set to 0.0 in
+    Step 3b, after byte-identity has verified the consolidation.
+    """
+    return 100.0
+
+
 def carbon_policy_scenarios() -> dict[str, dict[str, float | bool]]:
     """Carbon policy stances (deterministic). Price in USD/tCO2."""
     return {

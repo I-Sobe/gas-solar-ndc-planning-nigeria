@@ -7,7 +7,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]  # repo root
 sys.path.append(str(ROOT))
 
-from src.scenarios import load_scenario
+from src.scenarios import load_scenario, asset_lifetime_sweep
 import pyomo.environ as pyo
 from src.optimize_model import solve_model
 from src.optimize_model_sliced import (
@@ -45,7 +45,7 @@ def main():
         end_year=int(years[-1]),
     )
 
-    scenario["solar_min_build_mw_per_year"] = 100.0
+    scenario["solar_min_build_mw_per_year"] = solar_min_build_default()
 
     # ------------------------------------------------------------
     # Build and solve the SLICED baseline

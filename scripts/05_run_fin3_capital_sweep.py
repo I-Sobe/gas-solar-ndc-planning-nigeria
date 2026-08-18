@@ -69,7 +69,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
 from src.io import (load_econ, load_solar_capex_by_year)
-from src.scenarios import load_scenario, capital_envelope_scenarios
+from src.scenarios import load_scenario, capital_envelope_scenarios, asset_lifetime_sweep
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
 
@@ -205,7 +205,7 @@ def main():
             # Activate minimum build floor when time-varying CAPEX is in use.
             # This prevents, the optimizer from delaying all solar to the cheapest years
             # (2040-2045) creating unrealistic 2025-2030 supply gaps.
-            scenario["solar_min_build_mw_per_year"] = 100.0
+            scenario["solar_min_build_mw_per_year"] = solar_min_build_default()
             scenario["disco_collection_rate"] = cr_value
 
             # ------------------------------------------

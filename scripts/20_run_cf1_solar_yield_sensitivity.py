@@ -46,7 +46,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
 
-from src.scenarios import load_scenario
+from src.scenarios import load_scenario, asset_lifetime_sweep
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
 from src.io import load_econ, load_solar_capex_by_year
@@ -83,7 +83,7 @@ def main():
         )
         # ... with only solar_cf varied (mutate convention, as elsewhere).
         scenario["solar_cf"] = cf
-        scenario["solar_min_build_mw_per_year"] = 100.0
+        scenario["solar_min_build_mw_per_year"] = solar_min_build_default()
 
         years = list(scenario["years"])
         solar_capex_tv = load_solar_capex_by_year(

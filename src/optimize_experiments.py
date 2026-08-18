@@ -41,6 +41,7 @@ from src.scenarios import (
     gas_deliverability_scenarios,
     solar_build_scenarios,
     carbon_policy_scenarios,
+    solar_min_build_default,
 )
 from pathlib import Path
 
@@ -848,7 +849,7 @@ def run_fin2_blended_bankability_sweep(
             sc = _copy.deepcopy(base_scenario)
             sc["financing_regime"] = "eaas"
             sc["solar_service_tariff_usd_per_twh"] = tariff
-            sc["solar_min_build_mw_per_year"] = 100.0
+            sc["solar_min_build_mw_per_year"] = solar_min_build_default()
             # Inject the blended-finance structure so build_model derives r_private
             sc["concessional_share"] = share
             sc["r_concessional"] = r_conc
@@ -1122,7 +1123,7 @@ def run_dem1_demand_sensitivity(
                 # Activate minimum build floor when time-varying CAPEX is in use.
                 # This prevents, the optimizer from delaying all solar to the cheapest years
                 # (2040-2045) creating unrealistic 2025-2030 supply gaps.
-                scenario["solar_min_build_mw_per_year"] = 100.0
+                scenario["solar_min_build_mw_per_year"] = solar_min_build_default()
                 m = build_model(
                     scenario=scenario,
                     econ=econ,
@@ -1500,7 +1501,7 @@ def run_str1_storage_parameter_sweep(
                     # Override storage parameters
                     scenario["storage_deployable_hours_per_year"] = hd
                     scenario["storage_solar_surplus_frac"]        = sfrac
-                    scenario["solar_min_build_mw_per_year"] = 100.0
+                    scenario["solar_min_build_mw_per_year"] = solar_min_build_default
 
                     scenario["financing_regime"] = fin_cfg["financing_regime"]
                     if fin_cfg["financing_regime"] == "eaas":
@@ -2335,7 +2336,7 @@ def run_rel1_feasibility_matrix(
             # Activate minimum build floor when time-varying CAPEX is in use.
             # This prevents, the optimizer from delaying all solar to the cheapest years
             # (2040-2045) creating unrealistic 2025-2030 supply gaps.
-            scenario["solar_min_build_mw_per_year"] = 100.0
+            scenario["solar_min_build_mw_per_year"] = solar_min_build_default()
 
             # --- VoLL-only baseline (no reliability constraint)
             m_base = build_model(
@@ -2573,7 +2574,7 @@ def run_gas_regime_ndc_matrix(
         # Activate minimum build floor when time-varying CAPEX is in use.
         # This prevents, the optimizer from delaying all solar to the cheapest years
         # (2040-2045) creating unrealistic 2025-2030 supply gaps.
-        scenario["solar_min_build_mw_per_year"] = 100.0
+        scenario["solar_min_build_mw_per_year"] = solar_min_build_default()
 
         # Build and solve baseline model with an effectively non-binding cumulative cap
 

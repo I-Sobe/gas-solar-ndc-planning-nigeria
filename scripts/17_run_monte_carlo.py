@@ -53,6 +53,7 @@ from src.scenarios import (
     gas_probability_weights,
     demand_growth_scenarios,
     demand_growth_prior,
+    asset_lifetime_sweep
 )
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import extract_planning_diagnostics
@@ -161,7 +162,7 @@ def main():
                 end_year=2045,
             )
             scenario["demand_growth"] = draw["demand_growth"]
-            scenario["solar_min_build_mw_per_year"] = 100.0
+            scenario["solar_min_build_mw_per_year"] = solar_min_build_default()
             scenario["financing_regime"] = case["financing_regime"]
             scenario["required_margin"] = case["required_margin"]
 

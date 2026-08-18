@@ -7,7 +7,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]  # repo root
 sys.path.append(str(ROOT))
 
-from src.scenarios import load_scenario
+from src.scenarios import load_scenario, asset_lifetime_sweep
 import pyomo.environ as pyo
 from src.optimize_model import build_model, solve_model
 from src.optimize_experiments import run_deterministic_scenario, run_tariff_public_capital_frontier ,extract_planning_diagnostics
@@ -60,7 +60,7 @@ def main():
     # Activate minimum build floor when time-varying CAPEX is in use.
     # This prevents, the optimizer from delaying all solar to the cheapest years
     # (2040-2045) creating unrealistic 2025-2030 supply gaps.
-    scenario["solar_min_build_mw_per_year"] = 100.0
+    scenario["solar_min_build_mw_per_year"] = solar_min_build_default()
     
     # Build and solve baseline model with an effectively non-binding cumulative cap
     m = build_model(
