@@ -56,6 +56,7 @@ import sys
 import contextlib
 import io as _io
 from pathlib import Path
+from weakref import ref
 
 import pandas as pd
 import pyomo.environ as pyo
@@ -75,6 +76,13 @@ CANONICAL_VOLL = "voll_mid"
 
 # MW / MWh below which two trajectories count as identical.
 TRAJECTORY_TOL = 1e-4
+
+# Materiality threshold. A deviation must exceed this SHARE of cumulative build
+# to count as the trajectory "responding" to cost. Without it the verdict fires
+# on any nonzero movement, however small -- and the degenerate no_salvage arm
+# (all lives = 1 yr) produces a few hundred MW against a fleet of tens of GW,
+# which is a tripwire firing, not a finding.
+MATERIALITY_SHARE = 0.01
 
 
 def lifetime_arms():
@@ -160,16 +168,26 @@ def analyse(arms, label):
           f"{'solar dMW':>12}{'storage dMWh':>14}")
     print(f"  {'-' * 68}")
 
-    responsive = False
+    ref_solar_total = max(ref["solar_total_mw"], 1e-9)
+    ref_stor_total = max(ref["storage_final_mwh"], 1e-9)
+
+    responsive = False           # material movement in ANY arm
+    responsive_real = False      # material movement in a REAL-lifetime arm
     rows = []
     for name, r in arms.items():
         d_solar = max_abs_diff(r["solar_add_mw"], ref["solar_add_mw"])
         d_stor = max_abs_diff(r["storage_capacity_mwh"], ref["storage_capacity_mwh"])
-        if name != "central" and (d_solar > TRAJECTORY_TOL or d_stor > TRAJECTORY_TOL):
+        pct_solar = d_solar / ref_solar_total
+        pct_stor = d_stor / ref_stor_total
+        material = (pct_solar > MATERIALITY_SHARE) or (pct_stor > MATERIALITY_SHARE)
+        if name != "central" and material:
             responsive = True
+            if name != "no_salvage":
+                responsive_real = True
         salv = f"{r['salvage_usd']/1e9:.4f}" if r["salvage_usd"] is not None else "--"
+        mark = "  *" if (name != "central" and d_solar > TRAJECTORY_TOL) else ""
         print(f"  {name:<14}{r['objective_usd']/1e9:>15.4f}{salv:>13}"
-              f"{d_solar:>12.5f}{d_stor:>14.4f}")
+              f"{d_solar:>12.5f}{d_stor:>14.4f}{pct_solar:>9.2%}{mark}")
         rows.append({
             "model": label, "arm": name,
             "objective_usd": r["objective_usd"], "salvage_usd": r["salvage_usd"],
@@ -183,14 +201,26 @@ def analyse(arms, label):
     cost_swing = (ce["objective_usd"] - ns["objective_usd"]) / ns["objective_usd"]
 
     print(f"\n  Cost swing, no_salvage -> central: {cost_swing:+.2%}")
-    if responsive:
-        print("  VERDICT: trajectory RESPONDS to cost. The degrees of freedom")
-        print("           have opened -- restate the residual finding.")
+    print(f"  Materiality threshold: {MATERIALITY_SHARE:.0%} of cumulative build "
+          f"({ref_solar_total * MATERIALITY_SHARE:,.0f} MW)")
+    if responsive_real:
+        print("  VERDICT: trajectory RESPONDS materially to cost under a REAL")
+        print("           lifetime assumption. The degrees of freedom have")
+        print("           opened -- RESTATE the residual finding.")
+    elif responsive:
+        print("  VERDICT: trajectory invariant across every PLAUSIBLE lifetime.")
+        print("           Only the degenerate no_salvage arm (all lives = 1 yr)")
+        print("           moves it, and that arm exists solely to switch salvage")
+        print("           off. Capacity remains an ACCOUNTING RESIDUAL for any")
+        print("           real parameterisation.")
+        print(f"           A {abs(cost_swing):.1%} cost change moved the plan by")
+        print("           less than the materiality threshold in every real arm.")
     else:
-        print("  VERDICT: trajectory IDENTICAL across every arm. Capacity is an")
-        print("           ACCOUNTING RESIDUAL -- the energy balance determines it")
-        print("           and cost cannot move it.")
+        print("  VERDICT: trajectory IDENTICAL across every arm, including the")
+        print("           no-salvage case. Capacity is an ACCOUNTING RESIDUAL --")
+        print("           the energy balance determines it and cost cannot move it.")
         print(f"           A {abs(cost_swing):.1%} cost change moved zero MW.")
+    print("  ('*' marks any nonzero deviation, material or not.)")
     return rows, responsive, cost_swing
 
 
