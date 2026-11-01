@@ -1,0 +1,342 @@
+{
+ "cap": "ndc3_conditional",
+ "wall_s": 130.2,
+ "rows": [
+  {
+   "uncapped_hash": "661b03c1",
+   "label": "conversion_case=conv_central",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.6,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "8ca8cea2",
+   "label": "gas_availability_case=gas_avail_observed",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.1,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "2945336c",
+   "label": "conversion_case=conv_none",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 2.6,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "10836924",
+   "label": "conversion_case=conv_low",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 2.9,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "fa6a652b",
+   "label": "conversion_case=conv_high",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.1,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "39d05de7",
+   "label": "conversion_case=conv_eff_low",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.0,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "cfa91e98",
+   "label": "conversion_case=conv_eff_high",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 2.9,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "6ddbd8fa",
+   "label": "gas_retirement_case=gas_retire_none",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 2.9,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "7ba9c449",
+   "label": "gas_retirement_case=gas_retire_vintage_40",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 2.9,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "3852cdf3",
+   "label": "gas_retirement_case=gas_retire_vintage_50",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 2.9,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "50e88adf",
+   "label": "gas_retirement_case=gas_retire_proxy",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.0,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "00da6824",
+   "label": "capital_recovery_case=cr_ida21",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.1,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "59f45b41",
+   "label": "capital_recovery_case=cr_comm_low",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.2,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "fec4854b",
+   "label": "capital_recovery_case=cr_comm_high",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.2,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "7eae92bb",
+   "label": "gas_deliverability_case=upside",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.0,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "fa1a954f",
+   "label": "gas_deliverability_case=downside",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.6,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "462b4485",
+   "label": "gas_deliverability_case=shock_recovery",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.3,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "1b11ddd7",
+   "label": "gas_deliverability_case=gas_deliv_flat",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 2.9,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "b8c43014",
+   "label": "gas_deliverability_case=gas_deliv_gmp_partial",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 2.8,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "89dce1f6",
+   "label": "gas_deliverability_case=gas_deliv_gmp_full",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.1,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "a3801166",
+   "label": "concessional_envelope_case=env_none",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.3,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "29d7d360",
+   "label": "concessional_envelope_case=env_5x",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.3,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "9f6bab89",
+   "label": "concessional_envelope_case=env_10x",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.3,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "4dad4483",
+   "label": "concessional_envelope_case=env_dares_plus",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.5,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "59d830c8",
+   "label": "peak_case=peak_suppressed",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 2.8,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "0d3e2a45",
+   "label": "peak_case=peak_high",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.2,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "622bde4e",
+   "label": "hydro_case=hydro_committed",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.4,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "b1621370",
+   "label": "hydro_case=hydro_ndc",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 2.8,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "58728c98",
+   "label": "new_gas_deliverability=exempt",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.0,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "05a86e43",
+   "label": "storage_cc_case=storage_cc_low",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.1,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "3abc5898",
+   "label": "storage_cc_case=storage_cc_high",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.2,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "bc542471",
+   "label": "gas_build_case=gas_ndc_17gw",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.2,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "bfdd3fd8",
+   "label": "gas_build_case=gas_none",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 2.7,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "87865b0a",
+   "label": "gas_capex_case=gas_capex_low",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 2.6,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "3bd1a69b",
+   "label": "gas_capex_case=gas_capex_high",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.0,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "fb049147",
+   "label": "ccgt_efficiency_case=ccgt_eff_iso",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.5,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "73074c5e",
+   "label": "ccgt_efficiency_case=ccgt_eff_low",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.3,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "79fe1160",
+   "label": "dscr_case=dscr_low",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.2,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "5c0b32fb",
+   "label": "dscr_case=dscr_high",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.3,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "e3405eb4",
+   "label": "om_case=om_none",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.2,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "7695c45a",
+   "label": "om_case=om_low",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.1,
+   "err": ""
+  },
+  {
+   "uncapped_hash": "9e0d690e",
+   "label": "om_case=om_high",
+   "cap": "ndc3_conditional",
+   "rc": 0,
+   "sec": 3.1,
+   "err": ""
+  }
+ ]
+}

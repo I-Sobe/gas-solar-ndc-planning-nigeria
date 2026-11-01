@@ -84,6 +84,7 @@ OUTPUTS
   results/dem2/dem2_summary.json        — headline findings
 """
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -96,7 +97,8 @@ sys.path.append(str(ROOT))
 
 from src.io import load_econ
 from src.optimize_experiments import run_dem2_growth_gas_matrix
-from src.scenarios import demand_growth_scenarios
+from src.scenarios import demand_growth_scenarios, tariff_scenarios
+from src.cli_arms import add_standard_arms, standard_arms_kwargs, resolve_results_dir
 
 # ============================================================
 # CONFIG
@@ -107,7 +109,15 @@ RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 CAP_PATH       = ROOT / "data" / "cost" / "processed" / "emissions_cap.csv"
 CANONICAL_VOLL = "voll_mid"
-CANONICAL_TARIFF = 95_000_000   # USD/TWh
+# docs/tariff_arm.md, Steps 1-3: was a bare `95_000_000` literal threaded
+# into run_dem2_growth_gas_matrix via FINANCING_CONFIGS[eaas]["tariff"].
+# This runner is non-functional independent of this task -- the backend's
+# load_scenario() calls omit ~15 arms required since phases 2.6-2.13 and
+# raise before returning. Bare literal replaced by the named
+# retained-for-attribution legacy arm, threaded via
+# load_scenario(tariff_case=...) not a post-call mutation.
+CANONICAL_TARIFF_CASE = "tariff_legacy_95m"
+CANONICAL_GENSET = "genset_central"
 
 GAS_CASES    = ["baseline", "upside", "downside", "shock_recovery"]
 
@@ -116,13 +126,22 @@ FINANCING_CONFIGS = [
         "label":            "public_only",
         "financing_regime": "traditional",
         "capital_case":     "moderate",
+        # TASK 20 Part A / TASK 21: run_dem2_growth_gas_matrix() requires
+        # tariff_case in every fin_cfg, including public_only, where it is
+        # inert (financing_regime="traditional" disables the EaaS tariff
+        # channel regardless of this value -- docs/task_log_20a_dem2_tariff_
+        # case.md). Set to the same constant "eaas" below already uses, not
+        # a second literal, so both arms are never accidentally set to
+        # different tariff cases (TASK 21's own stop condition).
+        "tariff_case":      CANONICAL_TARIFF_CASE,
     },
     {
         "label":            "eaas",
         "financing_regime": "eaas",
         "capital_case":     "moderate",
-        "required_margin":  1.10,
-        "tariff":           CANONICAL_TARIFF,
+        # required_margin: NOT set here (TASK 29, register L34/L43) -- the
+        # dscr_case-derived value load_scenario() sets, same as public_only.
+        "tariff_case":      CANONICAL_TARIFF_CASE,
     },
 ]
 
@@ -227,6 +246,59 @@ def compute_interaction_matrix(gas_premium_df):
             else None
         )
 
+        # task_defect_closure, D1: ONE classification, computed once, drives
+        # BOTH interaction_amplifies and interpretation -- the pre-fix code
+        # tested `> 0` for the boolean and `> 1e6` for the text, so any
+        # interaction strictly between 0 and 1e6 produced
+        # interaction_amplifies=True next to interpretation="approximately
+        # independent" (the console renders the boolean, the CSV carries
+        # the text -- a genuine disagreement between the two, not just an
+        # aesthetic one). There was also no sub-additive branch at all, so
+        # a large NEGATIVE interaction (the plan's own example: -$201bn)
+        # fell into the same "approximately independent" text as a
+        # genuinely near-zero one -- discarding a real, economically
+        # meaningful result (per the plan: under gas `upside`, higher
+        # demand REDUCES the scarcity penalty).
+        #
+        # Reference magnitude and tolerance: `interaction` is a difference
+        # of two gas-scarcity premiums (`high_prem - low_prem`), so its own
+        # scale is judged against THEIR magnitude, not a fixed dollar
+        # figure -- the plan's own diagnosis is that a fixed 1e6 fails
+        # because this table spans 10^-1 to 10^11 USD. reference =
+        # max(|low_prem|, |high_prem|); REL_TOL = 1% of that reference.
+        # 1% is tight enough that two premiums differing only by LP solver
+        # noise (which, on this project's cost figures, is orders of
+        # magnitude below 1% of any reported premium) still read as
+        # "approximately independent", while a difference large enough to
+        # be a reportable finding at any scale in this table clears it.
+        if interaction is None:
+            classification = "cannot_compute"
+            amplifies = None
+            interpretation = "Cannot compute — missing data."
+        else:
+            reference_magnitude = max(abs(low_prem), abs(high_prem))
+            tolerance = 0.01 * reference_magnitude
+            if interaction > tolerance:
+                classification = "super_additive"
+                amplifies = True
+                interpretation = (
+                    "Demand growth AMPLIFIES gas scarcity cost (super-additive)."
+                )
+            elif interaction < -tolerance:
+                classification = "sub_additive"
+                amplifies = False
+                interpretation = (
+                    "Demand growth REDUCES gas scarcity cost (sub-additive) -- "
+                    "higher demand growth softens the scarcity penalty under "
+                    "this gas regime, a real result, not noise."
+                )
+            else:
+                classification = "approximately_independent"
+                amplifies = False
+                interpretation = (
+                    "Demand growth and gas scarcity are approximately independent."
+                )
+
         rows.append({
             "gas_case":           gas,
             "financing_arm":      fin,
@@ -234,18 +306,9 @@ def compute_interaction_matrix(gas_premium_df):
             "gas_premium_low_growth":  low_prem,
             "gas_premium_high_growth": high_prem,
             "interaction_effect_usd":  interaction,
-            "interaction_amplifies": (
-                interaction > 0 if interaction is not None else None
-            ),
-            "interpretation": (
-                "Demand growth AMPLIFIES gas scarcity cost (super-additive)."
-                if (interaction is not None and interaction > 1e6)
-                else (
-                    "Demand growth and gas scarcity are approximately independent."
-                    if interaction is not None
-                    else "Cannot compute — missing data."
-                )
-            ),
+            "interaction_classification": classification,
+            "interaction_amplifies": amplifies,
+            "interpretation": interpretation,
         })
     return pd.DataFrame(rows)
 
@@ -321,9 +384,37 @@ def compute_eaas_value(df):
 # MAIN
 # ============================================================
 
+def parse_args():
+    # task_runner_revival, Part 2A / audit A55: this runner had NO argparse
+    # at all before this edit -- its sole run_dem2_growth_gas_matrix() call
+    # omitted the standard arm set outright (16 required keys, confirmed
+    # via inspect.signature). Built fresh, add_standard_arms(parser),
+    # following 05_run_fin3_capital_sweep.py's pattern -- excluding
+    # gas_deliverability_case (this runner's own swept subject, GAS_CASES
+    # above), new_gas_deliverability, and tariff_case (run_dem2_growth_gas_
+    # matrix accepts none of the three -- confirmed via inspect.signature;
+    # tariff_case is instead supplied per financing arm via FINANCING_
+    # CONFIGS["eaas"]["tariff_case"] above, a per-arm value this revival
+    # does not change, per "change no constant, no computation").
+    #
+    # WARNING (audit A56, not fixed here -- see the task report for why):
+    # threading these 16 arguments makes this runner EXECUTE, but does NOT
+    # make its "eaas" financing arm's output trustworthy. See the report.
+    parser = argparse.ArgumentParser(
+        description="13_run_dem2_growth_gas_interaction: DEM-2 demand-growth x gas-regime interaction"
+    )
+    add_standard_arms(parser, exclude=["gas_deliverability_case", "new_gas_deliverability", "tariff_case"])
+    return parser.parse_args()
+
+
 def main():
 
-    econ = load_econ(CANONICAL_VOLL)
+    args = parse_args()
+    global RESULTS_DIR
+    RESULTS_DIR = resolve_results_dir(RESULTS_DIR, args)   # TASK 53 2.5: arm-keyed output directory
+    standard_kwargs = standard_arms_kwargs(args)
+
+    econ = load_econ(CANONICAL_VOLL, genset_case=CANONICAL_GENSET)
 
     n_solves = (
         len(DEMAND_CASES) * len(GAS_CASES)
@@ -344,7 +435,9 @@ def main():
         gas_cases=GAS_CASES,
         financing_configs=FINANCING_CONFIGS,
         policy_configs=POLICY_CONFIGS,
+        builder="sliced",  # A5 addendum, Part 2: was hardwired to the annual builder
         cap_path=str(CAP_PATH),
+        **standard_kwargs,
     )
 
     df = pd.DataFrame(rows)
@@ -389,6 +482,12 @@ def main():
                 "gas_premium_low":  row["gas_premium_low_growth"],
                 "gas_premium_high": row["gas_premium_high_growth"],
                 "interaction":      row["interaction_effect_usd"],
+                # task_defect_closure, D1: "classification" is the single
+                # three-way tag (super_additive / approximately_independent
+                # / sub_additive / cannot_compute) that now drives both
+                # "amplifies" (kept for backward compatibility -- True only
+                # for super_additive) and interpretation below.
+                "classification":   row["interaction_classification"],
                 "amplifies":        row["interaction_amplifies"],
             }
             for _, row in sub.iterrows()
@@ -426,8 +525,8 @@ def main():
     print()
     print(f"  {'Gas case':<18} {GROWTH_RATE_MAP[LOW_CASE]:>11.1%} "
           f"{GROWTH_RATE_MAP[MID_CASE]:>10.1%} {GROWTH_RATE_MAP[HIGH_CASE]:>10.1%} "
-          f"{'Interaction':>13} {'Amplifies':>10}")
-    print("  " + "-" * 76)
+          f"{'Interaction':>13} {'Class':>14}")
+    print("  " + "-" * 80)
 
     inter_sub = interaction_df[
         (interaction_df["financing_arm"] == "public_only")
@@ -456,14 +555,27 @@ def main():
         bv = f"{base_p[0]/1e9:.2f}B"  if len(base_p) and pd.notna(base_p[0]) else "—"
         hv = f"{high_p[0]/1e9:.2f}B"  if len(high_p) and pd.notna(high_p[0]) else "—"
 
+        # task_defect_closure, D1: print the three-way classification
+        # directly, not a re-derived YES/no -- the console previously
+        # rendered only interaction_amplifies (a boolean two states away
+        # from what interpretation's text said), which is exactly how the
+        # disagreement this fix closes went unnoticed at the console.
+        _CLASS_LABEL = {
+            "super_additive":            "SUPER-ADDITIVE",
+            "approximately_independent": "independent",
+            "sub_additive":              "SUB-ADDITIVE",
+            "cannot_compute":            "—",
+        }
         if len(i_row):
             inter = i_row["interaction_effect_usd"].values[0]
             iv = f"{inter/1e9:.2f}B" if pd.notna(inter) else "—"
-            amp = "YES" if i_row["interaction_amplifies"].values[0] else "no"
+            cls = _CLASS_LABEL.get(
+                i_row["interaction_classification"].values[0], "—"
+            )
         else:
-            iv, amp = "—", "—"
+            iv, cls = "—", "—"
 
-        print(f"  {gc:<18} {lv:>11} {bv:>10} {hv:>10} {iv:>13} {amp:>10}")
+        print(f"  {gc:<18} {lv:>11} {bv:>10} {hv:>10} {iv:>13} {cls:>14}")
 
     print("\n=== DEM-2: EAAS VALUE BY DEMAND GROWTH (no_policy) ===")
     print()

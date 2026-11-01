@@ -4,8 +4,10 @@ anchor:
   # Derived: observed 2024 gas generation 25.62 TWh_e (NERC: 37,093.70 GWh
   # total, 30.92% hydro) / measured eta 0.287 = 89.27 TWh_th.
   # Cross-check: 89.27 TWh_th = ~805 MMscf/d at HHV 1036 Btu/scf, at the low
-  # end of the sourced NGC range (800-860 MMscf/d). Three independent sources
-  # (NERC generation, NGC volumes, efficiency identity) close to within ~1%.
+  # end of a REPORTED range (800-860 MMscf/d) FOR WHICH NO SOURCE EXISTS (register
+  # L130; TASK 77 A.1: no document, table or file holds it, and 805 is this anchor
+  # turned back into a volume, not an observation). The "three independent sources"
+  # are ONE (NERC 2024 generation) restated through a circular chain (task_log_76 A).
   # 2024 observation used as the 2025 anchor: gas delivery was broadly stable
   # between the two years (2024 total gen 37.09 TWh vs 2025 39.19 TWh).
   # Previous value 40.66 was calibrated against the old eta=0.43 and the
@@ -36,3 +38,73 @@ cases:
     recovery_start_year: 2034
     recovery_ramp_years: 5
     recovery_uplift_fraction: 0.05
+
+  # ── GMP 2026 policy-target family ────────────────────────────────
+  # DISTINCT EPISTEMIC OBJECT from downside/baseline/upside/shock_recovery
+  # above, which extrapolate historical drift. These discount a POLICY
+  # TARGET. Never present a result mixing the two families without saying
+  # which it came from.
+  #
+  # Chain (SOURCED, NNPC Gas Master Plan 2026 p.3 + NUPRC 2025):
+  #   national production   7.45 (2025, NUPRC) -> 10 (2027) -> 12 (2030) Bcf/d
+  #   monetisation rate     0.60 (current) -> 0.75 (2027) -> 0.80 (2030)
+  #   domestic share of commercialised gas   0.43  [DERIVED: GMP 2.0/4.7;
+  #                                          NUPRC cross-check 2.08/4.75]
+  #   power share of domestic gas            0.481 [DERIVED: GMP power
+  #                                          demand 1.0 Bcf/d / NUPRC
+  #                                          domestic sales 2.08 Bcf/d.
+  #                                          NOTE basis mismatch: numerator
+  #                                          is DEMAND, denominator SALES.]
+  #   -> chain ratio vs 2025:  2027 1.678x,  2030 2.148x
+  #
+  # LEVEL IS NOT TAKEN FROM THE CHAIN. GMP's 1.0 Bcf/d power figure is
+  # DEMAND; the anchor (89.27 TWh_th = 0.8055 Bcf/d) is observed DELIVERY.
+  # The 24% gap between them IS the deliverability shortfall this model
+  # exists to represent. The chain supplies SHAPE ONLY, as a multiplier on
+  # the observed anchor.
+  #
+  # I = implementation factor, applied to the planned INCREMENT, not the
+  # level. Same basis the 2008 NGMP retrospective uses for reserve growth
+  # (23.16/70 = 33%, not 203/250 = 81%).
+  #   uplift_fraction = I x (2.148 - 1) = I x 1.148
+  #
+  # DECLARED SIMPLIFICATIONS:
+  #  (a) Linear ramp 2025-2030. The GMP trajectory is front-loaded (the
+  #      2027 jump is larger than the 2027-2030 step), so linear
+  #      undershoots 2027: 1.459x against the chain's 1.678x at I=1.
+  #  (b) Held flat after 2030. The GMP states no target beyond 2030;
+  #      extrapolating a 5-year policy target over 24 further years would
+  #      be indefensible.
+
+  gas_deliv_flat:
+    # I = 0. Anchor held flat: no midstream expansion. DECLARED LOWER
+    # BOUND and the control arm for this family -- same case type as the
+    # two below, only uplift_fraction differs.
+    type: lag_ramp_uplift
+    lag_years: 0
+    ramp_years: 5
+    uplift_fraction: 0.0
+
+  gas_deliv_gmp_partial:
+    # I = 0.50. CENTRAL. [SOURCE: NMDPRA Domestic Supply Obligation
+    # compliance, 50.66% in 2020.] DSO compliance is the best-matched
+    # historical metric -- it measures whether obligated domestic volumes
+    # actually reached domestic buyers. Bracketing evidence: the 2008
+    # NGMP's three planned CPFs reached 0/3 appreciable progress by 2018
+    # (argues lower); DSO compliance rose to 64.8% in 2021 (argues
+    # higher). The 19% domestic-demand shortfall is deliberately EXCLUDED
+    # -- this model takes demand exogenously from NERC/NIRP, so demand
+    # failing to materialise is not the constraint being modelled.
+    type: lag_ramp_uplift
+    lag_years: 0
+    ramp_years: 5
+    uplift_fraction: 0.574
+
+  gas_deliv_gmp_full:
+    # I = 1.0. GMP targets fully met. DECLARED UPPER BOUND, not a
+    # candidate central case. Reaches 191.7 TWh_th by 2030 (16.5%/yr),
+    # against 94.7 for the existing 'upside' arm.
+    type: lag_ramp_uplift
+    lag_years: 0
+    ramp_years: 5
+    uplift_fraction: 1.148

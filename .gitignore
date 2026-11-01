@@ -5,6 +5,37 @@ __pycache__/
 ~$*
 results/
 
+# TASK 00: pre-Phase-B snapshot of results/, mirrors results/ itself
+# being gitignored (docs/branch_status.md)
+results_pre_phase_b/
+
 # Verification sweep snapshots (see scripts/run_verification_sweep.sh)
 snapshots/
 pre_*_snapshot/
+
+# Claude Code local state
+.claude/
+
+# Run logs (regenerable, noisy in diffs)
+logs/
+
+# Conda installer — exceeds GitHub's 100MB limit
+Miniconda3-*.sh
+
+# Environment backups
+*.yml.bak
+
+# Stale nested repo (moved to ~/stale_windows_backup_20260823)
+thesis-code/
+TASK.md
+literature/
+Highs.log
+
+# Superseded chapter working files (TASK 102)
+docs/chapters/Chapter_2_thesis_submission.docx
+docs/chapters/chapter_4_skeleton.bak.md
+
+# Not published (TASK 102): internal task logs, briefs and a retired test
+docs/task_log*.md
+docs/tasks/TASK_*.md
+tests/test_run.py

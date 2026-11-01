@@ -1,0 +1,76 @@
+study_no,authors,year,scope,model_class,security_dims,financing_treatment,derivation_tag
+1,Fuso Nerini et al.,2016,Nigeria (national),geospatial,Av·De·Ac·Af,exogenous,undefended-flat
+2,Afful-Dadzie et al.,2022,Ghana (national electricity syst,math-prog,Av·Af,exogenous,precedent-cited
+3,Agutu et al.,2022,40 SSA countries,geospatial,Av·De·Ac·Af·Ap,exogenous,"precedent-cited (swept), country×mode"
+4,Akbas et al.,2025,multi-country (~6),math-prog,Av·De·Ac·Af,exogenous,"precedent-cited, country-diff"
+5,Aliyu et al.,2019,"Nigeria, national",math-prog,Av·Ac·Af·Ap,exogenous,undefended-flat (swept)
+6,Altieri et al.,2016,South Africa,partial-eq,Av·Ac·Af·Ap,absent,—
+7,Kehbila et al.,,Kenya,sim-hybrid,Av·De·Af·Ap,exogenous,undefended-flat
+8,Awopone et al.,2017,"Ghana, national electricity syst",math-prog,Av·Af·Ap,exogenous,argued
+9,Beath et al.,2024,43 SSA countries,geospatial,Av·De·Ac·Af·Ap,exogenous,undefended-flat
+10,Beres et al.,2024,"South Africa, National",math-prog,Av·De·Af·Ap,exogenous,argued
+11,Carvallo et al.,2017,Kenya - national power system,math-prog,Av·De·Af·Ap,exogenous,undefended-flat
+12,Chen et al.,2022,"Rwanda, National, 30 districts, ",math-prog,Av·De·Ac·Af,exogenous,undefended-flat
+13,Chen et al.,2026,Southern Africa,math-prog,Av·Af,exogenous,precedent-cited
+14,Chitandula et al.,2024,Zambia,geospatial,Av·De·Ac·Af·Ap,exogenous,argued (swept)
+15,Dalder et al.,2024,Democratic Republic of Congo (na,math-prog,Av·Af·Ap,exogenous,"argued (swept), technology-diff"
+16,Dalla Longa et al.,2018,"Ethiopia, national (modelled as ",nat-IAM,Av·De·Ac·Af,exogenous,undefended-flat
+17,Diassy et al.,2026,Senegal,math-prog,Av·Ac·Af·Ap,exogenous,undefended-flat
+18,Diawuo et al.,2020,"Ghana, national",math-prog,Av·De·Af·Ap,exogenous,argued
+19,Diesing et al.,2026,Southern Africa,math-prog,Av·De·Af·Ap,exogenous,undefended-flat
+20,Dioha et al.,2020,"Nigeria — national, single region",partial-eq,Av·De·Ac·Af·Ap,exogenous,argued
+21,Egli et al.,2023,40 SSA countries,geospatial,Av·De·Ac·Af·Ap,exogenous,"institution-sourced (swept), country×mode"
+22,Falchetta et al.,2021,"Sub-Saharan Africa, regional (pe",geospatial,Av·De·Ac·Af·Ap,exogenous,undefended-flat
+23,Fields et al.,2023,"Kenya, national",math-prog,Av·Af·Ap,exogenous,undefended-flat
+24,Gbadamosi et al.,2020,"Nigeria,",math-prog,Av·De·Af·Ap,exogenous,undefended-flat
+25,Gebremeskel et al.,2023,"Ethiopia, national",math-prog,Av·De·Ac·Af,exogenous,undefended-flat (swept)
+26,Giglio et al.,2025,"South Africa, National (10-node)",math-prog,Av·De·Af·Ap,absent,—
+27,Golobish et al.,2025,"Nigeria, national",math-prog,Av·De·Af·Ap,exogenous,undefended-flat
+28,Guta et al.,2017,"Ethiopia, national, 1  solve",math-prog,Av·Af,exogenous,institution-sourced
+29,Hanto et al.,2021,Southern Africa,math-prog,Av·De·Af·Ap,exogenous,undefended-flat
+30,Hughes et al.,2024,South Africa,partial-eq,Av·De·Ac·Af·Ap,absent,—
+31,Isihak,2023,multi-country (~5),geospatial,Av·De·Ac·Af,absent,—
+32,Isihak et al.,2022,multi-country (~5),geospatial,Av·De·Ac·Af,absent,—
+33,Joseph et al.,2022,"Nigeria, National electricity sy",math-prog,Av·Af·Ap,exogenous,undefended-flat
+34,Kemausuor et al.,2014,"Ghana, national (modelled region",geospatial,Av·De·Ac·Af,exogenous,undefended-flat
+35,Kichonge et al.,2015,"Tanzania, National Electricity Sy",math-prog,Av·Af·Ap,exogenous,undefended-flat (swept)
+36,Kihara et al.,2024,Kenya - national power system,math-prog,Av·Af·Ap,exogenous,undefended-flat
+37,Korkovelos et al.,2019,Malawi,geospatial,Av·De·Ac·Af·Ap,exogenous,argued
+38,Kueppers et al.,2020,South Africa,math-prog,Av·De·Af·Ap,absent,—
+39,Marong et al.,2018,The Gambia,math-prog,Av·De·Ac·Af·Ap,exogenous,argued
+40,Mekonnen et al.,2025,"Ethiopia, rural communities",geospatial,Av·De·Ac·Af,exogenous,not stated
+41,Mekonnen et al.,2022,"Ethiopia, national",math-prog,Av·De·Af·Ap,absent,—
+42,Mentis et al.,2017,Kenya( national),geospatial,Av·De·Ac·Af,exogenous,argued (swept)
+43,Mentis et al.,2015,Nigeria,geospatial,Av·De·Ac·Af,exogenous,argued
+44,Moksnes et al.,2024,"Kenya, national electricity syst",math-prog,Av·De·Ac·Af·Ap,exogenous,argued (swept)
+45,Moksnes et al.,2017,"Kenya, national, 1 solve",geospatial,Av·De·Ac·Af,exogenous,"institution-sourced (swept), country×mode"
+46,Mondal et al.,2017,"Ethiopia, National electricity s",math-prog,Av·Ac·Af·Ap,exogenous,undefended-flat
+47,Moner-Girona et al.,2019,"Kenya, national (rural)",geospatial,Av·De·Ac·Af·Ap,exogenous,undefended-flat
+48,Musonye et al.,2021,Kenya,math-prog,Av·De·Af·Ap,exogenous,argued (swept)
+49,Musonye et al.,2025,"Kenya, national",partial-eq,Av·De·Af·Ap,exogenous,undefended-flat
+50,Musselman et al.,2021,"Rwanda, National — 30 districts ",math-prog,Av·De·Ac·Af·Ap,exogenous,undefended-flat
+51,Ouedraogo et al.,2023,"Cameroon, national (GIS settlement",geospatial,Av·De·Ac·Af,exogenous,undefended-flat (swept)
+52,Nana et al.,2024,Nigeria- national,partial-eq,Av·De·Ac·Af·Ap,exogenous,undefended-flat
+53,Nyasapoh et al.,2023,"Ghana, national",math-prog,Av·De·Af·Ap,exogenous,undefended-flat (swept)
+54,Ohiare,2015,"Nigeria, national (774 LGA demand",geospatial,Av·De·Ac·Af,absent,—
+55,Olawumi et al.,2026,Nigeria (national electricity sy,math-prog,Av·De·Af·Ap,exogenous,undefended-flat
+56,Olokotor,2024,"Nigeria, national",math-prog,Av·De·Af·Ap,exogenous,undefended-flat
+57,Omondi et al.,2026,"Kenya, national",geospatial,Av·De·Ac·Af,absent,—
+58,Oyewo et al.,2018,Nigeria (national),math-prog,Av·De·Af·Ap,exogenous,undefended-flat
+59,Oyewo et al.,2019,"South Africa, National",math-prog,Av·De·Af·Ap,exogenous,undefended-flat
+60,Pappis et al.,2021,"Ethiopia, national",geospatial,Av·De·Ac·Af,exogenous,undefended-flat (swept)
+61,Mohd Rafiq et al.,2026,Uganda - national,math-prog,Av·De·Ac·Af·Ap,exogenous,undefended-flat
+62,Rocco et al.,2021,"Tanzania, National electricity s",math-prog,Av·De·Ac·Af·Ap,exogenous,argued (swept)
+63,Rocco et al.,2020,Tanzania (national electricity s,math-prog,Av·Ac·Af·Ap,exogenous,"argued (swept), technology-diff"
+64,Sahlberg et al.,2023,"Somalia, national",geospatial,Av·De·Ac·Af,exogenous,"precedent-cited, technology-diff"
+65,Sahlberg et al.,2023,"Ethiopia, national",geospatial,Av·De·Ac·Af,exogenous,precedent-cited (swept)
+66,Sahlberg et al.,2021,"Burkina Faso, national (OnSSET s",geospatial,Av·De·Ac·Af,exogenous,undefended-flat (swept)
+67,Sarr et al.,2025,Senegal - national,geospatial,Av·De·Ac·Af,exogenous,undefended-flat
+68,Shari et al.,2024,"Nigeria, National power sector w",math-prog,Av·De·Ac·Af·Ap,exogenous,undefended-flat
+69,Simiyu,2015,"Kenya, national",math-prog,Av·Af·Ap,absent,—
+70,Taliotis et al.,2016,Africa (45 electricity systems l,sim-hybrid,Av·De·Ac·Af,exogenous,undefended-flat
+71,Temesgen et al.,2026,"Ethiopia, national",geospatial,Av·De·Ac·Af,exogenous,argued (swept)
+72,Trotter et al.,2019,Uganda - national,math-prog,Av·De·Ac·Af·Ap,exogenous,undefended-flat
+73,Wright et al.,2019,South Africa,math-prog,Av·Af·Ap,exogenous,undefended-flat
+74,Yazdanie et al.,2025,Ghana - Accra metropolitan energy,math-prog,Av·De·Af·Ap,exogenous,"undefended-flat, technology-diff"
+75,Yazdanie et al.,2024,Ghana,math-prog,Av·De·Af·Ap,exogenous,undefended-flat (swept)

@@ -1,0 +1,26 @@
+plant_nerc_name,plant_old_name,installed_mw,turbine_type,ownership,commissioning_year,confidence,note
+Sapele_Steam_1,Sapele ST,720,GS,Privatised,1980,H,Steam plant; units commissioned 1978-1981. Value is a blend.
+Egbin_1,Egbin,1320,GS,Privatised,1986,H,6 x 220 MW steam units 1985-1987. Repowered/rehabilitated post-privatisation.
+Delta_1,Delta Gas,900,OC,Privatised,1985,M,Ughelli; units span 1966-1990. Value is a capacity-weighted blend. Transcorp rehabilitated post-2013.
+Afam_1,Afam IV-V,726,OC,Privatised,1990,L,Afam IV 1970s; Afam V circa 2002. Blend across two very different vintages. LOWEST CONFIDENCE ITEM BY CAPACITY.
+AES_1,AES,294,OC,IPP,2001,M,Barge-mounted. Not present in NERC 2026/Q1 availability table.
+Trans_Amadi_1,Trans Amadi,100,OC,IPP,2004,L,Date uncertain within 2001-2005.
+Okpai_1,Okpai,480,CC,IPP,2005,H,NAOC/Agip combined cycle; wellhead gas supply.
+Omotosho_1,Omotosho,335,OC,Privatised,2005,M,First-phase government plant.
+Omoku_1,Omoku,150,OC,IPP,2006,L,Rivers State plant; date uncertain within 2005-2007.
+Olorunsogo_1,Olorunsogo,335,OC,Privatised,2007,M,First-phase government plant.
+Geregu_1,Geregu,435,OC,Privatised,2007,H,Now Geregu Power Plc (NGX listed).
+Afam_2,Afam VI,650,CC,IPP,2008,H,Shell combined cycle.
+Ibom_power_1,Ibom Power,190,OC,IPP,2009,M,Akwa Ibom State plant.
+Rivers_1,Rivers IPP,180,OC,IPP,2010,L,Date uncertain within 2009-2012.
+Olorunsogo_2,Olorunsogo NIPP,750,CC,NIPP,2012,M,NIPP combined cycle; protracted commissioning.
+Omotosho_2,Omotosho NIPP,500,OC,NIPP,2013,M,NIPP; protracted commissioning.
+Ihovbor_1,Ihovbor NIPP,500,OC,NIPP,2013,M,NIPP; protracted commissioning.
+Geregu_2,Geregu NIPP,435,OC,NIPP,2013,M,NIPP; protracted commissioning.
+Sapele_2,Sapele GT NIPP,500,OC,NIPP,2014,M,NIPP; protracted commissioning.
+Odukpani_1,Odukpani,625,OC,NIPP,2016,M,Calabar NIPP.
+Alaoji_1,Alaoji,500,CC,NIPP,2016,L,NIPP; commissioning highly protracted. NERC 2024 and 2026/Q1 both report ~0% availability.
+Ihovbor_2,Azura IPP,461,OC,IPP,2018,H,Azura-Edo. Highest availability in the fleet (93-98%).
+Gbarain_1,Gbarain,120,OC,NIPP,2020,L,NIPP; date uncertain. Not present in NERC 2026/Q1 availability table.
+Ikeja_1,Paras,110,OC,IPP,2022,L,Recent IPP; date uncertain.
+Igbafo_1,Taopex,45,GS,IPP,2022,L,Small recent IPP; date uncertain.

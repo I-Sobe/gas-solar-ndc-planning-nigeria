@@ -38,7 +38,18 @@ def gas_cost(gas_gen_twh, gas_cost_per_twh):
 
 def solar_capex(capacity_mw, solar_capex_per_mw, n_years):
     """
-    Planning-level annualized solar capital cost.
+    Undiscounted average annual solar capital cost (total CAPEX / n_years).
+
+    DOC-CODE PARITY (plan 5.5): this is a straight arithmetic mean, not
+    an annuity -- there is no discount rate or time-value-of-money
+    treatment, so "annualized" (the prior wording) overstated what the
+    arithmetic does. Not called by either Pyomo LP builder
+    (`src/optimize_model.py`, `src/optimize_model_sliced.py`); the only
+    call site is `src/optimize_experiments.py`'s
+    `run_deterministic_scenario()`, a separate non-Pyomo dispatch-
+    simulation helper. The LP builders compute solar capital cost via
+    their own CRF/overnight-capex machinery under `capital_treatment_case`,
+    not this function.
 
     Parameters
     ----------

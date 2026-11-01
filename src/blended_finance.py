@@ -41,8 +41,12 @@ commercial rate. This module exposes BOTH:
 
 CITATION DISCIPLINE
 -------------------
-Every rate below is a PLACEHOLDER pending a primary source the author has
-personally verified. Do NOT ship these defaults.
+Rates below are PLACEHOLDERS pending a primary source the author has
+personally verified, EXCEPT r_concessional, which was sourced on
+2026-09-20 (IDA21 Blend fixed-rate USD, 2.12%; see
+src/scenarios.py blended_finance_scenarios()) -- the bullet for it below
+predates that and is kept only for its CBN-figure caveat. Do NOT ship the
+remaining placeholder defaults.
   - r_commercial : Nigerian commercial power-sector WACC. anchored to the IEA/CCSI 
                     "Africa power-sector WACC >18% (2023)" 
                     statement, representing unblended Nigerian commercial capital. 
@@ -176,6 +180,11 @@ def resolve_private_rate(scenario: dict) -> float:
       2. Else use scenario['private_discount_rate'] as-is.
 
     This keeps optimize_model.py agnostic: it just calls resolve_private_rate().
+
+    Retained for the 'bank_tenor_legacy' arm (rate-coherence task, Part 1) --
+    see legacy_blended_npv_factor() below, its only caller now. NOT deleted:
+    the legacy arm needs it, and every pre-correction result was produced
+    through this function.
     """
     keys = ("concessional_share", "r_concessional", "r_commercial")
     if all(k in scenario and scenario[k] is not None for k in keys):
@@ -185,3 +194,102 @@ def resolve_private_rate(scenario: dict) -> float:
             r_commercial=scenario["r_commercial"],
         )
     return float(scenario.get("private_discount_rate", 0.18))
+
+
+# ============================================================
+# RATE COHERENCE (Part 1): m.remaining_npv_factor basis selector
+# ============================================================
+# The objective's own commercial tranche (r_comm_nominal / L_comm,
+# capital_recovery_scenarios()) and the bankability test's tranche used to
+# diverge: the objective charges 11% nominal / 8.824% real over a 10-yr
+# tenor (cr_central), while the bankability test discounted at the blended
+# WACC above -- which itself blends a NAIRA-BASIS 18% commercial rate
+# (blended_finance_scenarios(), still unresolved, see that function's
+# docstring) over the full model horizon with no tenor truncation at all.
+# bank_tenor_case unifies them onto the objective's basis by default,
+# while keeping the old behaviour reachable and attributable.
+
+def commercial_tenor_npv_factor(scenario: dict, T) -> dict:
+    """
+    Bankability discount factor F_t on the objective's OWN commercial
+    tranche (bank_tenor_case='bank_tenor_comm', the new default).
+
+        F_t = sum_{j=0}^{L_eff-1} (1 + r_comm_real)^-j
+        L_eff = min(L_comm, T_last - t + 1)
+
+    Year-t ANNUITY convention: j is counted from the vintage t, matching
+    F1's per-tranche CRF window in length (both are L_comm long, truncated
+    at the horizon) WITHOUT importing F1's delta_t-weighted service-window
+    form -- see docs/task_log_rate_coherence.md, Part 1.
+
+    r_comm_real is deflated HERE, from scenario['r_comm_nominal'] and
+    scenario['us_inflation'], independently of the F1 per-tranche capital
+    charge block in build_model()/build_model_sliced(). That block's own
+    real-rate local variable only exists when capital_treatment_case ==
+    'f1_tranche' (it is defined inside that branch); this function is
+    called before any capital_treatment_case branch runs, under BOTH
+    treatments, so it must derive its own real rate rather than reuse the
+    F1 block's -- reusing it would be undefined under 'pre_f1_overnight'.
+    """
+    L_comm = int(round(float(scenario["L_comm"])))
+    r_comm_nom = float(scenario["r_comm_nominal"])
+    us_inflation = float(scenario["us_inflation"])
+    r_comm_real = (1.0 + r_comm_nom) / (1.0 + us_inflation) - 1.0
+
+    T_list = list(T)
+    T_last = T_list[-1]
+    return {
+        t: sum((1.0 + r_comm_real) ** (-j) for j in range(min(L_comm, T_last - t + 1)))
+        for t in T_list
+    }
+
+
+def legacy_blended_npv_factor(scenario: dict, T) -> dict:
+    """
+    Pre-correction bankability discount factor
+    (bank_tenor_case='bank_tenor_legacy'): the blended concessional/
+    commercial WACC (resolve_private_rate()), summed to the model horizon
+    with NO tenor truncation -- there was never an L parameter on this
+    path; every pre-correction result used the horizon length itself
+    (T_last - t + 1 terms), not a sourced tenor.
+
+    Retained so every pre-correction result stays attributable (register
+    L17, rate-coherence task Part 1) and so FIN-2 -- whose own analytics
+    (run_fin2_blended_bankability_sweep(), blended_wacc()) are not
+    rebuilt in this task -- can be pinned here explicitly to keep its
+    analytics and its LP solves on the same basis.
+    """
+    r_private = resolve_private_rate(scenario)
+    T_list = list(T)
+    N = len(T_list)
+    return {
+        t: sum((1.0 / ((1.0 + r_private) ** (k - t))) for k in range(t, N))
+        for t in T_list
+    }
+
+
+def resolve_remaining_npv_factor(scenario: dict, T) -> dict:
+    """
+    Single entry point for build_model()/build_model_sliced(): returns the
+    m.remaining_npv_factor initializer for scenario['bank_tenor_case']
+    (rate-coherence task, Part 1; see bank_tenor_scenarios() in
+    src/scenarios.py and docs/task_log_rate_coherence.md).
+
+      'bank_tenor_comm'   [DEFAULT, new] : commercial_tenor_npv_factor() --
+          the objective's own commercial tranche, deflated independently
+          at this call site so it works under both capital_treatment_case
+          values.
+      'bank_tenor_legacy' : legacy_blended_npv_factor() -- the
+          pre-correction blended-WACC factor. Not the default; retained
+          for attribution and for FIN-2's pinned analytics.
+
+    Default matches load_scenario()'s own default for bank_tenor_case, so
+    a hand-built scenario dict that omits the key gets the SAME behaviour
+    as load_scenario()'s default caller.
+    """
+    bank_tenor_case = scenario.get("bank_tenor_case", "bank_tenor_comm")
+    if bank_tenor_case not in ("bank_tenor_comm", "bank_tenor_legacy"):
+        raise ValueError(f"Unknown bank_tenor_case: {bank_tenor_case}")
+    if bank_tenor_case == "bank_tenor_legacy":
+        return legacy_blended_npv_factor(scenario, T)
+    return commercial_tenor_npv_factor(scenario, T)

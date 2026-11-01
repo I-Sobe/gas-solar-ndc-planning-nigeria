@@ -1,10 +1,13 @@
-def export_benchmark_comparison(gas_shadow_price_by_year, netbacks_usd_per_twh_th):
+def export_benchmark_comparison(gas_shadow_yr_by_year, netbacks_usd_per_twh_th):
     """
-    gas_shadow_price_by_year: {year: dual or None}
+    gas_shadow_yr_by_year: {year: YEAR-t shadow price or None}. The netbacks are year-t USD per
+    TWh_th, so the series must be the year-t one (diagnostics key
+    `gas_shadow_yr_usd_per_twh_th_by_year`), NOT the present-value `_pv_` series (TASK 53 2.3).
+    The parameter was renamed from `gas_shadow_price_by_year` so a stale caller fails loudly.
     netbacks_usd_per_twh_th: dict like {"low":  X, "mid": Y, "high": Z}
     """
-    years = [y for y, v in gas_shadow_price_by_year.items() if v is not None]
-    lam = [gas_shadow_price_by_year[y] for y in years]
+    years = [y for y, v in gas_shadow_yr_by_year.items() if v is not None]
+    lam = [gas_shadow_yr_by_year[y] for y in years]
 
     out = {}
     for name, p in netbacks_usd_per_twh_th.items():

@@ -1,0 +1,16 @@
+# SHA-256 manifest for the frozen PRISMA review artefacts
+# Generated: 2026-10-13T15:54:39Z
+# Verify with:  sha256sum -c data/review/MANIFEST.sha256
+# (run from the repository root)
+
+d29bd9bde196971aefdf168c177a07cd465e7d1970f1d0ad5ea0e44441cba0ce  docs/review/protocol_v5_ssa_prereg.md
+b0556cbe2e12f4d5502093179b070844c1e0dffabd3ac15eb0747aacb7d79348  docs/review/protocol_stage1.md
+2ee5bb3b87307108461ebfb33112c1949a8605a9eed66197b45858b4db2bf89a  docs/review/amendment_screening.md
+4a35c2db739d5b968517635d6811db5d1e84a25a68979f45359a58a3f2244d46  docs/review/screening_rulebook.md
+c690ffa30b080c5812c76c9343abcb2860050bc8ad98afa6a49f940e8f6a9a44  docs/review/search_strings_stage2.md
+2d2e6acaa0be90595a62d9cdfdd46adbed6131d9dfc1d59e3240a99d51d78f7c  data/review/extraction_workbook_v5.xlsx
+0aa52e55ea23c4bc37f137b1f2a6cc8ad54b66370b320130701c1e64f9a5ee91  data/review/table1_extracted.csv
+6d1f238baf534dfd775edab522704125ababebb7eaf754ded09ee6b413ea2e1a  data/review/fulltext_screening_sheet.xlsx
+0f3a0c07c9c33208b770db33d455d7a06036358a3d3f686b1f56f2c1a0dee59a  docs/review/limitations_register.docx
+337f9c328df0026b05167bdf6c8dcb48d609de42c4849e9eec8c5b1bd2a6a85d  docs/review/manuscript_final.docx
+721d22cdbd385c867ea30c1289e67f965557b5589b4aa4ba503c4e2174eab6aa  docs/review/handover_chapter_2.md

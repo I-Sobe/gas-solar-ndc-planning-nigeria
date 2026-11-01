@@ -51,6 +51,7 @@ OUTPUT
     results/salvage_sensitivity/trajectories.csv
 """
 
+import argparse
 import json
 import sys
 import contextlib
@@ -64,15 +65,238 @@ import pyomo.environ as pyo
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
+from src.cli_arms import resolve_results_dir
 from src.io import load_econ, load_solar_capex_by_year
-from src.scenarios import load_scenario, asset_lifetimes, solar_min_build_default, MODEL_END_YEAR
+from src.scenarios import (
+    load_scenario, asset_lifetimes, gas_deliverability_scenarios,
+    conversion_scenarios, hydro_case_scenarios, tariff_scenarios, MODEL_END_YEAR,
+)
 from src.optimize_model import build_model, solve_model
-from src.optimize_model_sliced import build_model_sliced
+from src.optimize_model_sliced import build_model_sliced, conversion_diagnostic
 
 RESULTS_DIR = ROOT / "results" / "salvage_sensitivity"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 CANONICAL_VOLL = "voll_mid"
+
+# 2.6, F0 Step 2.4 (phase_2_4_wiring): peak-demand shape arm is a REQUIRED
+# CLI argument, no default -- mirrors the genset_case discipline.
+PEAK_CASE_CHOICES = ("peak_suppressed", "peak_unsuppressed", "peak_nirp", "peak_high")
+# 2.6, phase_2_3b Step 2: storage's firm-capacity credit arm is a REQUIRED
+# CLI argument, no default -- mirrors the peak-case/genset_case discipline.
+STORAGE_CC_CASE_CHOICES = ("storage_cc_low", "storage_cc_central", "storage_cc_high")
+# 2.9, Step 4: new gas capacity's build policy and deliverability treatment
+# are REQUIRED CLI arguments, no default -- mirrors the peak-case/
+# storage-cc-case/genset_case discipline.
+GAS_BUILD_CASE_CHOICES = ("gas_ndc_17gw", "gas_unconstrained", "gas_none")
+NEW_GAS_DELIVERABILITY_CHOICES = ("constrained", "exempt")
+# 2.10, Step 4: the gas fleet's availability arm is a REQUIRED CLI argument,
+# no default -- mirrors the peak-case/storage-cc-case/gas-build-case
+# discipline.
+GAS_AVAILABILITY_CASE_CHOICES = ("gas_avail_observed", "gas_avail_central", "gas_avail_nameplate")
+# 2.11, Step 3: the gas fleet's retirement schedule is a REQUIRED CLI
+# argument, no default -- mirrors the peak-case/storage-cc-case/
+# gas-build-case/gas-availability-case discipline.
+GAS_RETIREMENT_CASE_CHOICES = ("gas_retire_none", "gas_retire_proxy", "gas_retire_vintage_30", "gas_retire_vintage_40", "gas_retire_vintage_50")
+# 2.13, Step 3: new-build gas unit cost and CCGT efficiency are REQUIRED
+# CLI arguments, no default -- mirrors the peak-case/storage-cc-case/
+# gas-build-case/gas-availability-case/gas-retirement-case discipline.
+GAS_CAPEX_CASE_CHOICES = ("gas_capex_low", "gas_capex_central", "gas_capex_high")
+CCGT_EFFICIENCY_CASE_CHOICES = ("ccgt_eff_iso", "ccgt_eff_central", "ccgt_eff_low")
+# F1, Step 7: per-tranche capital recovery and the DSCR coverage cushion
+# are REQUIRED CLI arguments, no default -- same discipline. us_inflation
+# has no named-arm alternatives (a single required scalar, not a "_case").
+# capital_treatment_case is NOT one of the task's three named required
+# keys but is required for the same reason (see docs/f1_implementation.md).
+# NOTE: this script's whole point is to probe salvage behaviour (m.salvage_npv),
+# which is structurally ABSENT under f1_tranche -- pass --capital-treatment-case
+# pre_f1_overnight here; f1_tranche is offered only for CLI uniformity.
+CAPITAL_RECOVERY_CASE_CHOICES = ("cr_central", "cr_ida21", "cr_comm_low", "cr_comm_high")
+DSCR_CASE_CHOICES = ("dscr_regression", "dscr_central", "dscr_low", "dscr_high")
+CAPITAL_TREATMENT_CASE_CHOICES = ("pre_f1_overnight", "f1_tranche")
+# Envelope resolution: F1's own concessional envelope arm, REQUIRED, no
+# default -- see concessional_envelope_scenarios() in src/scenarios.py.
+# Irrelevant when --capital-treatment-case pre_f1_overnight is passed (as
+# this script requires), but still required by load_scenario() regardless
+# of mode.
+CONCESSIONAL_ENVELOPE_CASE_CHOICES = ("env_dares", "env_dares_plus", "env_none", "env_5x", "env_10x")
+# Tier port B: gas_deliverability_case was hardcoded "baseline" in
+# run_arm()'s load_scenario() call, which stranded the GMP 2026
+# policy-target arms (gas_deliv_*, commit 5b811f2). Now a REQUIRED CLI
+# flag, no default -- same discipline as the arms above. Choices sourced
+# live from gas_deliverability_scenarios() so the historical-drift and
+# GMP policy-target families cannot drift out of sync with src/scenarios.py.
+GAS_DELIVERABILITY_CASE_CHOICES = tuple(gas_deliverability_scenarios().keys())
+# Phase 2.8: OCGT-to-CCGT conversion arm. REQUIRED, no default. NOTE this
+# script requires --capital-treatment-case pre_f1_overnight (the salvage
+# probe) and runs both builders, so only 'conv_none' is usable here --
+# an available arm requires f1_tranche + the sliced builder.
+CONVERSION_CASE_CHOICES = tuple(conversion_scenarios().keys())
+# Correction plan 1.5: hydro trajectory arm. REQUIRED, no default.
+HYDRO_CASE_CHOICES = tuple(hydro_case_scenarios())
+# docs/tariff_arm.md, Steps 1-3: EaaS service tariff arm. REQUIRED, no
+# default -- replaces the retired solar_tariff_case's silent 65,000,000
+# USD/TWh default. Choices sourced live from tariff_scenarios().
+TARIFF_CASE_CHOICES = tuple(tariff_scenarios())
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="22_salvage_sensitivity: asset-lifetime sweep")
+    parser.add_argument(
+        "--peak-case",
+        required=True,
+        choices=PEAK_CASE_CHOICES,
+        help="Peak-demand shape arm fed to load_scenario(peak_multiple_case=...). "
+             "No default: an unstated demand shape would build a firm-capacity "
+             "constraint silently.",
+    )
+    parser.add_argument(
+        "--storage-cc-case",
+        required=True,
+        choices=STORAGE_CC_CASE_CHOICES,
+        help="Storage firm-capacity credit arm fed to load_scenario(storage_cc_case=...). "
+             "No default: an unstated storage capacity credit would keep storage the "
+             "model's best firm-capacity resource on an unsourced assumption.",
+    )
+    parser.add_argument(
+        "--gas-build-case",
+        required=True,
+        choices=GAS_BUILD_CASE_CHOICES,
+        help="New gas capacity build policy fed to load_scenario(gas_build_case=...). "
+             "No default: an unstated build policy would let new gas capacity be "
+             "built (or not) silently.",
+    )
+    parser.add_argument(
+        "--new-gas-deliverability",
+        required=True,
+        choices=NEW_GAS_DELIVERABILITY_CHOICES,
+        help="New gas capacity's fuel-deliverability treatment fed to "
+             "load_scenario(new_gas_deliverability=...). No default: an unstated "
+             "treatment would relax (or not) the fleet fuel constraint for new "
+             "build silently.",
+    )
+    parser.add_argument(
+        "--gas-availability-case",
+        required=True,
+        choices=GAS_AVAILABILITY_CASE_CHOICES,
+        help="Gas fleet availability arm fed to load_scenario(gas_availability_case=...). "
+             "No default: an unstated availability figure would build both the "
+             "gas annual-energy ceiling and the gas firm-capacity credit silently.",
+    )
+    parser.add_argument(
+        "--gas-retirement-case",
+        required=True,
+        choices=GAS_RETIREMENT_CASE_CHOICES,
+        help="Gas fleet retirement schedule fed to load_scenario(gas_retirement_case=...). "
+             "No default: an unstated retirement schedule would retire the "
+             "baseline gas fleet silently.",
+    )
+    parser.add_argument(
+        "--gas-capex-case",
+        required=True,
+        choices=GAS_CAPEX_CASE_CHOICES,
+        help="New-build gas unit cost arm fed to load_scenario(gas_capex_case=...). "
+             "No default: an unstated capex figure would price every new gas "
+             "MW silently.",
+    )
+    parser.add_argument(
+        "--ccgt-efficiency-case",
+        required=True,
+        choices=CCGT_EFFICIENCY_CASE_CHOICES,
+        help="New-build CCGT efficiency arm fed to load_scenario(ccgt_efficiency_case=...). "
+             "No default: an unstated efficiency would size the exempt "
+             "fuel-equivalent allowance silently.",
+    )
+    parser.add_argument(
+        "--capital-recovery-case",
+        required=True,
+        choices=CAPITAL_RECOVERY_CASE_CHOICES,
+        help="Per-tranche capital recovery rate/tenor arm fed to "
+             "load_scenario(capital_recovery_case=...). No default: an unstated "
+             "recovery period would price every tranche's CRF() charge silently.",
+    )
+    parser.add_argument(
+        "--dscr-case",
+        required=True,
+        choices=DSCR_CASE_CHOICES,
+        help="DSCR coverage cushion arm fed to load_scenario(dscr_case=...). "
+             "No default: an unstated cushion would size the EaaS bankability "
+             "constraint silently.",
+    )
+    parser.add_argument(
+        "--us-inflation",
+        required=True,
+        type=float,
+        help="US inflation rate (fraction, e.g. 0.020) fed to "
+             "load_scenario(us_inflation=...), used ONLY to deflate "
+             "capital_recovery_case's nominal rates. No default.",
+    )
+    parser.add_argument(
+        "--capital-treatment-case",
+        required=True,
+        choices=CAPITAL_TREATMENT_CASE_CHOICES,
+        help="F1 objective-form selector fed to load_scenario(capital_treatment_case=...). "
+             "'pre_f1_overnight' reproduces the pre-F1 objective (required for this "
+             "script's m.salvage_npv probe); 'f1_tranche' replaces it with the "
+             "per-tranche CRF annuity and has no salvage to probe. No default: an "
+             "unstated choice would silently pick one of two materially "
+             "different objective functions.",
+    )
+    parser.add_argument(
+        "--concessional-envelope-case",
+        required=True,
+        choices=CONCESSIONAL_ENVELOPE_CASE_CHOICES,
+        help="F1 concessional envelope arm fed to "
+             "load_scenario(concessional_envelope_case=...). No default: an "
+             "unstated envelope would leave concessional volume "
+             "unconstrained and fund every channel 100%% concessionally.",
+    )
+    parser.add_argument(
+        "--gas-deliverability-case",
+        required=True,
+        choices=GAS_DELIVERABILITY_CASE_CHOICES,
+        help="Gas deliverability-to-power arm fed to "
+             "load_scenario(gas_deliverability_case=...). No default. Choices "
+             "span two epistemic families: historical-drift trajectories "
+             "(downside/baseline/upside/shock_recovery and their flat_* "
+             "level-equivalents) and GMP 2026 policy targets "
+             "(gas_deliv_flat / gas_deliv_gmp_partial / gas_deliv_gmp_full, "
+             "the planned-increment fractions I = 0 / 0.50 / 1.0).",
+    )
+    parser.add_argument(
+        "--conversion-case",
+        required=True,
+        choices=CONVERSION_CASE_CHOICES,
+        help="OCGT-to-CCGT conversion arm fed to "
+             "load_scenario(conversion_case=...). No default. This script "
+             "needs pre_f1_overnight and runs both builders, so only "
+             "'conv_none' is usable -- an available arm requires f1_tranche "
+             "and the sliced builder.",
+    )
+    parser.add_argument(
+        "--hydro-case",
+        required=True,
+        choices=HYDRO_CASE_CHOICES,
+        help="Hydro trajectory arm fed to load_scenario(hydro_case=...). "
+             "No default. 'hydro_flat' is the pre-1.5 regression arm "
+             "(11.47 TWh_e flat); 'hydro_committed' holds the ~12.8 TWh_e "
+             "2025 committed level flat; 'hydro_ndc' ramps toward the NDC's "
+             "10,400 MW by 2030 then holds flat. All exogenous -- hydro is "
+             "never a decision variable.",
+    )
+    parser.add_argument(
+        "--tariff-case",
+        required=True,
+        choices=TARIFF_CASE_CHOICES,
+        help="EaaS service tariff arm fed to load_scenario(tariff_case=...). No "
+             "default: the retired solar_tariff_case defaulted to 65,000,000 "
+             "USD/TWh silently, with no error, warning or visible signature in "
+             "the output. Inert in runners with no EaaS channel "
+             "(financing_regime='traditional' fixes solar_eaas_add to 0 via "
+             "m.eaas_disable), but load_scenario() requires it regardless. See "
+             "tariff_scenarios().",
+    )
+    return parser.parse_args()
 
 # MW / MWh below which two trajectories count as identical.
 TRAJECTORY_TOL = 1e-4
@@ -102,25 +326,52 @@ def lifetime_arms():
     }
 
 
-def run_arm(lives, sliced, econ, capex_tv):
+def run_arm(lives, sliced, econ, capex_tv, peak_case, storage_cc_case,
+            gas_build_case, new_gas_deliverability, gas_availability_case,
+            gas_retirement_case, gas_capex_case, ccgt_efficiency_case,
+            capital_recovery_case, dscr_case, us_inflation, capital_treatment_case,
+            concessional_envelope_case, gas_deliverability_case, conversion_case,
+            hydro_case, tariff_case):
     """Solve one arm; return objective and capacity trajectories."""
     scenario = load_scenario(
         demand_level_case="served",
         demand_case="organic_central",
         capital_case="unconstrained",
-        gas_deliverability_case="baseline",
+        gas_deliverability_case=gas_deliverability_case,
         solar_build_case="deployment_unconstrained",
         land_case="loose",
         carbon_case="no_policy",
         start_year=2025,
         end_year=MODEL_END_YEAR,
+        peak_multiple_case=peak_case,
+        reserve_margin="nirp_spinning",
+        storage_cc_case=storage_cc_case,
+        gas_build_case=gas_build_case,
+        new_gas_deliverability=new_gas_deliverability,
+        gas_availability_case=gas_availability_case,
+        gas_retirement_case=gas_retirement_case,
+        gas_capex_case=gas_capex_case,
+        ccgt_efficiency_case=ccgt_efficiency_case,
+        capital_recovery_case=capital_recovery_case,
+        dscr_case=dscr_case,
+        us_inflation=us_inflation,
+        capital_treatment_case=capital_treatment_case,
+        concessional_envelope_case=concessional_envelope_case,
+        conversion_case=conversion_case,
+        hydro_case=hydro_case,
+        tariff_case=tariff_case,
+        om_case="om_central",
     )
-    scenario["solar_min_build_mw_per_year"] = solar_min_build_default()
+    # solar_min_build_mw_per_year override to solar_min_build_default()
+    # REMOVED (2.11, Step 1) -- [UNSOURCED] (plan 2.5); load_scenario()'s
+    # own 0.0 default now applies (see docs/phase_2_11_minbuild_retirement.md).
     scenario["asset_lifetimes"] = dict(lives)
 
+    # Plan 0.4, item C: 1e18 sentinel -> None ("no cap", already the
+    # builder's own guarded meaning for this argument).
     builder = build_model_sliced if sliced else build_model
     m = builder(scenario=scenario, econ=econ,
-                emissions_cap=1e18, solar_capex_by_year=capex_tv)
+                emissions_cap=None, solar_capex_by_year=capex_tv)
 
     # Solver chatter and the (expected) retirement warnings are captured so the
     # summary table stays readable. Failures still raise.
@@ -152,6 +403,8 @@ def run_arm(lives, sliced, econ, capex_tv):
         "storage_capacity_mwh": storage_cap,
         "solar_total_mw": sum(solar_add.values()),
         "storage_final_mwh": storage_cap[int(years[-1])],
+        # Phase 2.8: {} for the annual arm and under conv_none.
+        "conversion": conversion_diagnostic(m, years, scenario) if sliced else {},
     }
 
 
@@ -225,11 +478,40 @@ def analyse(arms, label):
 
 
 def main():
-    econ = load_econ(CANONICAL_VOLL)
+    args = parse_args()
+    global RESULTS_DIR
+    RESULTS_DIR = resolve_results_dir(RESULTS_DIR, args)   # TASK 53 2.5: arm-keyed output directory
+
+    econ = load_econ(CANONICAL_VOLL, genset_case=None)
     capex_tv = load_solar_capex_by_year(scenario_name="solar_low",
                                         start_year=2025, end_year=MODEL_END_YEAR)
     arms_def = lifetime_arms()
-    out = {"tolerance_mw": TRAJECTORY_TOL, "models": {}}
+    out = {
+        "tolerance_mw": TRAJECTORY_TOL,
+        "peak_case": args.peak_case,
+        "storage_cc_case": args.storage_cc_case,
+        "gas_build_case": args.gas_build_case,
+        "new_gas_deliverability": args.new_gas_deliverability,
+        "gas_availability_case": args.gas_availability_case,
+        "gas_retirement_case": args.gas_retirement_case,
+        "gas_capex_case": args.gas_capex_case,
+        "ccgt_efficiency_case": args.ccgt_efficiency_case,
+        "capital_recovery_case": args.capital_recovery_case,
+        "dscr_case": args.dscr_case,
+        "us_inflation": args.us_inflation,
+        "capital_treatment_case": args.capital_treatment_case,
+        "concessional_envelope_case": args.concessional_envelope_case,
+        "gas_deliverability_case": args.gas_deliverability_case,
+        "conversion_case": args.conversion_case,
+        "hydro_case": args.hydro_case,
+        # docs/tariff_arm.md, Step 4: recorded for auditability even though
+        # this runner has no EaaS channel (financing_regime='traditional'
+        # -> m.eaas_disable fixes solar_eaas_add[t] <= 0), making the arm
+        # inert. NOT appended to the output tag (deliberate deviation,
+        # step 2).
+        "tariff_case": args.tariff_case,
+        "models": {},
+    }
     all_rows = []
 
     for label, sliced in (("annual", False), ("sliced", True)):
@@ -237,7 +519,22 @@ def main():
         arms = {}
         for name, lives in arms_def.items():
             try:
-                arms[name] = run_arm(lives, sliced, econ, capex_tv)
+                arms[name] = run_arm(lives, sliced, econ, capex_tv, args.peak_case,
+                                      args.storage_cc_case, args.gas_build_case,
+                                      args.new_gas_deliverability,
+                                      args.gas_availability_case,
+                                      args.gas_retirement_case,
+                                      args.gas_capex_case,
+                                      args.ccgt_efficiency_case,
+                                      args.capital_recovery_case,
+                                      args.dscr_case,
+                                      args.us_inflation,
+                                      args.capital_treatment_case,
+                                      args.concessional_envelope_case,
+                                      args.gas_deliverability_case,
+                                      args.conversion_case,
+                                      args.hydro_case,
+                                      args.tariff_case)
                 print(f"  {name:<14} ok")
             except Exception as e:
                 print(f"  {name:<14} FAILED: {e}")
@@ -257,8 +554,9 @@ def main():
             "storage_trajectory_central": arms["central"]["storage_capacity_mwh"],
         }
 
-    pd.DataFrame(all_rows).to_csv(RESULTS_DIR / "trajectories.csv", index=False)
-    with open(RESULTS_DIR / "salvage_sensitivity.json", "w") as f:
+    tag = f"{args.peak_case}__{args.storage_cc_case}__{args.gas_build_case}__{args.new_gas_deliverability}__{args.gas_availability_case}__{args.gas_retirement_case}__{args.gas_capex_case}__{args.ccgt_efficiency_case}__{args.capital_recovery_case}__{args.dscr_case}__{args.capital_treatment_case}__{args.concessional_envelope_case}__{args.gas_deliverability_case}__{args.conversion_case}__{args.hydro_case}"
+    pd.DataFrame(all_rows).to_csv(RESULTS_DIR / f"trajectories.csv", index=False)
+    with open(RESULTS_DIR / f"salvage_sensitivity.json", "w") as f:
         json.dump(out, f, indent=2)
 
     print(f"\n{'=' * 74}")

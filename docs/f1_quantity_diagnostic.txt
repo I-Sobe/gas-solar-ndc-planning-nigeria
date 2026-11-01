@@ -1,0 +1,248 @@
+Arms loaded:
+  regression           timeseries__peak_unsuppressed__storage_cc_central__gas_unconstrained__
+  f1_central_dares     timeseries__peak_unsuppressed__storage_cc_central__gas_unconstrained__
+  f1_central_none      timeseries__peak_unsuppressed__storage_cc_central__gas_unconstrained__
+  f1_commlow_L15       timeseries__peak_unsuppressed__storage_cc_central__gas_unconstrained__
+  f1_commhigh_L7       timeseries__peak_unsuppressed__storage_cc_central__gas_unconstrained__
+
+==============================================================================
+0. COLUMNS AVAILABLE (so nothing below is guessed)
+==============================================================================
+['emissions_tco2', 'gas_capacity_mw', 'gas_generation_twh_e', 'gas_shadow_usd_per_twh_th', 'gas_to_power_twh_th', 'hydro_generation_twh_e', 'selfgen_twh', 'solar_capacity_mw', 'solar_generation_twh_e', 'storage_capacity_mwh', 'storage_charge_twh_e', 'storage_discharge_twh_e', 'unserved_twh']
+
+==============================================================================
+H1. GAS CAPACITY BY YEAR -- is new gas build zero under F1?
+==============================================================================
+      regression  f1_central_dares  f1_central_none  f1_commlow_L15  f1_commhigh_L7
+year                                                                               
+2025     10947.0           10947.0          10947.0         10947.0         10947.0
+2026     10947.0           10947.0          10947.0         10947.0         10947.0
+2027     10947.0           10947.0          10947.0         10947.0         10947.0
+2028     10947.0           10947.0          10947.0         10947.0         10947.0
+2029     10947.0           10947.0          10947.0         10947.0         10947.0
+2030     10947.0           10947.0          10947.0         10947.0         10947.0
+2031     10947.0           10947.0          10947.0         10947.0         10947.0
+2032     10947.0           10947.0          10947.0         10947.0         10947.0
+2033     10947.0           10947.0          10947.0         10947.0         10947.0
+2034     10847.0           10847.0          10847.0         10847.0         10847.0
+2035     10032.0           10032.0          10032.0         10032.0         10032.0
+2036      9882.0            9882.0           9882.0          9882.0          9882.0
+2037      9112.0            9112.0           9112.0          9112.0          9112.0
+2038      8462.0            8462.0           8462.0          8462.0          8462.0
+2039      8272.0            8272.0           8272.0          8272.0          8272.0
+2040      8092.0            8092.0           8092.0          8092.0          8092.0
+2041      8092.0            8092.0           8092.0          8092.0          8092.0
+2042      7342.0            7342.0           7342.0          7342.0          7342.0
+2043      6405.2            5907.0           5907.0          5907.0          5907.0
+2044      7032.5            5407.0           5407.0          5407.0          5407.0
+2045      7684.9            5407.0           5407.0          5407.0          5407.0
+2046      7648.4            4586.6           4586.6          4586.6          4586.6
+2047      7648.4            4667.5           4667.5          4667.5          4667.5
+2048      8027.1            4751.0           4751.0          4751.0          4751.0
+2049      8790.3            4837.2           4837.2          4837.2          4837.2
+2050      9584.0            4926.3           4926.3          4926.3          4926.3
+2051     10409.5            5018.4           5018.4          5018.4          5018.4
+2052     11268.0            5113.5           5113.5          5113.5          5113.5
+2053     12160.9            5211.8           5211.8          5211.8          5211.8
+2054     13089.4            5313.4           5313.4          5313.4          5313.4
+
+Year-on-year CHANGE in gas capacity (negative = retirement only,
+positive = new build). If F1 columns are never positive, H1 holds.
+      regression  f1_central_dares  f1_central_none  f1_commlow_L15  f1_commhigh_L7
+year                                                                               
+2025         NaN               NaN              NaN             NaN             NaN
+2026         0.0               0.0              0.0             0.0             0.0
+2027         0.0               0.0              0.0             0.0             0.0
+2028         0.0               0.0              0.0             0.0             0.0
+2029         0.0               0.0              0.0             0.0             0.0
+2030         0.0               0.0              0.0             0.0             0.0
+2031         0.0               0.0              0.0             0.0             0.0
+2032         0.0               0.0              0.0             0.0             0.0
+2033         0.0               0.0              0.0             0.0             0.0
+2034      -100.0            -100.0           -100.0          -100.0          -100.0
+2035      -815.0            -815.0           -815.0          -815.0          -815.0
+2036      -150.0            -150.0           -150.0          -150.0          -150.0
+2037      -770.0            -770.0           -770.0          -770.0          -770.0
+2038      -650.0            -650.0           -650.0          -650.0          -650.0
+2039      -190.0            -190.0           -190.0          -190.0          -190.0
+2040      -180.0            -180.0           -180.0          -180.0          -180.0
+2041         0.0               0.0              0.0             0.0             0.0
+2042      -750.0            -750.0           -750.0          -750.0          -750.0
+2043      -936.8           -1435.0          -1435.0         -1435.0         -1435.0
+2044       627.3            -500.0           -500.0          -500.0          -500.0
+2045       652.4               0.0              0.0             0.0             0.0
+2046       -36.5            -820.4           -820.4          -820.4          -820.4
+2047         0.0              80.9             80.9            80.9            80.9
+2048       378.7              83.5             83.5            83.5            83.5
+2049       763.2              86.2             86.2            86.2            86.2
+2050       793.7              89.1             89.1            89.1            89.1
+2051       825.5              92.0             92.0            92.0            92.0
+2052       858.5              95.1             95.1            95.1            95.1
+2053       892.8              98.3             98.3            98.3            98.3
+2054       928.6             101.6            101.6           101.6           101.6
+  regression           years with net gas ADD > 1 MW: [2044, 2045, 2048, 2049, 2050, 2051, 2052, 2053, 2054]
+  f1_central_dares     years with net gas ADD > 1 MW: [2047, 2048, 2049, 2050, 2051, 2052, 2053, 2054]
+  f1_central_none      years with net gas ADD > 1 MW: [2047, 2048, 2049, 2050, 2051, 2052, 2053, 2054]
+  f1_commlow_L15       years with net gas ADD > 1 MW: [2047, 2048, 2049, 2050, 2051, 2052, 2053, 2054]
+  f1_commhigh_L7       years with net gas ADD > 1 MW: [2047, 2048, 2049, 2050, 2051, 2052, 2053, 2054]
+
+==============================================================================
+H2. STORAGE -- residual of firm capacity, or optimised?
+==============================================================================
+Storage capacity (MWh):
+      regression  f1_central_dares  f1_central_none  f1_commlow_L15  f1_commhigh_L7
+year                                                                               
+2025         0.0               0.0              0.0             0.0             0.0
+2026         0.0               0.0              0.0             0.0             0.0
+2027         0.0               0.0              0.0             0.0             0.0
+2028         0.0               0.0              0.0             0.0             0.0
+2029         0.0               0.0              0.0             0.0             0.0
+2030         0.0               0.0              0.0             0.0             0.0
+2031         0.0               0.0              0.0             0.0             0.0
+2032         0.0               0.0              0.0             0.0             0.0
+2033         0.0               0.0              0.0             0.0             0.0
+2034       850.0             850.0            850.0           850.0           850.0
+2035      5873.0            5873.0           5873.0          5873.0          5873.0
+2036      8306.0            8306.0           8306.0          8306.0          8306.0
+2037     13293.0           13293.0          13293.0         13293.0         13293.0
+2038     17876.0           17876.0          17876.0         17876.0         17876.0
+2039     20698.0           20698.0          20698.0         20698.0         20698.0
+2040     23563.0           23563.0          23563.0         23563.0         23563.0
+2041     25794.0           25794.0          25794.0         25794.0         25794.0
+2042     31114.0           31114.0          31114.0         31114.0         31114.0
+2043     37274.0           39267.0          39267.0         39267.0         39267.0
+2044     37274.0           43776.0          43776.0         43776.0         43776.0
+2045     37274.0           46385.0          46385.0         46385.0         46385.0
+2046     40134.0           52381.0          52381.0         52381.0         52381.0
+2047     42956.0           54880.0          54880.0         54880.0         54880.0
+2048     44377.0           57481.0          57481.0         57481.0         57481.0
+2049     44377.0           60189.0          60189.0         60189.0         60189.0
+2050     44377.0           63008.0          63008.0         63008.0         63008.0
+2051     44377.0           65942.0          65942.0         65942.0         65942.0
+2052     44377.0           68995.0          68995.0         68995.0         68995.0
+2053     44377.0           72173.0          72173.0         72173.0         72173.0
+2054     44377.0           75481.0          75481.0         75481.0         75481.0
+
+Annual storage BUILD (MWh):
+      regression  f1_central_dares  f1_central_none  f1_commlow_L15  f1_commhigh_L7
+year                                                                               
+2025         NaN               NaN              NaN             NaN             NaN
+2026         0.0               0.0              0.0             0.0             0.0
+2027         0.0               0.0              0.0             0.0             0.0
+2028         0.0               0.0              0.0             0.0             0.0
+2029         0.0               0.0              0.0             0.0             0.0
+2030         0.0               0.0              0.0             0.0             0.0
+2031         0.0               0.0              0.0             0.0             0.0
+2032         0.0               0.0              0.0             0.0             0.0
+2033         0.0               0.0              0.0             0.0             0.0
+2034       850.0             850.0            850.0           850.0           850.0
+2035      5023.0            5023.0           5023.0          5023.0          5023.0
+2036      2433.0            2433.0           2433.0          2433.0          2433.0
+2037      4987.0            4987.0           4987.0          4987.0          4987.0
+2038      4583.0            4583.0           4583.0          4583.0          4583.0
+2039      2822.0            2822.0           2822.0          2822.0          2822.0
+2040      2865.0            2865.0           2865.0          2865.0          2865.0
+2041      2231.0            2231.0           2231.0          2231.0          2231.0
+2042      5320.0            5320.0           5320.0          5320.0          5320.0
+2043      6160.0            8153.0           8153.0          8153.0          8153.0
+2044         0.0            4509.0           4509.0          4509.0          4509.0
+2045         0.0            2610.0           2610.0          2610.0          2610.0
+2046      2860.0            5996.0           5996.0          5996.0          5996.0
+2047      2823.0            2499.0           2499.0          2499.0          2499.0
+2048      1421.0            2601.0           2601.0          2601.0          2601.0
+2049         0.0            2708.0           2708.0          2708.0          2708.0
+2050         0.0            2819.0           2819.0          2819.0          2819.0
+2051         0.0            2934.0           2934.0          2934.0          2934.0
+2052         0.0            3054.0           3054.0          3054.0          3054.0
+2053         0.0            3178.0           3178.0          3178.0          3178.0
+2054         0.0            3308.0           3308.0          3308.0          3308.0
+
+Identical-to-last-digit check across F1 arms:
+  f1_central_dares vs f1_central_none: True
+  f1_central_dares vs f1_commlow_L15: True
+  f1_central_dares vs f1_commhigh_L7: True
+  -> if ALL True, storage is insensitive to BOTH rate and
+     tenor, which rules out a cost-driven interior optimum.
+
+==============================================================================
+H2b. FIRM CAPACITY -- slack, dual, and the residual identity
+==============================================================================
+No firm-capacity columns in the timeseries CSV.
+Check the summary JSON instead:
+  regression: none
+  f1_central_dares: none
+  f1_central_none: none
+  f1_commlow_L15: none
+  f1_commhigh_L7: none
+
+==============================================================================
+H3. TRUNCATION ARBITRAGE -- does the ramp move with L_comm?
+==============================================================================
+If terminal truncation drives late storage, the year the build
+ramp accelerates should shift EARLIER as L_comm grows, because
+a longer window means more escaped payments at the horizon.
+
+arm                   L_comm   terminal MWh   first yr build>2000
+regression                 -         44,377                  2035
+f1_central_dares          10         75,481                  2035
+f1_central_none           10         75,481                  2035
+f1_commlow_L15            15         75,481                  2035
+f1_commhigh_L7             7         75,481                  2035
+
+READ: if terminal MWh and ramp year are IDENTICAL across
+      L_comm = 7, 10, 15, truncation length is NOT the driver
+      and H3 is dead.
+
+==============================================================================
+H4. CONCESSIONAL DRAW -- is the envelope actually binding?
+==============================================================================
+--- regression
+    concessional_envelope_case                    env_dares
+--- f1_central_dares
+    concessional_envelope_case                    env_dares
+--- f1_central_none
+    concessional_envelope_case                    env_none
+--- f1_commlow_L15
+    concessional_envelope_case                    env_none
+--- f1_commhigh_L7
+    concessional_envelope_case                    env_none
+
+READ: with a $750M envelope against billions of capex, the draw
+      should equal the envelope exactly (binding) in env_dares and
+      be zero in env_none. If the draw is BELOW the envelope in
+      env_dares, the envelope is NOT binding and something else
+      limits concessional uptake.
+
+==============================================================================
+REPORTING DEFECT -- 'storage 2045' label check
+==============================================================================
+  regression           2045 =       37,274   terminal =       44,377
+  f1_central_dares     2045 =       46,385   terminal =       75,481
+  f1_central_none      2045 =       46,385   terminal =       75,481
+  f1_commlow_L15       2045 =       46,385   terminal =       75,481
+  f1_commhigh_L7       2045 =       46,385   terminal =       75,481
+
+The runner prints 'storage 2045'. If that print matches the
+TERMINAL column rather than the 2045 column, the summary block
+is mislabeled and other lines in it should be checked too.
+
+==============================================================================
+SUMMARY OF WHAT TO CONCLUDE
+==============================================================================
+
+  H1 confirmed  -> new gas is uneconomic under F1 at every commercial rate
+                   tested; gas capacity is the retirement schedule alone.
+                   That is a reportable finding, not a bug.
+
+  H2 confirmed  -> storage is a firm-capacity residual, not an optimised
+                   outcome. This CONTRADICTS the project's standing
+                   principle and must be fixed or declared before any
+                   storage number is reported.
+
+  H3 dead       -> truncation length is not the driver (already strongly
+                   suggested by the identical terminal MWh across L=7/10/15).
+
+  If H1 and H2 both hold, the storage quantity carries no cost-optimality
+  content and the +70% against the regression arm is an artifact of gas
+  exiting the firm-capacity market, not a financing result.
+

@@ -23,6 +23,31 @@ Phase 2: Financing lever (CAPEX -> service payments)
 Deferred Phases
 ---------------
 Phase 3: Reliability substitution (explicitly not modeled)
+
+NOT CALLED BY THE LP (doc-code parity, plan 5.5)
+-------------------------------------------------
+This entire module is not imported anywhere in `src/` or `scripts/`
+(confirmed by search: no `from src.EaaS import ...` / `import src.EaaS`
+site exists in the tree) -- not just its financing machinery.
+`_capital_recovery_factor` and `compute_eaas_financing` have zero call
+sites (including from within this module, beyond
+`compute_eaas_financing`'s own internal call to
+`_capital_recovery_factor`). `compute_eaas_deployment` also has zero
+EXTERNAL call sites: `scripts/12_run_dem1_demand_sensitivity.py` defines
+its OWN unrelated function of the same name and never imports this
+module -- a name coincidence, not a caller.
+
+The two Pyomo LP builders that actually produce every reported result
+(`src/optimize_model.py`, `src/optimize_model_sliced.py`) build EaaS
+capital recovery entirely themselves, under `capital_treatment_case=
+'f1_tranche'` (per-tranche CRF annuity on the split
+concessional/commercial volumes) or `'pre_f1_overnight'` (overnight
+capex + salvage). Neither builder reads a single symbol from this file.
+This module's CRF/service-payment machinery predates F1 and was
+superseded by it, not merely duplicated by it -- kept here, undeleted,
+because deciding whether unused code that might still be referenced in
+prose should be removed is a larger decision than this task takes (see
+docs/task_bucketA_parity.md, Part B1, for the recommendation).
 """
 
 import numpy as np

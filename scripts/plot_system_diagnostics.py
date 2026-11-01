@@ -29,14 +29,10 @@ gas = df["gas_generation_twh_e"]
 storage = df["storage_discharge_twh_e"]
 
 # Panel B (shadow prices)
-if "gas_shadow_usd_per_twh_th" in df.columns:
-    gas_shadow = df["gas_shadow_usd_per_twh_th"]
-else:
-    gas_shadow = df["gas-shadow_price_usd_per_twh_th"]
-if "carbon_shadow_usd_per_tco2" in df.columns:
-    carbon_shadow = df["carbon_shadow_usd_per_tco2"]
-else:
-    carbon_shadow = df["caron_shadow_price_usd_per_tco2"]
+# TASK 53 2.3: plotted on the YEAR-t basis (the present-value columns are *_pv_*; the
+# basis-less and misspelt legacy fallbacks were removed so a stale file fails loudly).
+gas_shadow = df["gas_shadow_yr_usd_per_twh_th"]
+carbon_shadow = df["carbon_shadow_yr_usd_per_tco2"]
 # Optional VoLL (set or load)
 VOLL = 10_000_000_000 # voll_mid: 10B USD/TWH
 
@@ -78,13 +74,12 @@ ax1.grid()
 
 # Compute regime transition years from data
 gas_binding_year = df.loc[
-    (df["gas_shadow_usd_per_twh_th"] if "gas_shadow_usd_per_twh_th" in df.columns
-     else df["gas_shadow_price_usd_per_twh_th"]) > 1e-6,
+    df["gas_shadow_yr_usd_per_twh_th"] > 1e-6,
     "year"
 ].min()
 
 carbon_binding_year = df.loc[
-    df["carbon_shadow_usd_per_tco2"] > 1e-6,
+    df["carbon_shadow_yr_usd_per_tco2"] > 1e-6,
     "year"
 ].min()
 
@@ -94,7 +89,7 @@ carbon_binding_year = df.loc[
 
 # ax2: carbon shadow only
 for case_name, case_df in dfs.items():
-    cs_col = "carbon_shadow_usd_per_tco2" if "carbon_shadow_usd_per_tco2" in case_df.columns else "carbon_shadow_price_usd_per_tco2"
+    cs_col = "carbon_shadow_yr_usd_per_tco2"
     ax2.plot(
         case_df["year"],
         pd.to_numeric(case_df[cs_col], errors="coerce"),
@@ -109,7 +104,7 @@ ax2.legend()
 ax2.grid()
 
 # ax3: gas shadow + VoLL (same unit: USD/TWh)
-gs_col = "gas_shadow_price_usd_per_twh_th" if "gas_shadow_price_usd_per_twh_th" in df.columns else "gas_shadow_usd_per_twh_th"
+gs_col = "gas_shadow_yr_usd_per_twh_th"
 ax3.plot(years, df[gs_col], label="Gas shadow — baseline", color="grey")
 ax3.axhline(VOLL, linestyle="--", color="blue", label="VoLL (10B USD/TWh)")
 if pd.notna(gas_binding_year):

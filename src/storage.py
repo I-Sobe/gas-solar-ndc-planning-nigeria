@@ -16,6 +16,25 @@ Modeling assumptions
 - Minimum state of charge (SOC) is fixed at 0 MWh
 - No degradation, ramping, or intra-annual dynamics
 
+DOC-CODE PARITY (plan 5.5): this convention is NOT what the reported
+results use. `BatteryStorage` is imported and used only by
+`src/optimize_experiments.py`'s `run_deterministic_scenario()` (a
+separate, non-Pyomo dispatch-simulation helper) -- confirmed neither
+`src/optimize_model.py` nor `src/optimize_model_sliced.py` (the two
+Pyomo LP builders that produce every reported result) imports this
+module at all. Those builders apply the FULL round-trip efficiency on
+DISCHARGE ONLY, charge unmodified:
+`m.storage_discharge[t] <= storage_round_trip_eff * m.storage_charge[t]`
+(`optimize_model.py`'s `m.storage_energy_balance`; the sliced builder's
+`m.storage_season_balance` is the same rule per season) -- not this
+class's symmetric √η/√η split. The two conventions give the SAME
+round-trip loss for one full charge-discharge cycle at a given `eta_rt`,
+but differ in how loss is attributed between the two legs, and this
+class's SOC-tracking, capacity-limited, stateful behaviour has no
+counterpart in the LP's constraint-based formulation at all. Neither
+implementation is changed here -- changing either would move the
+objective.
+
 Boundary discipline
 -------------------
 - This class is STATEFUL: SOC is mutated during charge/discharge.

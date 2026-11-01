@@ -1,0 +1,31 @@
+# Source: World Bank WDI, indicator EG.ELC.ACCS.ZS (Nigeria, access to
+# electricity, % of population)
+# Year range: 2010-2024 (2025 is not populated in the source workbook --
+# the diagnostic's Raw_Ember_WDI!D19 cell for 2025 is empty)
+# Extracted from data/demand/step1_per_capita_diagnostic.xlsx, sheet
+# Raw_Ember_WDI, column D ("Access rate (fraction)", here converted to
+# a percentage to match the existing data/demand/electricity_access_worldbank.csv
+# convention) -- a manual transcription recorded in that workbook, not
+# a fresh pull from the WDI API. This series overlaps
+# electricity_access_worldbank.csv for 2010-2023 (values match to one
+# decimal place in the years checked: 2010 48.0%, 2023 61.2%) and
+# extends it by one further year, 2024 (62.5%), which the existing file
+# does not carry. Kept as a separate file, not merged into the existing
+# one, for the same reason the two generation series are kept separate.
+# Extracted: 2026-09-24
+year,electricity_access_percent
+2010,48.0
+2011,55.9
+2012,53.0
+2013,55.6
+2014,54.2
+2015,52.5
+2016,59.3
+2017,54.4
+2018,56.5
+2019,55.4
+2020,55.4
+2021,59.5
+2022,60.5
+2023,61.2
+2024,62.5

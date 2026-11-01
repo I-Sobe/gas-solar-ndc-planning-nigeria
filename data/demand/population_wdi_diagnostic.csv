@@ -1,0 +1,28 @@
+# Source: World Bank WDI, indicator SP.POP.TOTL (Nigeria total population)
+# Per step1_per_capita_diagnostic.xlsx, sheet README: "Source: UN World
+# Population Prospects plus national statistical office data."
+# Year range: 2010-2025
+# Extracted from data/demand/step1_per_capita_diagnostic.xlsx, sheet
+# Raw_Ember_WDI, column C ("WDI population") -- a manual transcription
+# recorded in that workbook, not a fresh pull from the WDI API. No
+# other population file exists anywhere in this repo (confirmed by
+# `find data -iname "*pop*"`, no result prior to this extraction) --
+# this is therefore the first stored population series checked in.
+# Extracted: 2026-09-24
+year,population
+2010,166642886
+2011,171379598
+2012,176200625
+2013,181049443
+2014,185896915
+2015,190671878
+2016,195443700
+2017,200254579
+2018,204938755
+2019,209485641
+2020,213996181
+2021,218529286
+2022,223150896
+2023,227882945
+2024,232679478
+2025,237527782

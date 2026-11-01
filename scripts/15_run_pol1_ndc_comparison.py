@@ -35,7 +35,11 @@ NDC 2.0: Moderate solar build, gas shadow price limited, EaaS convenient.
 NDC 3.0: Aggressive solar build required, feasibility may fail under public
           capital alone, EaaS transitions from convenient to necessary.
 
-Under NDC 3.0, the PUBLIC CAPITAL budget (moderate = 5.21B USD) may be
+Under NDC 3.0, the PUBLIC CAPITAL budget (task_audit_fixes_p3, A48:
+tight = $4.55B unconditional / moderate = $7.74B conditional, current
+B* = $9.104B -- the earlier "moderate = 5.21B USD" figure here computed
+0.85 x the RETIRED B* = $6.13B, and against the WRONG tier besides,
+since capital_case is "tight" for unconditional per A47's fix) may be
 insufficient to finance the solar deployment needed to:
   (a) replace near-zero gas with solar for power supply, AND
   (b) maintain acceptable energy access (low unserved energy)
@@ -71,6 +75,7 @@ NDC scenarios (ndc2_unconditional, ndc2_conditional, ndc3_unconditional,
 ndc3_conditional) in a single emissions_cap.csv.
 """
 
+import argparse
 import json
 from operator import sub
 import sys
@@ -84,9 +89,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
 from src.io import load_econ, load_solar_capex_by_year
-from src.scenarios import MODEL_START_YEAR, load_scenario, asset_lifetime_sweep, solar_min_build_default, MODEL_END_YEAR
-from src.optimize_model import build_model, solve_model
-from src.optimize_experiments import extract_planning_diagnostics
+from src.scenarios import (
+    MODEL_START_YEAR, load_scenario, asset_lifetime_sweep,
+    MODEL_END_YEAR,
+)
+from src.optimize_model import solve_model, leakage_diagnostic
+from src.optimize_model_sliced import build_model_sliced
+from src.optimize_experiments import extract_planning_diagnostics, shadow_mean_fields, shadow_series, annual_emissions_flat
+from src.cli_arms import add_standard_arms, standard_arms_kwargs, resolve_results_dir
 
 # ============================================================
 # CONFIG
@@ -97,41 +107,46 @@ RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 CAP_PATH       = ROOT / "data" / "cost" / "processed" / "emissions_cap.csv"
 CANONICAL_VOLL = "voll_mid"
-CANONICAL_TARIFF = 95_000_000   # USD/TWh
+CANONICAL_GENSET = "genset_central"
 
 # NDC version configurations — matched ambition pairs for comparison
+#
+# task_audit_fixes_p3 (A47): public_capital/eaas_capital were "moderate"/
+# "expansion" for unconditional/conditional -- one full tier looser, at
+# both levels, than the canonical convention 02_run_ndc_caps.py and
+# 03_run_ndc_eaas.py both use (unconditional -> "tight", conditional ->
+# "moderate"). Traced to a stale comment in 02_run_ndc_caps.py describing
+# a "moderate"/"expansion" split its own, adjacent NDC_CASES dict no
+# longer uses -- fixed there too (see that file). Aligned to "tight"/
+# "moderate" here to match both siblings exactly.
 NDC_CONFIGS = [
     {
         "ndc_label":     "ndc2_unconditional",
         "ndc_version":   "NDC 2.0",
         "ambition_level": "unconditional",
-        "public_capital": "moderate",
-        "eaas_capital":   "moderate",
-        "eaas_margin":    1.10,
+        "public_capital": "tight",
+        "eaas_capital":   "tight",
     },
     {
         "ndc_label":     "ndc2_conditional",
         "ndc_version":   "NDC 2.0",
         "ambition_level": "conditional",
-        "public_capital": "expansion",
-        "eaas_capital":   "expansion",
-        "eaas_margin":    1.05,
+        "public_capital": "moderate",
+        "eaas_capital":   "moderate",
     },
     {
         "ndc_label":     "ndc3_unconditional",
         "ndc_version":   "NDC 3.0",
         "ambition_level": "unconditional",
-        "public_capital": "moderate",
-        "eaas_capital":   "moderate",
-        "eaas_margin":    1.10,
+        "public_capital": "tight",
+        "eaas_capital":   "tight",
     },
     {
         "ndc_label":     "ndc3_conditional",
         "ndc_version":   "NDC 3.0",
         "ambition_level": "conditional",
-        "public_capital": "expansion",
-        "eaas_capital":   "expansion",
-        "eaas_margin":    1.05,
+        "public_capital": "moderate",
+        "eaas_capital":   "moderate",
     },
 ]
 
@@ -166,7 +181,28 @@ def load_annual_caps(scenario_name, years_list):
     return [float(s[int(y)]) for y in years_list]
 
 
-def run_one(ndc_cfg, fin_cfg, econ):
+def parse_args():
+    # docs/task_runner_repair.md, Step Three: this script had NO argparse
+    # at all before this edit. Its load_scenario() call (run_one, below)
+    # omitted 15 of the 17 sentinel-required keys outright -- confirmed by
+    # reading load_scenario()'s signature, every one of which raises
+    # TypeError with no default -- and pinned tariff_case to the module
+    # constant CANONICAL_TARIFF_CASE ("tariff_legacy_95m"), the same
+    # "hardcodes a value that is now a flag" case TASK.md calls out for
+    # gas_deliverability_case elsewhere. Both are now REQUIRED flags
+    # instead: CANONICAL_TARIFF_CASE/CANONICAL_TARIFF (module constants)
+    # are removed rather than left dead, since their only purpose was
+    # supplying this now-retired literal. Built fresh, add_standard_arms
+    # (parser) for the full set; capital_case stays sourced from
+    # NDC_CONFIGS (the runner's own subject), not a flag.
+    parser = argparse.ArgumentParser(
+        description="15_run_pol1_ndc_comparison: NDC 2.0 vs NDC 3.0 investment trajectory (POL-1)"
+    )
+    add_standard_arms(parser)
+    return parser.parse_args()
+
+
+def run_one(ndc_cfg, fin_cfg, econ, standard_kwargs):
     """Solve one (NDC version, financing arm) combination."""
     ndc_label = ndc_cfg["ndc_label"]
     fin_label  = fin_cfg["label"]
@@ -179,18 +215,24 @@ def run_one(ndc_cfg, fin_cfg, econ):
     scenario = load_scenario(
         demand_level_case="served",
         demand_case="organic_central",
-        gas_deliverability_case="baseline",
         capital_case=capital,
         solar_build_case="deployment_unconstrained",
         carbon_case="no_policy",
         start_year=2025,
         end_year=MODEL_END_YEAR,
+        **standard_kwargs,
     )
 
     scenario["financing_regime"] = fin_cfg["financing_regime"]
-    if fin_label == "eaas":
-        scenario["required_margin"] = ndc_cfg["eaas_margin"]
-        scenario["solar_service_tariff_usd_per_twh"] = CANONICAL_TARIFF
+    # docs/tariff_arm.md, Steps 1-3: tariff now threaded via
+    # load_scenario(tariff_case=...) above; post-call literal retired.
+    #
+    # task_audit_fixes_p3 (A46): no per-case required_margin override here
+    # anymore -- the retired conditional/unconditional 1.05/1.10 split was
+    # a double-count of capital_recovery_case's r_conc/r_comm CRF rates,
+    # per "F1, Decision 2" (see 02_run_ndc_caps.py / 03_run_ndc_eaas.py,
+    # which never override it either). required_margin is now sourced
+    # solely from load_scenario(dscr_case=...) via standard_kwargs above.
 
     years_list = list(range(MODEL_START_YEAR, MODEL_END_YEAR + 1))
     caps = load_annual_caps(ndc_label, years_list)
@@ -203,12 +245,11 @@ def run_one(ndc_cfg, fin_cfg, econ):
         end_year=int(years_list[-1]),
     )
 
-    # Activate minimum build floor when time-varying CAPEX is in use.
-    # This prevents, the optimizer from delaying all solar to the cheapest years
-    # (2040-2045) creating unrealistic 2025-2030 supply gaps.
-    scenario["solar_min_build_mw_per_year"] = solar_min_build_default()
-    
-    m = build_model(
+    # solar_min_build_mw_per_year override to solar_min_build_default()
+    # REMOVED (2.11, Step 1) -- [UNSOURCED] (plan 2.5); load_scenario()'s
+    # own 0.0 default now applies (see docs/phase_2_11_minbuild_retirement.md).
+
+    m = build_model_sliced(
         scenario=scenario,
         econ=econ,
         emissions_cap_by_year=caps,
@@ -228,16 +269,30 @@ def run_one(ndc_cfg, fin_cfg, econ):
             "status":         f"infeasible: {e}",
         }
 
-    diag = extract_planning_diagnostics(m, scenario, econ)
+    # task_audit_fixes_p3 (A49): pass the SAME solar_capex_tv the model was
+    # just built with, rather than letting extract_planning_diagnostics()
+    # resolve its own, independent copy via scenario.get("solar_capex_
+    # scenario", "solar_low") -- the A21 shape (fixed in 02_run_ndc_caps.py
+    # /03_run_ndc_eaas.py). Confirmed the two resolutions were already
+    # identical here too (load_scenario() unconditionally sets
+    # scenario["solar_capex_scenario"] = "solar_low", matching the
+    # explicit "solar_low" above; years match exactly) -- no computed
+    # value changes, one resolution replaces two.
+    diag = extract_planning_diagnostics(m, scenario, econ, solar_capex_series=solar_capex_tv)
 
-    cs_vals = [
-        v for v in diag["carbon_shadow_price_usd_per_tco2_by_year"].values()
-        if v is not None
-    ]
-    gs_vals = [
-        v for v in diag["gas_shadow_price_usd_per_twh_th_by_year"].values()
-        if v is not None
-    ]
+    # Leakage guard (2.6, D15). Cap is grid-only; if load is dumped to diesel
+    # the NDC is "met" on paper while national emissions rise. A flagged run
+    # is not an NDC-compliant plan and must not be reported as one.
+    leak = leakage_diagnostic(m)
+    if leak["flagged"]:
+        print(f"  LEAKAGE FLAG [{ndc_label}/{fin_label}]: {leak['leakage_share']:.1%} "
+              f"of emissions ({leak['leakage_tco2']/1e6:.1f} MtCO2) outside the "
+              f"cap boundary. NOT NDC-compliant.")
+        
+    cs_pv, cs_yr = shadow_series(diag, "carbon")
+    gs_pv, gs_yr = shadow_series(diag, "gas")
+    cs_vals = [v for v in cs_pv if v is not None]          # binding/count logic: basis-free
+    gs_vals = [v for v in gs_pv if v is not None]
 
     solar_public_mw = sum(float(pyo.value(m.solar_public_add[t])) for t in T)
     solar_eaas_mw   = sum(float(pyo.value(m.solar_eaas_add[t]))   for t in T)
@@ -259,15 +314,18 @@ def run_one(ndc_cfg, fin_cfg, econ):
         "npv_total_cost_usd":     float(pyo.value(m.system_cost_npv)),
         "cumulative_unserved_twh": sum(diag["unserved_twh_by_year"].values()),
         "cumulative_emissions_tco2": float(pyo.value(m.emissions)),
-        "horizon_reliability":    diag["horizon_reliability"],
+        **annual_emissions_flat(m, scenario["years"]),
+        "unserved_only_reliability": diag["unserved_only_reliability"],
+        "grid_service_reliability_horizon": diag["grid_service_reliability_horizon"],
         "solar_total_mw":         solar_public_mw + solar_eaas_mw,
         "solar_public_total_mw":  solar_public_mw,
         "solar_eaas_total_mw":    solar_eaas_mw,
         "storage_final_mwh":      float(pyo.value(m.storage_capacity_mwh[len(list(T))-1])),
-        "carbon_shadow_mean":     float(np.mean(cs_vals)) if cs_vals else 0.0,
-        "carbon_shadow_max":      float(max(cs_vals))     if cs_vals else 0.0,
+        **shadow_mean_fields("carbon", cs_pv, cs_yr),
+        "carbon_shadow_pv_max":   float(max(cs_vals))     if cs_vals else 0.0,
+        "carbon_shadow_yr_max":   float(max(v for v in cs_yr if v is not None)) if cs_vals else 0.0,
         "carbon_binding_years":   sum(1 for v in cs_vals if v > 1e-6),
-        "gas_shadow_mean":        float(np.mean(gs_vals)) if gs_vals else 0.0,
+        **shadow_mean_fields("gas", gs_pv, gs_yr),
         "gas_binding_years":      sum(1 for v in gs_vals if v > 1e-6),
         "budget_shadow":          diag.get("public_budget_shadow_usd_per_usd"),
         "budget_utilisation":     diag.get("public_budget_utilisation"),
@@ -275,6 +333,9 @@ def run_one(ndc_cfg, fin_cfg, econ):
         "solar_add_by_year_json": json.dumps(solar_add_by_year),
         "cap_2030_tco2":          caps[5],   # index 5 = year 2030 (2025+5)
         "capital_case":           capital,
+        "leakage_share":           leak["leakage_share"],
+        "leakage_tco2":            leak["leakage_tco2"],
+        "leakage_flagged":         leak["flagged"],
     }
 
 
@@ -448,7 +509,12 @@ def assess_eaas_rescue(df, diff_df):
 
 def main():
 
-    econ = load_econ(CANONICAL_VOLL)
+    args = parse_args()
+    global RESULTS_DIR
+    RESULTS_DIR = resolve_results_dir(RESULTS_DIR, args)   # TASK 53 2.5: arm-keyed output directory
+    standard_kwargs = standard_arms_kwargs(args)
+
+    econ = load_econ(CANONICAL_VOLL, genset_case=CANONICAL_GENSET)
 
     print(f"\nPOL-1: NDC 2.0 vs NDC 3.0 investment trajectory comparison")
     print(f"  NDC scenarios: {[c['ndc_label'] for c in NDC_CONFIGS]}")
@@ -474,7 +540,7 @@ def main():
         for fin_cfg in FINANCING_CONFIGS:
             label = f"{ndc_cfg['ndc_label']} × {fin_cfg['label']}"
             print(f"  Running: {label}")
-            result = run_one(ndc_cfg, fin_cfg, econ)
+            result = run_one(ndc_cfg, fin_cfg, econ, standard_kwargs)
             rows.append(result)
             status_str = result["status"]
             if status_str == "optimal":
@@ -499,8 +565,9 @@ def main():
         "ndc_label", "ndc_version", "ambition_level", "financing_arm",
         "npv_total_cost_usd", "solar_total_mw", "solar_eaas_total_mw",
         "solar_public_total_mw", "storage_final_mwh",
-        "cumulative_unserved_twh", "horizon_reliability",
-        "carbon_binding_years", "carbon_shadow_mean",
+        "cumulative_unserved_twh", "unserved_only_reliability", "grid_service_reliability_horizon",
+        "carbon_binding_years", "carbon_shadow_pv_all_year_mean", "carbon_shadow_yr_all_year_mean",
+        "carbon_shadow_pv_binding_mean", "carbon_shadow_yr_binding_mean",
         "gas_binding_years", "cap_2030_tco2", "status",
     ]
     traj_df = df[[c for c in traj_cols if c in df.columns]].copy()

@@ -111,6 +111,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
 from src.io import load_econ
+from src.scenarios import tariff_scenarios
 from src.optimize_experiments import run_dem1_demand_sensitivity
 
 # ============================================================
@@ -122,7 +123,15 @@ RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 CAP_PATH       = ROOT / "data" / "cost" / "processed" / "emissions_cap.csv"
 CANONICAL_VOLL = "voll_mid"
-CANONICAL_TARIFF = 95_000_000   # USD/TWh
+# docs/tariff_arm.md, Steps 1-3: was a bare `95_000_000` literal threaded
+# into run_dem1_demand_sensitivity via each NDC_CONFIG's "eaas_tariff".
+# This runner is non-functional independent of this task -- the backend's
+# load_scenario() call omits ~15 arms required since phases 2.6-2.13 and
+# raises before returning. Bare literal replaced by the named
+# retained-for-attribution legacy arm, threaded via
+# load_scenario(tariff_case=...) not a post-call mutation.
+CANONICAL_TARIFF_CASE = "tariff_legacy_95m"
+CANONICAL_GENSET = "genset_central"
 
 DEMAND_LEVEL_CASES = ["served", "latent_low", "latent_high"]
 
@@ -133,32 +142,28 @@ NDC_CONFIGS = [
         "ndc_scenario": "ndc2_unconditional",
         "public_capital": "moderate",    # 0.85 × B* = 5.21B
         "eaas_capital":   "moderate",
-        "eaas_margin":    1.10,          # commercial finance
-        "eaas_tariff":    CANONICAL_TARIFF,
+        "tariff_case":    CANONICAL_TARIFF_CASE,
     },
     {
         "ndc_label":    "ndc2_conditional",
         "ndc_scenario": "ndc2_conditional",
         "public_capital": "expansion",   # 1.20 × B* = 7.36B
         "eaas_capital":   "expansion",
-        "eaas_margin":    1.05,          # concessional finance
-        "eaas_tariff":    CANONICAL_TARIFF,
+        "tariff_case":    CANONICAL_TARIFF_CASE,
     },
     {
         "ndc_label":    "ndc3_unconditional",
         "ndc_scenario": "ndc3_unconditional",
         "public_capital": "moderate",    # 0.85 × B* = 5.21B
         "eaas_capital":   "moderate",
-        "eaas_margin":    1.10,          # commercial finance
-        "eaas_tariff":    CANONICAL_TARIFF,
+        "tariff_case":    CANONICAL_TARIFF_CASE,
     },
     {
         "ndc_label":    "ndc3_conditional",
         "ndc_scenario": "ndc3_conditional",
         "public_capital": "expansion",   # 1.20 × B* = 7.36B
         "eaas_capital":   "expansion",
-        "eaas_margin":    1.05,          # concessional finance
-        "eaas_tariff":    CANONICAL_TARIFF,
+        "tariff_case":    CANONICAL_TARIFF_CASE,
     },
 ]
 
@@ -206,7 +211,8 @@ def compute_cost_sensitivity(df):
                 "npv_cost_b_usd":             cost / 1e9,
                 "cost_premium_vs_served_pct": premium,
                 "cumulative_unserved_twh":    r["cumulative_unserved_twh"],
-                "horizon_reliability":        r["horizon_reliability"],
+                "unserved_only_reliability":  r["unserved_only_reliability"],
+                "grid_service_reliability_horizon": r["grid_service_reliability_horizon"],
                 "solar_total_mw":             r["solar_total_mw"],
                 "status":                     r["status"],
             })
@@ -305,7 +311,7 @@ def main():
         "DEM-1 suspended: latent demand scenarios use a depreciated base."
         "See module docstring. Rebuild in Phase 2."
     )
-    econ = load_econ(CANONICAL_VOLL)
+    econ = load_econ(CANONICAL_VOLL, genset_case=CANONICAL_GENSET)
 
     print(f"\nDEM-1: Demand level sensitivity")
     print(f"  demand_levels:  {DEMAND_LEVEL_CASES}")

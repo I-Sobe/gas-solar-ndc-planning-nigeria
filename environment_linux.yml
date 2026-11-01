@@ -1,0 +1,20 @@
+name: nigeria-energy
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pyomo
+  - pandas
+  - numpy=1.26.4
+  - scipy
+  - openpyxl
+  - matplotlib
+  - lxml
+  - requests
+  - xlrd
+  - highs
+  - coincbc
+  - pyyaml
+  - coincbc
+prefix: /home/zeus/miniconda3/envs/nigeria-energy

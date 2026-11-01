@@ -36,7 +36,7 @@ GAP 1 — CRITICAL: Shape vs Level confound
             exponential decline hedges against later scarcity).
 
 GAP 2 — IMPORTANT: No annual cap binding diagnostic
-  Scalar carbon_shadow_mean cannot distinguish:
+  Scalar carbon_shadow_{pv,yr}_*_mean cannot distinguish:
     (a) cap binding throughout horizon (downside — progressive tightening)
     (b) cap binding only during disruption years (shock_recovery 2030-2033)
     (c) cap never binding despite abundant gas (upside paradox)
@@ -52,7 +52,7 @@ GAP 3 — IMPORTANT: Cost premium relative to wrong baseline
 
 GAP 4 — MODERATE: Upside paradox not explicitly flagged
   More gas available -> model burns more gas -> emissions rise -> NDC cap
-  harder to meet. Test: carbon_shadow_mean(upside) > carbon_shadow_mean(baseline).
+  harder to meet. Test: carbon_shadow_yr_binding_mean(upside) > carbon_shadow_yr_binding_mean(baseline) (TASK 53: year-t basis; the pv verdict is written beside it).
   Fix: upside_paradox bool computed and written to gas3_summary.json.
 
 PRE-REQUISITE
@@ -70,6 +70,7 @@ OUTPUTS
   results/gas3/gas3_summary.json         — headline findings
 """
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -80,8 +81,10 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
+from src.cli_arms import add_solar_build_args, solar_build_kwargs, resolve_results_dir  # TASK 46
 from src.io import load_econ
 from src.optimize_experiments import run_gas_regime_ndc_matrix
+from src.cli_arms import add_standard_arms, standard_arms_kwargs
 
 # ============================================================
 # CONFIG
@@ -148,19 +151,20 @@ def flatten_annual_timeseries(results, ndc_name):
                 "emissions_tco2":        yr_row["emissions_tco2"],
                 "annual_cap_tco2":       yr_row["annual_cap_tco2"],
                 "cap_slack_tco2":        yr_row["cap_slack_tco2"],
-                "carbon_shadow":         yr_row["carbon_shadow"],
+                "carbon_shadow_pv":      yr_row["carbon_shadow_pv"],
+                "carbon_shadow_yr":      yr_row["carbon_shadow_yr"],
                 "unserved_twh":          yr_row["unserved_twh"],
                 # Derived flags
                 "cap_binding": (
-                    yr_row["carbon_shadow"] is not None
-                    and yr_row["carbon_shadow"] > 1e-6
+                    yr_row["carbon_shadow_pv"] is not None
+                    and yr_row["carbon_shadow_pv"] > 1e-6      # basis-free: pv and yr share sign and zero set
                 ),
                 "gas_disrupted": yr_row["gas_avail_twh_th"] < GAS_ANCHOR_TWH_TH,
                 # Key for GAS-3 thesis: does cap bind IN THE SAME YEAR as disruption?
                 "cap_and_gas_disruption_coincide": (
                     yr_row["gas_avail_twh_th"] < GAS_ANCHOR_TWH_TH
-                    and yr_row["carbon_shadow"] is not None
-                    and yr_row["carbon_shadow"] > 1e-6
+                    and yr_row["carbon_shadow_pv"] is not None
+                    and yr_row["carbon_shadow_pv"] > 1e-6
                 ),
             })
     return rows
@@ -219,8 +223,14 @@ def compute_shape_premium(structural_results, flat_results, ndc_name):
             "shape_premium_pct":            pct,
             "struct_unserved_twh":          r_s["cumulative_unserved_twh"],
             "flat_unserved_twh":            r_f["cumulative_unserved_twh"],
-            "struct_carbon_shadow_mean":    r_s["carbon_shadow_mean"],
-            "flat_carbon_shadow_mean":      r_f["carbon_shadow_mean"],
+            "struct_carbon_shadow_pv_all_year_mean": r_s["carbon_shadow_pv_all_year_mean"],
+            "struct_carbon_shadow_yr_all_year_mean": r_s["carbon_shadow_yr_all_year_mean"],
+            "struct_carbon_shadow_pv_binding_mean":  r_s["carbon_shadow_pv_binding_mean"],
+            "struct_carbon_shadow_yr_binding_mean":  r_s["carbon_shadow_yr_binding_mean"],
+            "flat_carbon_shadow_pv_all_year_mean":   r_f["carbon_shadow_pv_all_year_mean"],
+            "flat_carbon_shadow_yr_all_year_mean":   r_f["carbon_shadow_yr_all_year_mean"],
+            "flat_carbon_shadow_pv_binding_mean":    r_f["carbon_shadow_pv_binding_mean"],
+            "flat_carbon_shadow_yr_binding_mean":    r_f["carbon_shadow_yr_binding_mean"],
             "struct_carbon_binding_years":  r_s["carbon_binding_years"],
             "flat_carbon_binding_years":    r_f["carbon_binding_years"],
             "interpretation": (
@@ -238,10 +248,40 @@ def compute_shape_premium(structural_results, flat_results, ndc_name):
 # ============================================================
 # MAIN
 # ============================================================
+CANONICAL_GENSET = "genset_central"
+
+
+def parse_args():
+    # task_runner_revival, Part 2A: this runner had NO argparse at all
+    # before this edit -- both run_gas_regime_ndc_matrix() calls in main()
+    # (structural and flat) omitted the standard arm set outright. Built
+    # fresh, add_standard_arms(parser), following 05_run_fin3_capital_
+    # sweep.py's pattern -- excluding gas_deliverability_case (this
+    # runner's own swept subject: STRUCTURAL_GAS_CASES/FLAT_GAS_CASES) and
+    # new_gas_deliverability (run_gas_regime_ndc_matrix does not accept it
+    # at all, confirmed via inspect.signature -- unlike load_scenario(),
+    # which this file never calls directly).
+    parser = argparse.ArgumentParser(
+        description="08_run_gas3_regime_ndc_feasibility: GAS-3 gas-shape vs level feasibility matrix"
+    )
+    add_standard_arms(parser, exclude=["gas_deliverability_case", "new_gas_deliverability"])
+    add_solar_build_args(parser)  # TASK 46: opt-in; absent = inherited default
+    return parser.parse_args()
+
 
 def main():
 
-    econ = load_econ(CANONICAL_VOLL)
+    args = parse_args()
+    standard_kwargs = standard_arms_kwargs(args)
+    # TASK 46: opt-in design flags. With neither given, nothing changes: no
+    # solar_build_case keyword is added, so load_scenario's own default applies.
+    # When given, it travels in standard_kwargs to every load_scenario() call
+    # and (via shared_fn_kwargs / **standard_kwargs) to the shared function.
+    global RESULTS_DIR
+    RESULTS_DIR = resolve_results_dir(RESULTS_DIR, args)
+    standard_kwargs.update(solar_build_kwargs(args))
+
+    econ = load_econ(CANONICAL_VOLL, genset_case=CANONICAL_GENSET)
 
     all_structural = []
     all_flat       = []
@@ -260,9 +300,11 @@ def main():
             econ=econ,
             ndc_cap_scenario=ndc_name,
             gas_cases=STRUCTURAL_GAS_CASES,
+            builder="sliced",  # A5, Group C: was hardwired to the annual builder
             financing_regime="traditional",
             capital_case=ndc_cfg["capital_case"],
             cap_path=str(CAP_PATH),
+            **standard_kwargs,
         )
         for r in structural:
             r["ndc_scenario"] = ndc_name
@@ -274,8 +316,8 @@ def main():
                     f"  {r['gas_case']:<16} "
                     f"cost={r['npv_total_cost_usd']/1e9:.2f}B  "
                     f"unserved={r['cumulative_unserved_twh']:.3f} TWh  "
-                    f"carbon_bind={r['carbon_binding_years']}/21  "
-                    f"gas_bind={r['gas_shadow_binding_years']}/21"
+                    f"carbon_bind={r['carbon_binding_years']}/{r['carbon_shadow_evaluable_years']} evaluable  "
+                    f"gas_bind={r['gas_shadow_binding_years']}/{r['gas_shadow_evaluable_years']} evaluable"
                 )
             else:
                 print(f"  {r['gas_case']:<16} [{r['status']}]")
@@ -291,9 +333,11 @@ def main():
             econ=econ,
             ndc_cap_scenario=ndc_name,
             gas_cases=FLAT_GAS_CASES,
+            builder="sliced",  # A5, Group C: was hardwired to the annual builder
             financing_regime="traditional",
             capital_case=ndc_cfg["capital_case"],
             cap_path=str(CAP_PATH),
+            **standard_kwargs,
         )
         for r in flat:
             r["ndc_scenario"] = ndc_name
@@ -304,7 +348,7 @@ def main():
                 print(
                     f"  {r['gas_case']:<22} "
                     f"cost={r['npv_total_cost_usd']/1e9:.2f}B  "
-                    f"carbon_bind={r['carbon_binding_years']}/21"
+                    f"carbon_bind={r['carbon_binding_years']}/{r['carbon_shadow_evaluable_years']} evaluable"
                 )
             else:
                 print(f"  {r['gas_case']:<22} [{r['status']}]")
@@ -328,12 +372,22 @@ def main():
             ),
             "cumulative_unserved_twh":   r.get("cumulative_unserved_twh"),
             "cumulative_emissions_tco2": r.get("cumulative_emissions_tco2"),
-            "horizon_reliability":       r.get("horizon_reliability"),
-            "gas_shadow_mean":           r.get("gas_shadow_mean"),
+            "unserved_only_reliability": r.get("unserved_only_reliability"),
+            "grid_service_reliability_horizon": r.get("grid_service_reliability_horizon"),
+            "gas_shadow_pv_all_year_mean":  r.get("gas_shadow_pv_all_year_mean"),
+            "gas_shadow_yr_all_year_mean":  r.get("gas_shadow_yr_all_year_mean"),
+            "gas_shadow_pv_binding_mean":   r.get("gas_shadow_pv_binding_mean"),
+            "gas_shadow_yr_binding_mean":   r.get("gas_shadow_yr_binding_mean"),
             "gas_shadow_binding_years":  r.get("gas_shadow_binding_years"),
-            "carbon_shadow_mean":        r.get("carbon_shadow_mean"),
-            "carbon_shadow_max":         r.get("carbon_shadow_max"),
+            "gas_shadow_evaluable_years": r.get("gas_shadow_evaluable_years"),
+            "carbon_shadow_pv_all_year_mean": r.get("carbon_shadow_pv_all_year_mean"),
+            "carbon_shadow_yr_all_year_mean": r.get("carbon_shadow_yr_all_year_mean"),
+            "carbon_shadow_pv_binding_mean":  r.get("carbon_shadow_pv_binding_mean"),
+            "carbon_shadow_yr_binding_mean":  r.get("carbon_shadow_yr_binding_mean"),
+            "carbon_shadow_pv_max":      r.get("carbon_shadow_pv_max"),
+            "carbon_shadow_yr_max":      r.get("carbon_shadow_yr_max"),
             "carbon_binding_years":      r.get("carbon_binding_years"),
+            "carbon_shadow_evaluable_years": r.get("carbon_shadow_evaluable_years"),
             "solar_total_mw":            r.get("solar_total_mw"),
         })
 
@@ -376,9 +430,19 @@ def main():
         baseline_cost = struct_sub.get("baseline", {}).get("npv_total_cost_usd")
 
         # GAP 4: Upside paradox
-        upside_c  = struct_sub.get("upside",   {}).get("carbon_shadow_mean", 0.0)
-        base_c    = struct_sub.get("baseline", {}).get("carbon_shadow_mean", 0.0)
+        # TASK 27 A.2: compare BINDING-year means (the marginal abatement
+        # cost in the years the cap is active), not the former all-year
+        # mean, which is diluted by the number of non-binding years.
+        # None (no binding year) -> 0.0.
+        # TASK 53 2.3: compared on the YEAR-t basis (the marginal abatement cost in the
+        # years the cap is active, in comparable money); the present-value verdict is
+        # recorded beside it so the choice of basis is visible.
+        upside_c  = struct_sub.get("upside",   {}).get("carbon_shadow_yr_binding_mean") or 0.0
+        base_c    = struct_sub.get("baseline", {}).get("carbon_shadow_yr_binding_mean") or 0.0
         upside_paradox = bool(upside_c > base_c)
+        upside_c_pv = struct_sub.get("upside",   {}).get("carbon_shadow_pv_binding_mean") or 0.0
+        base_c_pv   = struct_sub.get("baseline", {}).get("carbon_shadow_pv_binding_mean") or 0.0
+        upside_paradox_pv_basis = bool(upside_c_pv > base_c_pv)
 
         # Annual binding coincidence for shock_recovery
         # (does cap bind in the SAME years as gas disruption?)
@@ -423,13 +487,19 @@ def main():
                     shape_p["shape_premium_usd"] if shape_p else None
                 ),
                 "carbon_binding_years":           r["carbon_binding_years"],
-                "carbon_shadow_mean":             r["carbon_shadow_mean"],
+                "carbon_shadow_evaluable_years":  r["carbon_shadow_evaluable_years"],
+                "carbon_shadow_pv_all_year_mean":    r["carbon_shadow_pv_all_year_mean"],
+                "carbon_shadow_yr_all_year_mean":    r["carbon_shadow_yr_all_year_mean"],
+                "carbon_shadow_pv_binding_mean":     r["carbon_shadow_pv_binding_mean"],
+                "carbon_shadow_yr_binding_mean":     r["carbon_shadow_yr_binding_mean"],
                 "gas_shadow_binding_years":       r["gas_shadow_binding_years"],
+                "gas_shadow_evaluable_years":     r["gas_shadow_evaluable_years"],
                 "cumulative_unserved_twh":        r["cumulative_unserved_twh"],
             }
 
         summary[ndc_name] = {
             "upside_paradox_confirmed": upside_paradox,
+            "upside_paradox_confirmed_pv_basis": upside_paradox_pv_basis,
             "upside_paradox_note": (
                 "CONFIRMED: Upside gas worsens NDC compliance — model burns "
                 "more gas when supply expands, tightening the emissions cap."
@@ -464,8 +534,8 @@ def main():
         print(f"  Shock/cap coincidence years: {s['shock_cap_disruption_coincidence_years']}")
         print()
         print(f"  {'Gas regime':<18} {'Cost(B$)':>9} {'Level D%':>9} "
-              f"{'Shape D%':>9} {'C-bind':>7} {'Unserved':>9}")
-        print("  " + "-" * 66)
+              f"{'Shape D%':>9} {'C-bind/eval':>12} {'Unserved':>9}")
+        print("  " + "-" * 71)
         for gas_case in STRUCTURAL_GAS_CASES:
             d = s["regimes"].get(gas_case, {})
             if not d.get("feasible"):
@@ -476,9 +546,14 @@ def main():
                   if d.get("cost_premium_vs_baseline_pct") is not None else "—")
             sp = (f"{d['shape_cost_premium_pct']:+.1f}%"
                   if d.get("shape_cost_premium_pct") is not None else "n/a")
-            cb = f"{d['carbon_binding_years']}/21"
+            # TASK 20 Part B: /21 was a stale literal, left over from before
+            # the model horizon was extended to 30 years -- never the
+            # correct denominator for this count, which is drawn from
+            # len(cs_vals), i.e. carbon_shadow_evaluable_years, computed
+            # alongside the numerator in run_gas_regime_ndc_matrix().
+            cb = f"{d['carbon_binding_years']}/{d['carbon_shadow_evaluable_years']}"
             un = f"{d['cumulative_unserved_twh']:.3f}"
-            print(f"  {gas_case:<18} {c:>9} {lp:>9} {sp:>9} {cb:>7} {un:>9}")
+            print(f"  {gas_case:<18} {c:>9} {lp:>9} {sp:>9} {cb:>12} {un:>9}")
 
     print(f"\nSaved to: {RESULTS_DIR}")
     print()

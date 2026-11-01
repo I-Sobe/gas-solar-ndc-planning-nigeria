@@ -1,0 +1,24 @@
+  NOTE [plan 2.5]: storage vintage 2037 retires within the horizon (life 15 yr < 18 yr served) and is rebuilt at 2052, with replacement capex charged there (m.cost_replacement_capex_npv under pre_f1_overnight / m.cost_rebuild_capital_charge_npv under f1_tranche).
+=======================================================
+SLICED BASELINE — BACKCAST CHECK (2025 vs observed 2024)
+  gas generation :  24.79 TWh_e   (observed 25.62)   (fleet 3.03 + converted 21.76)
+  deviation      :  -3.2%
+  unserved 2025  : 0.0000 TWh
+ selfgen 2025    : 0.0000 TWh
+  objective      : 27.318 bn USD
+  storage 2054   : 63,056 MWh
+=======================================================
+=======================================================
+FIRM CAPACITY CONSTRAINT -- slack (MW) and dual by year
+  2025: slack=     3550.36 MW   dual=0.0
+  2030: slack=     2244.77 MW   dual=0.0
+  2035: slack=       -0.00 MW   dual=77299.225
+  2040: slack=       -0.00 MW   dual=43799.73
+  2045: slack=       -0.00 MW   dual=48497.239
+  2050: slack=       -0.00 MW   dual=32549.242
+  2054: slack=       -0.00 MW   dual=23924.665
+Binding years (|slack_mw| < 1.0): 20 / 30
+=======================================================
+--- Sliced baseline saved ---
+Solar addition (MW/year): {2025: 0.0, 2026: 0.0, 2027: 0.0, 2028: 0.0, 2029: 0.0, 2030: 0.0, 2031: 0.0, 2032: 879.0698, 2033: 1056.2841, 2034: 1100.1892, 2035: 1145.8197, 2036: 1193.2439, 2037: 1242.5311, 2038: 1293.7541, 2039: 1346.9889, 2040: 1402.3134, 2041: 1459.8098, 2042: 1521.2689, 2043: 1707.7672, 2044: 1839.0409, 2045: 1802.2326, 2046: 2116.6247, 2047: 1941.9642, 2048: 2020.743, 2049: 2102.6093, 2050: 2187.6837, 2051: 2276.0916, 2052: 2367.9624, 2053: 2463.4321, 2054: 2562.6405}
+Final storage capacity (MWh): 63056.310770000004

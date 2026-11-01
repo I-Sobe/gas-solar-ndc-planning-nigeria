@@ -1,0 +1,248 @@
+finding,title,source_file,status,note
+F-1,"Cost of capital reaches the objective, but weighs less than before",01b_run_baseline_sliced.py,out of scope,
+F-1,"Cost of capital reaches the objective, but weighs less than before",docs/task_log_54_rederivation.md,out of scope,
+F-1,"Cost of capital reaches the objective, but weighs less than before",results/baseline_sliced/,dir-has-vintage,"244 vintage files in results/baseline_sliced, none named "
+F-1,"Cost of capital reaches the objective, but weighs less than before",results/baseline_sliced/summary__779e4d66.json,exists (twin),results/baseline_sliced/summary__59f45b41.json
+F-1,"Cost of capital reaches the objective, but weighs less than before",results/baseline_sliced/summary__6046f759.json,exists (twin),results/baseline_sliced/summary__661b03c1.json
+F-1,"Cost of capital reaches the objective, but weighs less than before",results/baseline_sliced/summary__36abe3f4.json,exists (twin),results/baseline_sliced/summary__00da6824.json
+F-1,"Cost of capital reaches the objective, but weighs less than before",results/baseline_sliced/summary__ba51db11.json,exists (twin),results/baseline_sliced/summary__fec4854b.json
+F-1,"Cost of capital reaches the objective, but weighs less than before",results/baseline_sliced/summary__*.json,exists,results/baseline_sliced/summary__00da6824.json
+F-2,Concessional finance is inframarginal at every scale tested,01b_run_baseline_sliced.py,out of scope,
+F-2,Concessional finance is inframarginal at every scale tested,~/thesis-snapshots/results_pre_margin_fix/,out of scope,
+F-2,Concessional finance is inframarginal at every scale tested,results/baseline_sliced/,dir-has-vintage,"244 vintage files in results/baseline_sliced, none named "
+F-2,Concessional finance is inframarginal at every scale tested,results/baseline_sliced/summary__d85a9332.json,exists (twin),results/baseline_sliced/summary__a3801166.json
+F-2,Concessional finance is inframarginal at every scale tested,results/baseline_sliced/summary__6046f759.json,exists (twin),results/baseline_sliced/summary__661b03c1.json
+F-2,Concessional finance is inframarginal at every scale tested,results/baseline_sliced/summary__ed835601.json,exists (twin),results/baseline_sliced/summary__4dad4483.json
+F-2,Concessional finance is inframarginal at every scale tested,results/baseline_sliced/summary__542a5d27.json,exists (twin),results/baseline_sliced/summary__29d7d360.json
+F-2,Concessional finance is inframarginal at every scale tested,results/baseline_sliced/summary__6e125b84.json,exists (twin),results/baseline_sliced/summary__9f6bab89.json
+F-3,Financing moves cost; physics moves quantity,results/baseline_sliced/summary__*.json,exists,results/baseline_sliced/summary__00da6824.json
+F-3,Financing moves cost; physics moves quantity,01b_run_baseline_sliced.py,out of scope,
+F-3,Financing moves cost; physics moves quantity,results/baseline_sliced/,dir-has-vintage,"244 vintage files in results/baseline_sliced, none named "
+F-3,Financing moves cost; physics moves quantity,docs/chapters/chapter3_3_draft.md,out of scope,
+F-3,Financing moves cost; physics moves quantity,CHAPTER_3_assembled.md,out of scope,
+F-4,Tenor is half the concessional advantage,(no file named on a Source line),,
+F-5,Gas fleet availability is the largest single lever,01b_run_baseline_sliced.py,out of scope,
+F-5,Gas fleet availability is the largest single lever,results/baseline_sliced/,dir-has-vintage,"244 vintage files in results/baseline_sliced, none named "
+F-5,Gas fleet availability is the largest single lever,results/baseline_sliced/summary__*.json,exists,results/baseline_sliced/summary__00da6824.json
+F-6,Conversion nearly doubled and is now the second-largest lever,01b_run_baseline_sliced.py,out of scope,
+F-6,Conversion nearly doubled and is now the second-largest lever,results/baseline_sliced/,dir-has-vintage,"244 vintage files in results/baseline_sliced, none named "
+F-6,Conversion nearly doubled and is now the second-largest lever,results/baseline_sliced/summary__0b2b2c25.json,exists (twin),results/baseline_sliced/summary__2945336c.json
+F-6,Conversion nearly doubled and is now the second-largest lever,results/baseline_sliced/summary__a6ed56c2.json,exists (twin),results/baseline_sliced/summary__10836924.json
+F-6,Conversion nearly doubled and is now the second-largest lever,results/baseline_sliced/summary__6046f759.json,exists (twin),results/baseline_sliced/summary__661b03c1.json
+F-6,Conversion nearly doubled and is now the second-largest lever,results/baseline_sliced/summary__30fbcb9a.json,exists (twin),results/baseline_sliced/summary__fa6a652b.json
+F-7,The availability screen decides the conversion merit order,results/baseline_sliced/summary__02c17f55.json,dir-has-vintage,"244 vintage files in results/baseline_sliced, none named summary__02c17f55.json"
+F-7,The availability screen decides the conversion merit order,results/baseline_sliced/summary__abbb2e9e.json,dir-has-vintage,"244 vintage files in results/baseline_sliced, none named summary__abbb2e9e.json"
+F-7,The availability screen decides the conversion merit order,results/baseline_sliced/summary__138c45af.json,dir-has-vintage,"244 vintage files in results/baseline_sliced, none named summary__138c45af.json"
+F-7,The availability screen decides the conversion merit order,01b_run_baseline_sliced.py,out of scope,
+F-7,The availability screen decides the conversion merit order,results/baseline_sliced/summary__6046f759.json,exists (twin),results/baseline_sliced/summary__661b03c1.json
+F-7,The availability screen decides the conversion merit order,results/baseline_sliced/summary__a6ed56c2.json,exists (twin),results/baseline_sliced/summary__10836924.json
+F-7,The availability screen decides the conversion merit order,results/baseline_sliced/summary__30fbcb9a.json,exists (twin),results/baseline_sliced/summary__fa6a652b.json
+F-8,NDC compliance costs 36.5–42.4% less with conversion available,results/ndc/*/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-8,NDC compliance costs 36.5–42.4% less with conversion available,02_run_ndc_caps.py,out of scope,
+F-8,NDC compliance costs 36.5–42.4% less with conversion available,results/ndc/,dir-has-vintage,"531 vintage files in results/ndc, none named "
+F-8,NDC compliance costs 36.5–42.4% less with conversion available,results/ndc/ndc*_conditional_92f26628/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-8,NDC compliance costs 36.5–42.4% less with conversion available,results/ndc/ndc*_conditional_2093b998/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-8,NDC compliance costs 36.5–42.4% less with conversion available,results/ndc/ndc*_conditional_085f7315/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-8,NDC compliance costs 36.5–42.4% less with conversion available,results/ndc/ndc*_conditional_a4ea9f7b/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-8,NDC compliance costs 36.5–42.4% less with conversion available,results/ndc/ndc*_conditional_3399bf36/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-8,NDC compliance costs 36.5–42.4% less with conversion available,results/ndc/ndc*_conditional_2def3495/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-8,NDC compliance costs 36.5–42.4% less with conversion available,results/ndc/ndc*_conditional_2e122592/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-8,NDC compliance costs 36.5–42.4% less with conversion available,results/ndc/ndc*_conditional_d7bd0bb8/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-8,NDC compliance costs 36.5–42.4% less with conversion available,results/ndc/ndc*_unconditional_92f26628/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-8,NDC compliance costs 36.5–42.4% less with conversion available,results/ndc/ndc*_unconditional_2093b998/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-8,NDC compliance costs 36.5–42.4% less with conversion available,results/ndc/ndc*_unconditional_085f7315/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-8,NDC compliance costs 36.5–42.4% less with conversion available,results/ndc/ndc*_unconditional_a4ea9f7b/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-8,NDC compliance costs 36.5–42.4% less with conversion available,results/ndc/ndc*_unconditional_3399bf36/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-8,NDC compliance costs 36.5–42.4% less with conversion available,results/ndc/ndc*_unconditional_2def3495/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-8,NDC compliance costs 36.5–42.4% less with conversion available,results/ndc/ndc*_unconditional_2e122592/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-8,NDC compliance costs 36.5–42.4% less with conversion available,results/ndc/ndc*_unconditional_d7bd0bb8/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-9,Gas deliverability is worth EXACTLY ZERO under a cap,results/ndc/*gas_deliv*/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-9,Gas deliverability is worth EXACTLY ZERO under a cap,02_run_ndc_caps.py,out of scope,
+F-9,Gas deliverability is worth EXACTLY ZERO under a cap,results/gas1/,dir-has-vintage,"5 vintage files in results/gas1, none named "
+F-9,Gas deliverability is worth EXACTLY ZERO under a cap,06_run_gas1_shadow_benchmarks.py,out of scope,
+F-9,Gas deliverability is worth EXACTLY ZERO under a cap,results/ndc/,dir-has-vintage,"531 vintage files in results/ndc, none named "
+F-9,Gas deliverability is worth EXACTLY ZERO under a cap,results/ndc/ndc*_92f26628/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-9,Gas deliverability is worth EXACTLY ZERO under a cap,results/ndc/ndc*_95884918/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-9,Gas deliverability is worth EXACTLY ZERO under a cap,results/ndc/ndc*_d237145b/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-9,Gas deliverability is worth EXACTLY ZERO under a cap,results/ndc/ndc*_.../summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-10,The EaaS channel is worth 9.7 to 22.4 bn under NDC caps,results/ndc/,dir-has-vintage,"531 vintage files in results/ndc, none named "
+F-10,The EaaS channel is worth 9.7 to 22.4 bn under NDC caps,results/ndc_eaas/,dir-has-vintage,"24 vintage files in results/ndc_eaas, none named "
+F-10,The EaaS channel is worth 9.7 to 22.4 bn under NDC caps,02_run_ndc_caps.py,out of scope,
+F-10,The EaaS channel is worth 9.7 to 22.4 bn under NDC caps,03_run_ndc_eaas.py,out of scope,
+F-10,The EaaS channel is worth 9.7 to 22.4 bn under NDC caps,results/_pre_bstar_20260920_1132/,not re-run,newest file 2026-09-20
+F-10,The EaaS channel is worth 9.7 to 22.4 bn under NDC caps,results/pol1/arms_92390a63/pol1_results.csv,exists,results/pol1/arms_1d68be49/pol1_results.csv
+F-10,The EaaS channel is worth 9.7 to 22.4 bn under NDC caps,results/pol1/arms_92390a63/,dir-has-vintage,"6 vintage files in results/pol1, none named "
+F-11,Leakage,(no file named on a Source line),,
+F-21,Tightening a grid-only cap RAISES national emissions,results/ndc/ndc3_conditional_decline_2cfa636a/summary.json,exists,results/ndc/ndc2_conditional_58638a57/summary.json
+F-21,Tightening a grid-only cap RAISES national emissions,results/ndc/ndc3_conditional_decline_2cfa636a/diagnostics.json,exists,results/ndc/ndc2_conditional_58638a57/diagnostics.json
+F-21,Tightening a grid-only cap RAISES national emissions,results/ndc/ndc3_conditional_decline_2cfa636a/timeseries.csv,exists,results/ndc/ndc2_conditional_58638a57/timeseries.csv
+F-21,Tightening a grid-only cap RAISES national emissions,results/ndc/ndc3_conditional_604ec993/,dir-has-vintage,"531 vintage files in results/ndc, none named "
+F-21,Tightening a grid-only cap RAISES national emissions,02_run_ndc_caps.py,out of scope,
+F-21,Tightening a grid-only cap RAISES national emissions,data/cost/processed/emissions_cap.csv,out of scope,
+F-21,Tightening a grid-only cap RAISES national emissions,logs/phase_c/2_ndc_caps_with_decline.log,out of scope,
+F-21,Tightening a grid-only cap RAISES national emissions,results/ndc_uncapped/,not re-run,newest file 2026-10-20
+F-21,Tightening a grid-only cap RAISES national emissions,logs/phase_c/3_02_ndc_caps_decline.log,out of scope,
+F-21,Tightening a grid-only cap RAISES national emissions,results/ndc/ndc3_conditional_2e122592,exists (twin),results/ndc/ndc3_conditional_3fbc75ac
+F-21,Tightening a grid-only cap RAISES national emissions,results/ndc_uncapped/ndc3_conditional_40bf0362,not re-run,newest file 2026-10-20
+F-12,"Total EaaS solar is bounded above by total solar, below by the public budget; the split is",results/f3/*/summary.json,exists,results/f3/ndc3_conditional_adequacy_4718da0a/summary.json
+F-12,"Total EaaS solar is bounded above by total solar, below by the public budget; the split is",26_run_f3_identification.py,out of scope,
+F-12,"Total EaaS solar is bounded above by total solar, below by the public budget; the split is",run_phase_b.sh,out of scope,
+F-12,"Total EaaS solar is bounded above by total solar, below by the public budget; the split is",logs/phase_c/0_26_f3_moderate.log,out of scope,
+F-12,"Total EaaS solar is bounded above by total solar, below by the public budget; the split is",results/f3/,dir-has-vintage,"8 vintage files in results/f3, none named "
+F-12,"Total EaaS solar is bounded above by total solar, below by the public budget; the split is",results/f3/ndc3_conditional_a1d01dfc/summary.json,exists,results/f3/ndc3_conditional_adequacy_4718da0a/summary.json
+F-12,"Total EaaS solar is bounded above by total solar, below by the public budget; the split is",results/f3/ndc3_conditional_2eab9df6/summary.json,exists,results/f3/ndc3_conditional_adequacy_4718da0a/summary.json
+F-12,"Total EaaS solar is bounded above by total solar, below by the public budget; the split is",results/f3/ndc3_conditional_8c4f4479/summary.json,exists,results/f3/ndc3_conditional_adequacy_4718da0a/summary.json
+F-12,"Total EaaS solar is bounded above by total solar, below by the public budget; the split is",results/f3/ndc3_conditional_17efe111/summary.json,exists,results/f3/ndc3_conditional_adequacy_4718da0a/summary.json
+F-12,"Total EaaS solar is bounded above by total solar, below by the public budget; the split is",results/f3/ndc3_conditional_41544db3/summary.json,exists,results/f3/ndc3_conditional_adequacy_4718da0a/summary.json
+F-13,The result is robust to the tariff,results/f3/*/summary.json,exists,results/f3/ndc3_conditional_adequacy_4718da0a/summary.json
+F-13,The result is robust to the tariff,26_run_f3_identification.py,out of scope,
+F-13,The result is robust to the tariff,run_phase_b.sh,out of scope,
+F-13,The result is robust to the tariff,results/f3/,dir-has-vintage,"8 vintage files in results/f3, none named "
+F-13,The result is robust to the tariff,results/f3/ndc3_conditional_87b0d49c/summary.json,exists,results/f3/ndc3_conditional_adequacy_4718da0a/summary.json
+F-13,The result is robust to the tariff,results/f3/ndc3_conditional_2eab9df6/summary.json,exists,results/f3/ndc3_conditional_adequacy_4718da0a/summary.json
+F-13,The result is robust to the tariff,results/f3/ndc3_conditional_a23e1deb/summary.json,exists,results/f3/ndc3_conditional_adequacy_4718da0a/summary.json
+F-14,NIRP's gas trajectory never binds on the cost-optimal path,01b_run_baseline_sliced.py,out of scope,
+F-14,NIRP's gas trajectory never binds on the cost-optimal path,results/baseline_sliced/summary__a675ad72.json,exists (twin),results/baseline_sliced/summary__bc542471.json
+F-14,NIRP's gas trajectory never binds on the cost-optimal path,results/baseline_sliced/summary__6046f759.json,exists (twin),results/baseline_sliced/summary__661b03c1.json
+F-14,NIRP's gas trajectory never binds on the cost-optimal path,timeseries__*.csv,out of scope,
+F-15,"NDC 3.0's ""17 GW"" is a derated figure; the nameplate commitment is ~22 GW",(no file named on a Source line),,
+F-16,NIRP's 2045 hydro exceeds independent exploitable potential,(no file named on a Source line),,
+F-17,The demand-base gap with NIRP is definitional,(no file named on a Source line),,
+F-18,The solar-dominant pathway is contingent on hydro not expanding,01b_run_baseline_sliced.py,out of scope,
+F-18,The solar-dominant pathway is contingent on hydro not expanding,results/baseline_sliced/,dir-has-vintage,"244 vintage files in results/baseline_sliced, none named "
+F-18,The solar-dominant pathway is contingent on hydro not expanding,results/baseline_sliced/summary__6046f759.json,exists (twin),results/baseline_sliced/summary__661b03c1.json
+F-18,The solar-dominant pathway is contingent on hydro not expanding,results/baseline_sliced/summary__0da84099.json,exists (twin),results/baseline_sliced/summary__622bde4e.json
+F-18,The solar-dominant pathway is contingent on hydro not expanding,results/baseline_sliced/summary__61f36814.json,exists (twin),results/baseline_sliced/summary__b1621370.json
+F-19,Storage magnitude is not a cost optimum,01b_run_baseline_sliced.py,out of scope,
+F-19,Storage magnitude is not a cost optimum,results/baseline_sliced/,dir-has-vintage,"244 vintage files in results/baseline_sliced, none named "
+F-19,Storage magnitude is not a cost optimum,results/baseline_sliced/summary__9035ee72.json,exists (twin),results/baseline_sliced/summary__05a86e43.json
+F-19,Storage magnitude is not a cost optimum,results/baseline_sliced/summary__6046f759.json,exists (twin),results/baseline_sliced/summary__661b03c1.json
+F-19,Storage magnitude is not a cost optimum,results/baseline_sliced/summary__dedbe8a1.json,exists (twin),results/baseline_sliced/summary__3abc5898.json
+F-20,RESOLVED: the retirement inversion was an O&M artefact,01b_run_baseline_sliced.py,out of scope,
+F-20,RESOLVED: the retirement inversion was an O&M artefact,results/baseline_sliced/,dir-has-vintage,"244 vintage files in results/baseline_sliced, none named "
+F-20,RESOLVED: the retirement inversion was an O&M artefact,results/baseline_sliced/summary__4d9c3881.json,exists (twin),results/baseline_sliced/summary__6ddbd8fa.json
+F-20,RESOLVED: the retirement inversion was an O&M artefact,results/baseline_sliced/summary__ab657cf1.json,exists (twin),results/baseline_sliced/summary__3852cdf3.json
+F-20,RESOLVED: the retirement inversion was an O&M artefact,results/baseline_sliced/summary__37e92afb.json,exists (twin),results/baseline_sliced/summary__7ba9c449.json
+F-20,RESOLVED: the retirement inversion was an O&M artefact,results/baseline_sliced/summary__6046f759.json,exists (twin),results/baseline_sliced/summary__661b03c1.json
+F-22,EaaS reaches the same optimum on 55.6–57.9% less public capital.,capital_frontier_raw.csv,out of scope,
+F-22,EaaS reaches the same optimum on 55.6–57.9% less public capital.,capital_frontier_eaas_gap.csv,out of scope,
+F-22,EaaS reaches the same optimum on 55.6–57.9% less public capital.,capital_frontier_dominated_points.csv,out of scope,
+F-22,EaaS reaches the same optimum on 55.6–57.9% less public capital.,28_run_capital_frontier.py,out of scope,
+F-22,EaaS reaches the same optimum on 55.6–57.9% less public capital.,results/capital_frontier_run.log,absent,results/ does not exist
+F-22,EaaS reaches the same optimum on 55.6–57.9% less public capital.,results/capital_frontier_postbstar.log,absent,results/ does not exist
+F-22,EaaS reaches the same optimum on 55.6–57.9% less public capital.,results/capital_frontier/capital_frontier_raw.csv,exists,results/capital_frontier/arms_1d68be49/capital_frontier_raw.csv
+F-22,EaaS reaches the same optimum on 55.6–57.9% less public capital.,results/capital_frontier/arms_92390a63/capital_frontier_raw.csv,exists,results/capital_frontier/arms_1d68be49/capital_frontier_raw.csv
+F-22,EaaS reaches the same optimum on 55.6–57.9% less public capital.,results/capital_frontier/arms_92390a63/capital_frontier_eaas_gap.csv,exists,results/capital_frontier/arms_1d68be49/capital_frontier_eaas_gap.csv
+F-22,EaaS reaches the same optimum on 55.6–57.9% less public capital.,results/capital_frontier/arms_92390a63/capital_frontier_dominated_points.csv,exists,results/capital_frontier/arms_1d68be49/capital_frontier_dominated_points.csv
+F-30,"The gas shadow price collapses to zero under an NDC cap in three of four gas regimes, conf",results/gas1/arms_be9472ef/gas_shadow_by_year.csv,exists,results/gas1/arms_f30c5990/gas_shadow_by_year.csv
+F-30,"The gas shadow price collapses to zero under an NDC cap in three of four gas regimes, conf",results/gas1/arms_be9472ef/gas1_summary.json,exists,results/gas1/arms_f30c5990/gas1_summary.json
+F-30,"The gas shadow price collapses to zero under an NDC cap in three of four gas regimes, conf",src/gas_benchmarks.py,out of scope,
+F-30,"The gas shadow price collapses to zero under an NDC cap in three of four gas regimes, conf",src/optimize_model_sliced.py,out of scope,
+F-30,"The gas shadow price collapses to zero under an NDC cap in three of four gas regimes, conf",src/optimize_experiments.py,out of scope,
+F-30,"The gas shadow price collapses to zero under an NDC cap in three of four gas regimes, conf",logs/phase_b/09_gas1_shadow_benchmarks.log,out of scope,
+F-30,"The gas shadow price collapses to zero under an NDC cap in three of four gas regimes, conf",results/gas1/gas1_summary.json,exists,results/gas1/arms_f30c5990/gas1_summary.json
+F-30,"The gas shadow price collapses to zero under an NDC cap in three of four gas regimes, conf",results/gas1_uncapped/,not re-run,newest file 2026-10-10
+F-30,"The gas shadow price collapses to zero under an NDC cap in three of four gas regimes, conf",06_run_gas1_shadow_benchmarks.py,out of scope,
+F-30,"The gas shadow price collapses to zero under an NDC cap in three of four gas regimes, conf",gas_shadow_binding_recomputed.csv,out of scope,
+F-30,"The gas shadow price collapses to zero under an NDC cap in three of four gas regimes, conf",gas_benchmark_exceedance_recomputed.csv,out of scope,
+F-30,"The gas shadow price collapses to zero under an NDC cap in three of four gas regimes, conf",results/gas1_postbstar.log,absent,results/ does not exist
+F-30,"The gas shadow price collapses to zero under an NDC cap in three of four gas regimes, conf",results/gas1/,dir-has-vintage,"5 vintage files in results/gas1, none named "
+F-30,"The gas shadow price collapses to zero under an NDC cap in three of four gas regimes, conf",docs/sourcing_pack_01_rates.md,out of scope,
+F-31,"Under realistic collection friction a ""fully-funded"" capital envelope (`adequacy`, 1.00 × ",05_run_fin3_capital_sweep.py,out of scope,
+F-31,"Under realistic collection friction a ""fully-funded"" capital envelope (`adequacy`, 1.00 × ",results/fin3/capital_sweep_results.csv,exists,results/fin3/arms_1d68be49/capital_sweep_results.csv
+F-31,"Under realistic collection friction a ""fully-funded"" capital envelope (`adequacy`, 1.00 × ",results/_attrib/D_all.csv,not re-run,newest file 2026-09-20
+F-31,"Under realistic collection friction a ""fully-funded"" capital envelope (`adequacy`, 1.00 × ",_attrib/,out of scope,
+F-31,"Under realistic collection friction a ""fully-funded"" capital envelope (`adequacy`, 1.00 × ",D_all.csv,out of scope,
+F-31,"Under realistic collection friction a ""fully-funded"" capital envelope (`adequacy`, 1.00 × ",results/fin3/arms_92390a63/capital_sweep_results.csv,exists,results/fin3/arms_1d68be49/capital_sweep_results.csv
+F-31,"Under realistic collection friction a ""fully-funded"" capital envelope (`adequacy`, 1.00 × ",results/_attrib/,not re-run,newest file 2026-09-20
+F-32,"A deterministically-optimal plan carries zero adequacy margin, and fails every realisation",scripts/30_run_stochastic_redispatch.py,out of scope,
+F-32,"A deterministically-optimal plan carries zero adequacy margin, and fails every realisation",results/stochastic_redispatch/,dir-has-vintage,"6 vintage files in results/stochastic_redispatch, none named "
+F-32,"A deterministically-optimal plan carries zero adequacy margin, and fails every realisation",results/stochastic_redispatch/draws__aaced7e1.jsonl,exists (twin),results/stochastic_redispatch/draws__857ac191.jsonl
+F-32,"A deterministically-optimal plan carries zero adequacy margin, and fails every realisation",draws__8fc2e490.jsonl,out of scope,
+F-32,"A deterministically-optimal plan carries zero adequacy margin, and fails every realisation",results/stochastic_redispatch/draws__aaced7e1,dir-has-vintage,"6 vintage files in results/stochastic_redispatch, none named draws__aaced7e1"
+F-32,"A deterministically-optimal plan carries zero adequacy margin, and fails every realisation",results/stochastic_redispatch/draws__8fc2e490,dir-has-vintage,"6 vintage files in results/stochastic_redispatch, none named draws__8fc2e490"
+F-32,"A deterministically-optimal plan carries zero adequacy margin, and fails every realisation",results/stochastic_redispatch/summary__aaced7e1,dir-has-vintage,"6 vintage files in results/stochastic_redispatch, none named summary__aaced7e1"
+F-32,"A deterministically-optimal plan carries zero adequacy margin, and fails every realisation",results/stochastic_redispatch/summary__8fc2e490,dir-has-vintage,"6 vintage files in results/stochastic_redispatch, none named summary__8fc2e490"
+F-33,A horizon-aggregated reliability budget misstates its own standard,results/rel1/total/gas_avail_nameplate/,dir-has-vintage,"20 vintage files in results/rel1, none named "
+F-33,A horizon-aggregated reliability budget misstates its own standard,results/rel1/total/gas_avail_observed/,dir-has-vintage,"20 vintage files in results/rel1, none named "
+F-33,A horizon-aggregated reliability budget misstates its own standard,results/rel1/annual/gas_avail_nameplate/,dir-has-vintage,"20 vintage files in results/rel1, none named "
+F-33,A horizon-aggregated reliability budget misstates its own standard,results/rel1/annual/gas_avail_observed/,dir-has-vintage,"20 vintage files in results/rel1, none named "
+F-33,A horizon-aggregated reliability budget misstates its own standard,shortfall_by_year.csv,out of scope,
+F-33,A horizon-aggregated reliability budget misstates its own standard,rel1_summary.json,out of scope,
+F-33,A horizon-aggregated reliability budget misstates its own standard,results/rel1/total/rel1_summary.json,exists,results/rel1/annual/gas_avail_nameplate/rel1_summary.json
+F-33,A horizon-aggregated reliability budget misstates its own standard,results/rel1/annual/rel1_summary.json,exists,results/rel1/annual/gas_avail_nameplate/rel1_summary.json
+F-33,A horizon-aggregated reliability budget misstates its own standard,results/_superseded_pre_extension/rel1/total/rel1_summary.json,not re-run,newest file 2026-10-03
+F-33,A horizon-aggregated reliability budget misstates its own standard,results/_superseded_pre_extension/rel1/annual/rel1_summary.json,not re-run,newest file 2026-10-03
+F-33,A horizon-aggregated reliability budget misstates its own standard,results/rel1/total/gas_avail_nameplate/shortfall_by_year.csv,exists,results/rel1/annual/gas_avail_nameplate/shortfall_by_year.csv
+F-33,A horizon-aggregated reliability budget misstates its own standard,results/rel1/total/gas_avail_observed/shortfall_by_year.csv,exists,results/rel1/annual/gas_avail_nameplate/shortfall_by_year.csv
+F-33,A horizon-aggregated reliability budget misstates its own standard,results/rel1/annual/gas_avail_nameplate/shortfall_by_year.csv,exists,results/rel1/annual/gas_avail_nameplate/shortfall_by_year.csv
+F-33,A horizon-aggregated reliability budget misstates its own standard,results/rel1/annual/gas_avail_observed/shortfall_by_year.csv,exists,results/rel1/annual/gas_avail_nameplate/shortfall_by_year.csv
+F-33,A horizon-aggregated reliability budget misstates its own standard,results/rel1/total/gas_avail_nameplate/rel1_summary.json,exists,results/rel1/annual/gas_avail_nameplate/rel1_summary.json
+F-33,A horizon-aggregated reliability budget misstates its own standard,results/rel1/total/gas_avail_observed/rel1_summary.json,exists,results/rel1/annual/gas_avail_nameplate/rel1_summary.json
+F-33,A horizon-aggregated reliability budget misstates its own standard,results/rel1/annual/gas_avail_nameplate/rel1_summary.json,exists,results/rel1/annual/gas_avail_nameplate/rel1_summary.json
+F-33,A horizon-aggregated reliability budget misstates its own standard,results/rel1/annual/gas_avail_observed/rel1_summary.json,exists,results/rel1/annual/gas_avail_nameplate/rel1_summary.json
+F-34,"EaaS relieves gas scarcity where gas is scarce, and worsens it in one regime",results/gas2/eaas_vs_noeaas_gas_shadow.csv,exists,results/gas2/arms_f30c5990/eaas_vs_noeaas_gas_shadow.csv
+F-34,"EaaS relieves gas scarcity where gas is scarce, and worsens it in one regime",results/gas2/gas2_summary.json,exists,results/gas2/arms_f30c5990/gas2_summary.json
+F-34,"EaaS relieves gas scarcity where gas is scarce, and worsens it in one regime",results/gas2/arms_be9472ef/eaas_vs_noeaas_gas_shadow.csv,exists,results/gas2/arms_f30c5990/eaas_vs_noeaas_gas_shadow.csv
+F-34,"EaaS relieves gas scarcity where gas is scarce, and worsens it in one regime",gas2_summary.json,out of scope,
+F-35,EaaS value has an interior maximum in policy stringency,results/rel3/gas_avail_nameplate/frontier_shift.csv,exists,results/rel3/arms_1e01828a/gas_avail_observed/frontier_shift.csv
+F-35,EaaS value has an interior maximum in policy stringency,results/rel3/gas_avail_observed/frontier_shift.csv,exists,results/rel3/arms_1e01828a/gas_avail_observed/frontier_shift.csv
+F-35,EaaS value has an interior maximum in policy stringency,results/rel3/arms_31d60098/gas_avail_nameplate/,dir-has-vintage,"10 vintage files in results/rel3, none named "
+F-35,EaaS value has an interior maximum in policy stringency,arms_5037b4db/gas_avail_observed/,out of scope,
+F-35,EaaS value has an interior maximum in policy stringency,results/rel3/arms_31d60098/gas_avail_*/frontier_shift.csv,exists,results/rel3/arms_1e01828a/gas_avail_observed/frontier_shift.csv
+F-35,EaaS value has an interior maximum in policy stringency,results/rel3/arms_5037b4db/gas_avail_*/frontier_shift.csv,exists,results/rel3/arms_1e01828a/gas_avail_observed/frontier_shift.csv
+F-36,EaaS reduces cost dispersion as well as expected cost,results/monte_carlo/monte_carlo_summary.csv,exists,results/monte_carlo/arms_f30c5990/monte_carlo_summary.csv
+F-36,EaaS reduces cost dispersion as well as expected cost,cost_mean/p10/p90,out of scope,
+F-36,EaaS reduces cost dispersion as well as expected cost,eaas_necessity.json,out of scope,
+F-36,EaaS reduces cost dispersion as well as expected cost,results/monte_carlo/arms_be9472ef/,dir-has-vintage,"7 vintage files in results/monte_carlo, none named "
+F-36,EaaS reduces cost dispersion as well as expected cost,results/stochastic/draws__3fdfba47.csv,exists (twin),results/stochastic/draws__6b686491.csv
+F-36,EaaS reduces cost dispersion as well as expected cost,draws__bd65b0bb.csv,out of scope,
+F-36,EaaS reduces cost dispersion as well as expected cost,results/monte_carlo/arms_be9472ef/monte_carlo_summary.csv,exists,results/monte_carlo/arms_f30c5990/monte_carlo_summary.csv
+F-36,EaaS reduces cost dispersion as well as expected cost,results/monte_carlo/arms_be9472ef/monte_carlo_raw.csv,exists,results/monte_carlo/arms_f30c5990/monte_carlo_raw.csv
+F-36,EaaS reduces cost dispersion as well as expected cost,results/monte_carlo/arms_be9472ef/eaas_necessity.json,exists,results/monte_carlo/arms_f30c5990/eaas_necessity.json
+F-37,Demand growth and gas scarcity compound (public financing only),results/dem2/gas_premium.csv,exists,results/dem2/arms_1fa34539/gas_premium.csv
+F-37,Demand growth and gas scarcity compound (public financing only),interaction_matrix.csv,out of scope,
+F-37,Demand growth and gas scarcity compound (public financing only),dem2_summary.json,out of scope,
+F-37,Demand growth and gas scarcity compound (public financing only),results/dem2/arms_31d60098/,dir-has-vintage,"6 vintage files in results/dem2, none named "
+F-37,Demand growth and gas scarcity compound (public financing only),results/dem2/arms_31d60098/gas_premium.csv,exists,results/dem2/arms_1fa34539/gas_premium.csv
+F-37,Demand growth and gas scarcity compound (public financing only),results/dem2/arms_31d60098/interaction_matrix.csv,exists,results/dem2/arms_1fa34539/interaction_matrix.csv
+F-37,Demand growth and gas scarcity compound (public financing only),results/dem2/arms_31d60098/dem2_summary.json,exists,results/dem2/arms_1fa34539/dem2_summary.json
+F-38,EaaS value is conditional on the public capital envelope binding,results/dem2/eaas_value.csv,exists,results/dem2/arms_1fa34539/eaas_value.csv
+F-38,EaaS value is conditional on the public capital envelope binding,results/dem2/arms_31d60098/,dir-has-vintage,"6 vintage files in results/dem2, none named "
+F-38,EaaS value is conditional on the public capital envelope binding,capital_frontier_eaas_gap.csv,out of scope,
+F-38,EaaS value is conditional on the public capital envelope binding,docs/chapters/,out of scope,
+F-38,EaaS value is conditional on the public capital envelope binding,results/dem2/arms_31d60098/dem2_results.csv,exists,results/dem2/arms_1fa34539/dem2_results.csv
+F-38,EaaS value is conditional on the public capital envelope binding,results/dem2/arms_31d60098/eaas_value.csv,exists,results/dem2/arms_1fa34539/eaas_value.csv
+F-38,EaaS value is conditional on the public capital envelope binding,results/capital_frontier/arms_92390a63/capital_frontier_eaas_gap.csv,exists,results/capital_frontier/arms_1d68be49/capital_frontier_eaas_gap.csv
+F-39,A tight capital envelope raises total emissions at zero carbon price,results/carbon_price_sweep/carbon_price_raw.csv,exists,results/carbon_price_sweep/arms_1d68be49/carbon_price_raw.csv
+F-39,A tight capital envelope raises total emissions at zero carbon price,results/carbon_price_sweep/arms_92390a63/carbon_price_raw.csv,exists,results/carbon_price_sweep/arms_1d68be49/carbon_price_raw.csv
+F-40,Under a binding capital envelope the carbon price does no abatement,results/carbon_price_sweep/carbon_price_raw.csv,exists,results/carbon_price_sweep/arms_1d68be49/carbon_price_raw.csv
+F-40,Under a binding capital envelope the carbon price does no abatement,19_run_carbon_price_sweep.py,out of scope,
+F-40,Under a binding capital envelope the carbon price does no abatement,results/carbon_price_sweep/arms_92390a63/carbon_price_raw.csv,exists,results/carbon_price_sweep/arms_1d68be49/carbon_price_raw.csv
+F-41,EaaS needs a smaller public capital budget before the constraint materially binds,results/capital_frontier/capital_frontier_endpoints.json,exists,results/capital_frontier/arms_1d68be49/capital_frontier_endpoints.json
+F-41,EaaS needs a smaller public capital budget before the constraint materially binds,capital_frontier_raw.csv,out of scope,
+F-41,EaaS needs a smaller public capital budget before the constraint materially binds,results/capital_frontier/arms_92390a63/capital_frontier_raw.csv,exists,results/capital_frontier/arms_1d68be49/capital_frontier_raw.csv
+F-41,EaaS needs a smaller public capital budget before the constraint materially binds,capital_frontier_endpoints.json,out of scope,
+F-42,"The value of the stochastic solution, bounded",results/vss_bound/vss_bound__76f4aea6.json,dir-has-vintage,"1 vintage files in results/vss_bound, none named vss_bound__76f4aea6.json"
+F-42,"The value of the stochastic solution, bounded",results/vss_bound/vss_bound__d6f19a23.json,dir-has-vintage,"1 vintage files in results/vss_bound, none named vss_bound__d6f19a23.json"
+F-42,"The value of the stochastic solution, bounded",results/stochastic_redispatch/draws__8fc2e490,dir-has-vintage,"6 vintage files in results/stochastic_redispatch, none named draws__8fc2e490"
+F-42,"The value of the stochastic solution, bounded",results/stochastic_redispatch/summary__8fc2e490,dir-has-vintage,"6 vintage files in results/stochastic_redispatch, none named summary__8fc2e490"
+F-43,"Under public financing the cost-emissions curve bends backward: past a point, tightening t",results/pareto_frontier/pareto_raw.csv,exists,results/pareto_frontier/arms_1d68be49/pareto_raw.csv
+F-43,"Under public financing the cost-emissions curve bends backward: past a point, tightening t",pareto_dominated_points.csv,out of scope,
+F-43,"Under public financing the cost-emissions curve bends backward: past a point, tightening t",pareto_endpoints.json,out of scope,
+F-43,"Under public financing the cost-emissions curve bends backward: past a point, tightening t",docs/task_log_29_2_findings_update.md,out of scope,
+F-43,"Under public financing the cost-emissions curve bends backward: past a point, tightening t",results/pareto_frontier/arms_92390a63/pareto_raw.csv,exists,results/pareto_frontier/arms_1d68be49/pareto_raw.csv
+M-1,Midstream cost per unit deliverability (post-hoc),(no file named on a Source line),,
+M-2,Two errors partly cancelling are undetectable from internal consistency,(no file named on a Source line),,
+M-3,A constraint can bind exactly and still be immaterial,results/hydro_minflow/,dir-has-vintage,"6 vintage files in results/hydro_minflow, none named "
+M-3,A constraint can bind exactly and still be immaterial,27_run_hydro_minflow_sensitivity.py,out of scope,
+M-3,A constraint can bind exactly and still be immaterial,run_phase_b.sh,out of scope,
+M-3,A constraint can bind exactly and still be immaterial,results/hydro_minflow/arms_77bf0ff4,dir-has-vintage,"6 vintage files in results/hydro_minflow, none named arms_77bf0ff4"
+M-3,A constraint can bind exactly and still be immaterial,results/hydro_minflow/arms_77bf0ff4/,dir-has-vintage,"6 vintage files in results/hydro_minflow, none named "
+M-3,A constraint can bind exactly and still be immaterial,results/hydro_minflow/arms_1b623521/,dir-has-vintage,"6 vintage files in results/hydro_minflow, none named "
+M-4,One unmeasured parameter accounts for nine-tenths of the,results/parameter_uncertainty/summary_n256_seed42.*,exists,results/parameter_uncertainty/arms_09bd6dbc/summary_n256_seed42.json
+M-4,One unmeasured parameter accounts for nine-tenths of the,results/parameter_uncertainty/draws_n256_seed42.*,exists,results/parameter_uncertainty/arms_09bd6dbc/draws_n256_seed42.jsonl
+M-4,One unmeasured parameter accounts for nine-tenths of the,29_run_parameter_uncertainty.py,out of scope,
+M-4,One unmeasured parameter accounts for nine-tenths of the,results/parameter_uncertainty/arms_ce5387ec/,dir-has-vintage,"3 vintage files in results/parameter_uncertainty, none named "
+M-4,One unmeasured parameter accounts for nine-tenths of the,results/parameter_uncertainty/arms_ce5387ec/summary_n256_seed42.json,exists,results/parameter_uncertainty/arms_09bd6dbc/summary_n256_seed42.json
+M-4,One unmeasured parameter accounts for nine-tenths of the,results/parameter_uncertainty/arms_ce5387ec/draws_n256_seed42.jsonl,exists,results/parameter_uncertainty/arms_09bd6dbc/draws_n256_seed42.jsonl

@@ -1,0 +1,51 @@
+ndc ndc2_conditional conv_central base 7f38ab83 42.7349 emis 346.50Mt bind_yrs 29 | blended 52.7551 bind_yrs 27 | leak 0.17957994425212076 None
+ndc ndc2_conditional conv_none base 59cb6bcb 43.2718 emis 347.43Mt bind_yrs 30 | blended 84.9181 bind_yrs 30 | leak 0.17683353691179576 None
+ndc ndc2_conditional conv_central flat 58638a57 42.7349 emis 346.50Mt bind_yrs 29 | blended 52.7551 bind_yrs 27 | leak 0.17957994425212076 None
+ndc ndc2_conditional conv_central partial ddd8f874 42.7349 emis 346.50Mt bind_yrs 29 | blended 52.7551 bind_yrs 27 | leak 0.17957994425212076 None
+ndc ndc2_unconditional conv_central base 0063167f 28.3457 emis 424.29Mt bind_yrs 28 | blended 45.7120 bind_yrs 25 | leak 0.04407290636926511 None
+ndc ndc2_unconditional conv_none base b2127955 29.1184 emis 424.25Mt bind_yrs 30 | blended 80.6037 bind_yrs 30 | leak 0.0391878719099776 None
+ndc ndc2_unconditional conv_central flat fa55bd3a 28.3457 emis 424.29Mt bind_yrs 28 | blended 45.7120 bind_yrs 25 | leak 0.04407290636926511 None
+ndc ndc2_unconditional conv_central partial e5041749 28.3457 emis 424.29Mt bind_yrs 28 | blended 45.7120 bind_yrs 25 | leak 0.04407290636926511 None
+ndc ndc3_conditional conv_central base 3fbc75ac 36.1405 emis 338.58Mt bind_yrs 29 | blended 45.8831 bind_yrs 26 | leak 0.10494977568075538 None
+ndc ndc3_conditional conv_none base accb0eda 36.7040 emis 339.82Mt bind_yrs 30 | blended 78.5301 bind_yrs 30 | leak 0.10314507124765629 None
+ndc ndc3_conditional conv_central flat 5c0e155a 36.1405 emis 338.58Mt bind_yrs 29 | blended 45.8831 bind_yrs 26 | leak 0.10494977568075538 None
+ndc ndc3_conditional conv_central partial f0bf89bf 36.1405 emis 338.58Mt bind_yrs 29 | blended 45.8831 bind_yrs 26 | leak 0.10494977568075538 None
+ndc ndc3_conditional_decline conv_central base 74360050 45.6638 emis 381.53Mt bind_yrs 29 | blended 54.7125 bind_yrs 26 | leak 0.38823129480205865 None
+ndc ndc3_unconditional conv_central base ae31b29c 35.5615 emis 463.96Mt bind_yrs 28 | blended 53.1015 bind_yrs 26 | leak 0.21309731106336927 None
+ndc ndc3_unconditional conv_none base c5c60367 36.2594 emis 464.50Mt bind_yrs 30 | blended 88.7679 bind_yrs 30 | leak 0.2099231521842719 None
+ndc ndc3_unconditional conv_central flat b06bd92f 35.5615 emis 463.96Mt bind_yrs 28 | blended 53.1015 bind_yrs 26 | leak 0.21309731106336927 None
+ndc ndc3_unconditional conv_central partial af2314d7 35.5615 emis 463.96Mt bind_yrs 28 | blended 53.1015 bind_yrs 26 | leak 0.21309731106336927 None
+ndc_eaas ndc2_conditional conv_central base fd963bad 41.1066 emis 338.85Mt bind_yrs 29 | blended 46.5512 bind_yrs 27 | leak 0.16104482386089808 None
+ndc_eaas ndc2_conditional conv_none base ce5e3a65 41.7086 emis 339.92Mt bind_yrs 30 | blended 73.6214 bind_yrs 30 | leak 0.15863224467053108 None
+ndc_eaas ndc2_unconditional conv_central base bdeca2b7 24.9243 emis 395.37Mt bind_yrs 26 | blended 30.4026 bind_yrs 25 | leak 0.0 None
+ndc_eaas ndc2_unconditional conv_none base c7d257b0 26.8196 emis 407.63Mt bind_yrs 30 | blended 54.3153 bind_yrs 30 | leak 0.0 None
+ndc_eaas ndc3_conditional conv_central base 7a4fdb1c 34.9955 emis 335.32Mt bind_yrs 29 | blended 41.1918 bind_yrs 26 | leak 0.09624415318910481 None
+ndc_eaas ndc3_conditional conv_none base 2eab68a5 35.5980 emis 336.49Mt bind_yrs 30 | blended 67.6915 bind_yrs 30 | leak 0.09427949633752594 None
+ndc_eaas ndc3_unconditional conv_central base 2a1bad3e 26.6723 emis 365.46Mt bind_yrs 28 | blended 33.9597 bind_yrs 26 | leak 0.0010008788587144912 None
+ndc_eaas ndc3_unconditional conv_none base ea57c6dc 27.6052 emis 366.99Mt bind_yrs 30 | blended 59.1838 bind_yrs 30 | leak 0.0 None
+----- C.2 year sets
+ndc ndc2_conditional 7f38ab83 vintage-only ['2026', '2027'] blended-only [] leak>0.10: True
+ndc ndc2_conditional 59cb6bcb vintage-only [] blended-only [] leak>0.10: True
+ndc ndc2_conditional 58638a57 vintage-only ['2026', '2027'] blended-only [] leak>0.10: True
+ndc ndc2_conditional ddd8f874 vintage-only ['2026', '2027'] blended-only [] leak>0.10: True
+ndc ndc2_unconditional 0063167f vintage-only ['2027', '2028', '2029'] blended-only [] leak>0.10: False
+ndc ndc2_unconditional b2127955 vintage-only [] blended-only [] leak>0.10: False
+ndc ndc2_unconditional fa55bd3a vintage-only ['2027', '2028', '2029'] blended-only [] leak>0.10: False
+ndc ndc2_unconditional e5041749 vintage-only ['2027', '2028', '2029'] blended-only [] leak>0.10: False
+ndc ndc3_conditional 3fbc75ac vintage-only ['2026', '2027', '2028'] blended-only [] leak>0.10: True
+ndc ndc3_conditional accb0eda vintage-only [] blended-only [] leak>0.10: True
+ndc ndc3_conditional 5c0e155a vintage-only ['2026', '2027', '2028'] blended-only [] leak>0.10: True
+ndc ndc3_conditional f0bf89bf vintage-only ['2026', '2027', '2028'] blended-only [] leak>0.10: True
+ndc ndc3_conditional_decline 74360050 vintage-only ['2026', '2027', '2028'] blended-only [] leak>0.10: True
+ndc ndc3_unconditional ae31b29c vintage-only ['2027', '2028'] blended-only [] leak>0.10: True
+ndc ndc3_unconditional c5c60367 vintage-only [] blended-only [] leak>0.10: True
+ndc ndc3_unconditional b06bd92f vintage-only ['2027', '2028'] blended-only [] leak>0.10: True
+ndc ndc3_unconditional af2314d7 vintage-only ['2027', '2028'] blended-only [] leak>0.10: True
+ndc_eaas ndc2_conditional fd963bad vintage-only ['2026', '2027'] blended-only [] leak>0.10: True
+ndc_eaas ndc2_conditional ce5e3a65 vintage-only [] blended-only [] leak>0.10: True
+ndc_eaas ndc2_unconditional bdeca2b7 vintage-only ['2029'] blended-only [] leak>0.10: False
+ndc_eaas ndc2_unconditional c7d257b0 vintage-only [] blended-only [] leak>0.10: False
+ndc_eaas ndc3_conditional 7a4fdb1c vintage-only ['2026', '2027', '2028'] blended-only [] leak>0.10: False
+ndc_eaas ndc3_conditional 2eab68a5 vintage-only [] blended-only [] leak>0.10: False
+ndc_eaas ndc3_unconditional 2a1bad3e vintage-only ['2027', '2028'] blended-only [] leak>0.10: False
+ndc_eaas ndc3_unconditional ea57c6dc vintage-only [] blended-only [] leak>0.10: False

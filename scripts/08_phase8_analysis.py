@@ -18,6 +18,7 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 # Nigerian range (5–30 USD/kWh), prevents unserved-energy penalty from
 # dominating total system cost, and makes cross-case comparisons valid.
 CANONICAL_VOLL = "voll_mid"
+CANONICAL_GENSET = "genset_central"  # consistent with other runs (02, 03, 04, 08, 09, 11, 15, 19, 20)
 
 CASES = [
     {
@@ -71,7 +72,11 @@ CASES = [
 # Conversion:
 # 1 MMBtu = 293.071 kWh_th
 # 1 TWh_th = 1e9 kWh_th -> 1e9/293.071 MMBtu
-MMBTU_PER_TWH_TH = 1e9 / 293.071  # ≈ 3,412,141.6
+# Single source: src/gas_benchmarks.py (register L35 item 1). This script
+# had no sys.path setup, so the repo root is added for the import.
+import sys as _sys
+_sys.path.append(str(Path(__file__).resolve().parents[1]))
+from src.gas_benchmarks import MMBTU_PER_TWH_TH  # ≈ 3,412,141.6
 
 
 # =========================
@@ -128,13 +133,23 @@ def main():
         ts_by_case[case] = ts
 
         dv = summ.get("decision_variables", {})
+
+        def _pick(d, *names):
+            # TASK 53 2.4: the baseline runners (01, 01b, 02_run_eaas) now write year-labelled names
+            # (cumulative to the last model year); the NDC runners still write the unlabelled ones.
+            # Accept either, and refuse silence: a case with neither is an error, not a NaN.
+            for n in names:
+                if n in d:
+                    return d[n]
+            raise KeyError(f"case {case!r}: none of {names} in the summary")
+
         master_rows.append(
             {
                 "case": case,
                 "npv_total_cost_usd": summ.get("npv_total_cost_usd", np.nan),
-                "cumulative_emissions_tco2": summ.get("actual_emissions_tco2_total", np.nan),
-                "cumulative_unserved_twh": summ.get("cumulative_unserved_twh", np.nan),
-                "solar_total_built_mw": dv.get("solar_total_built_mw", np.nan),
+                "cumulative_emissions_tco2": _pick(summ, "actual_emissions_tco2_total", "cumulative_emissions_2025_2054_tco2"),
+                "cumulative_unserved_twh": _pick(summ, "cumulative_unserved_twh", "cumulative_unserved_2025_2054_twh"),
+                "solar_total_built_mw": _pick(dv, "solar_total_built_mw", "solar_cumulative_built_2054_mw"),
                 "storage_capacity_mwh": dv.get("storage_capacity_mwh", np.nan),
             }
         )
@@ -236,17 +251,23 @@ def main():
     for case, ts in ts_by_case.items():
         
         # carbon shadow (baseline may be NaN/0)
-        if "carbon_shadow_usd_per_tco2" not in ts.columns:
-            raise ValueError(f"Missing 'carbon_shadow_usd_per_tco2' in {case} timeseries.csv")
-        c = safe_numeric(ts["carbon_shadow_usd_per_tco2"])
+        # TASK 53 2.3: the timeseries carries the shadow on both bases (pv = year-0 USD, yr = year-t USD).
+        for _col in ("carbon_shadow_pv_usd_per_tco2", "carbon_shadow_yr_usd_per_tco2"):
+            if _col not in ts.columns:
+                raise ValueError(f"Missing '{_col}' in {case} timeseries.csv (the basis-less 'carbon_shadow_usd_per_tco2' was retired by TASK 53 2.3)")
+        c = safe_numeric(ts["carbon_shadow_pv_usd_per_tco2"])
+        c_yr = safe_numeric(ts["carbon_shadow_yr_usd_per_tco2"])
 
         scarcity_rows.append(
             {
                 "case": case,
-                "carbon_shadow_mean": float(c.dropna().mean()) if c.dropna().shape[0] else np.nan,
-                "carbon_shadow_max": float(c.dropna().max()) if c.dropna().shape[0] else np.nan,
+                "carbon_shadow_pv_mean": float(c.dropna().mean()) if c.dropna().shape[0] else np.nan,
+                "carbon_shadow_pv_max": float(c.dropna().max()) if c.dropna().shape[0] else np.nan,
+                "carbon_shadow_yr_mean": float(c_yr.dropna().mean()) if c_yr.dropna().shape[0] else np.nan,
+                "carbon_shadow_yr_max": float(c_yr.dropna().max()) if c_yr.dropna().shape[0] else np.nan,
                 "carbon_shadow_binding_years": binding_years(c),
-                **{f"carbon_shadow_{k}": v for k, v in quantiles(c, qs=(0.5, 0.9)).items()},
+                **{f"carbon_shadow_pv_{k}": v for k, v in quantiles(c, qs=(0.5, 0.9)).items()},
+                **{f"carbon_shadow_yr_{k}": v for k, v in quantiles(c_yr, qs=(0.5, 0.9)).items()},
             }
         )
     scarcity = pd.DataFrame(scarcity_rows)
@@ -256,17 +277,17 @@ def main():
     def plot_shadow_carbon():
         plt.figure()
         for case, ts in ts_by_case.items():
-            if "carbon_shadow_usd_per_tco2" in ts.columns:
+            if "carbon_shadow_yr_usd_per_tco2" in ts.columns:
                 plt.plot(
                     ts["year"].values,
-                    safe_numeric(ts["carbon_shadow_usd_per_tco2"]).values,
+                    safe_numeric(ts["carbon_shadow_yr_usd_per_tco2"]).values,
                     marker="o",
                     label=case,
                 )
 
         plt.xlabel("Year")
-        plt.ylabel("USD per tCO2")
-        plt.title("Carbon shadow price by year")
+        plt.ylabel("USD per tCO2 (year-t)")
+        plt.title("Carbon shadow price by year (year-t USD; the present-value series is in scarcity_stats.csv)")
         plt.legend()
         plt.tight_layout()
         plt.savefig(OUT_DIR / "carbon_shadow_by_year.png", dpi=200)
@@ -280,7 +301,7 @@ def main():
     for case, ts in ts_by_case.items():
         unserved = safe_numeric(ts["unserved_twh"])
         emissions = safe_numeric(ts["emissions_tco2"])
-        carbon_shadow = safe_numeric(ts["carbon_shadow_usd_per_tco2"])
+        carbon_shadow = safe_numeric(ts["carbon_shadow_yr_usd_per_tco2"])      # year-t basis (TASK 53 2.3)
 
         es_rows.append(
             {
@@ -290,7 +311,7 @@ def main():
                 "adequacy_years_with_unserved": int((unserved.dropna() > 0).sum()) if unserved.dropna().shape[0] else 0,
                 "sustainability_cum_emissions_tco2": float(emissions.sum()),
                 "sustainability_binding_years": binding_years(carbon_shadow),
-                "sustainability_avg_carbon_shadow_binding_only": float(carbon_shadow[carbon_shadow > 1e-9].mean())
+                "sustainability_avg_carbon_shadow_yr_binding_only": float(carbon_shadow[carbon_shadow > 1e-9].mean())
                 if (carbon_shadow.dropna() > 1e-9).any()
                 else 0.0,
             }
@@ -311,7 +332,7 @@ def main():
         case = c["case"]
         ts = ts_by_case[case]
 
-        if "carbon_shadow_usd_per_tco2" not in ts.columns:
+        if "carbon_shadow_yr_usd_per_tco2" not in ts.columns:
             continue
 
         for _, row in ts.iterrows():
@@ -319,7 +340,10 @@ def main():
                 row.get("subsidy_per_mw_usd", 0), errors="coerce"
             )
             carbon_val = pd.to_numeric(
-                row["carbon_shadow_usd_per_tco2"], errors="coerce"
+                row["carbon_shadow_pv_usd_per_tco2"], errors="coerce"
+            )
+            carbon_val_yr = pd.to_numeric(
+                row["carbon_shadow_yr_usd_per_tco2"], errors="coerce"
             )
             eaas_val = pd.to_numeric(
                 row.get("solar_eaas_add_mw", 0), errors="coerce"
@@ -329,7 +353,8 @@ def main():
                 "case": case,
                 "year": int(row["year"]),
                 "subsidy_per_mw_usd": subsidy_val,
-                "carbon_shadow_usd_per_tco2": carbon_val,
+                "carbon_shadow_pv_usd_per_tco2": carbon_val,
+                "carbon_shadow_yr_usd_per_tco2": carbon_val_yr,
                 "solar_eaas_add_mw": eaas_val,
             })
 
