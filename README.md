@@ -1,481 +1,283 @@
-# README.md
-Energy-as-a-Service Financing for Gas-Constrained Power Systems: Optimising Nigeria's NDC 3.0 Investment Pathway.
+# Gas deliverability and the financing of power-sector decarbonisation in Nigeria
 
-## 🔍 Project Overview
-This repository contains the full modeling framework, datasets, scripts, and reproducibility instructions for the MSc thesis:
+A capacity-expansion model of Nigeria's grid-connected power system to
+2054, with the division of investment capital between concessional and
+commercial sources determined within the model rather than supplied to
+it.
 
-"Energy-as-a-Service Financing for Gas-Constrained Power Systems: 
-Optimising Nigeria's NDC 3.0 Investment Pathway"
+This repository holds the model, the data, the run scripts and the
+submitted thesis. MSc, petroleum and energy resource engineering.
 
-This repository contains the full modelling framework, datasets, and 
-run scripts for an MSc thesis that builds a deterministic, multi-scenario 
-linear programming model of Nigeria's on-grid utility-scale power sector 
-over the 2025–2045 planning horizon. The model minimises total system NPV 
-cost (comprising real capital/operating expenditure and value-of-lost-load 
-penalties) subject to gas deliverability constraints, NDC 3.0 annual 
-emissions caps (derived via proportional top-down apportionment of the 
-energy-sector abatement target), a public capital budget ceiling covering 
-solar and storage CAPEX, EaaS bankability constraints, and a solar build 
-rate cap. It evaluates whether Energy-as-a-Service private financing 
-can close the investment gap that prevents simultaneous supply adequacy 
-and climate compliance under Nigeria's gas-constrained, capital-constrained 
-baseline.
-This work supports insights for:
-* National planners and regulators (MoP/NERC)
-* Utilities and generation companies
-* Renewable IPPs
-* EaaS providers and commercial/industrial customers
-* International development partners (WB, AfDB, IRENA)
-
-## Modeling Philosophy and Architectural Mapping
-
-### Modeling Objective
-This repository implements a **decision-oriented techno-economic optimization model** to evaluate Nigeria’s long-term electricity generation mix under **delivered gas-to-power availability constraints**, renewable deployment frictions, financing structures, and policy uncertainty.
-
-The model is designed for **national-scale, long-term planning**, focusing on system-level outcomes:
-- total system cost,
-- electricity reliability (unserved energy),
-- carbon emissions.
-
-It is not intended to simulate individual reservoirs, gas fields, or detailed power-flow dynamics.
-
-
-### What Is Modeled Endogenously
-The following elements are **endogenous decision variables or system outcomes** within the optimization framework:
-
-- Installed capacity of:
-  - utility-scale solar photovoltaic generation (public and EaaS-financed),
-  - battery energy storage.
-- Annual generation and dispatch subject to availability and technical limits.
-- Unserved energy as an explicit reliability metric.
-- System cost, emissions, and reliability trade-offs.
-- Financing-dependent deployment feasibility (e.g., utility CAPEX vs Energy-as-a-Service).
-
-
-### What Is Scenario-Based (Exogenous by Design)
-The following elements are represented through **structured scenarios and parameters**, not endogenously optimized:
-
-- **Delivered gas-to-power availability**, defined as the maximum annual electricity that can be generated from gas-fired plants.
-  - This availability is informed by:
-    - upstream deliverability trends (including decline analytics),
-    - midstream infrastructure constraints,
-    - domestic gas allocation and pricing regimes.
-- Gas-price and carbon-price trajectories.
-- Domestic gas policy regimes (allocation priorities, pricing structures).
-- Renewable regulatory environments (grid-integration limits, tariff and PPA feasibility).
-- Financing environments (WACC, investment ceilings, deployment rates).
-
-This separation reflects the resolution of publicly available data and the scope of national-scale planning studies.
-
-
-### Interpretation of Gas Decline
-Gas decline in this model **does not represent reservoir simulation or field-level forecasting**.
-
-Instead:
-- Decline analytics are used to inform **aggregate deliverability trends**.
-- These trends contribute to **delivered gas-to-power availability envelopes**, which act as binding constraints in the electricity system optimization.
-
-The system therefore responds to **delivered gas constraints**, not to subsurface production mechanics.
-
-
-### Representation of Energy-as-a-Service (EaaS)
-Energy-as-a-Service (EaaS) is modeled **mechanistically**, not narratively.
-
-EaaS affects system outcomes through one or more of the following channels:
-- reduced effective cost of capital,
-- higher feasible deployment rates,
-- alternative CAPEX–OPEX structures,
-- relaxed affordability or investment constraints.
-
-EaaS is treated as a **deployment and financing enabler**, not a separate generation technology.
-
-
-### Reliability Treatment
-Electricity reliability is represented through **unserved energy**, calculated annually and penalised economically in the objective function at $10,000/MWh (VoLL). An explicit reliability constraint (maximum unserved fraction epsilon) provides an optional hard backstop. System cost decomposes into real expenditure (CAPEX + OPEX) and VoLL penalty, allowing reliability to be:
-- explicitly traded against cost and emissions,
-- evaluated across gas-availability, policy, and financing scenarios,
-- decomposed into capital-driven and blackout-driven cost components.
-
-### Architectural Mapping: Text → Code
-Key modeling concepts map directly to repository modules:
-
-| Concept | Module |
-|------|------|
-| Gas-to-power availability | `src/gas_supply.py` |
-| Policy and availability scenarios | `src/scenarios.py` |
-| Demand projection | `src/demand.py` |
-| Solar generation | `src/solar.py` |
-| Battery storage | `src/storage.py` |
-| Ex-post feasibility dispatch | `src/dispatch.py` |
-| Cost, emissions, financing | `src/economics.py` |
-| Optimization formulation | `src/optimize_model.py` |
-| Experiment orchestration | `src/optimize_experiments.py` |
-| Visualization and Pareto analysis | `notebooks/visualization.ipynb` |
-| Cost decomposition & figures | `scripts/16_plot_cost_decomposition.py` |
-| Validation | `scripts/99_validate_baseline.py` |
-| I/O and serialisation | `src/io.py`, `src/utils.py` |
-
-This mapping ensures traceability between methodological claims in the thesis and executable model components.
-
-### Intended Use and Limitations
-The model is intended for:
-- comparative scenario analysis,
-- policy and planning insight,
-- evaluation of robustness under uncertainty.
-
-It is not intended for:
-- reservoir engineering studies,
-- nodal transmission analysis,
-- short-term operational dispatch.
-
-These limitations are deliberate and consistent with the research objectives.
-
-## 🧠 Core Contributions
-
-This thesis addresses one core research question: under binding gas 
-deliverability constraints, capital scarcity, and Nigeria's NDC 3.0 
-emissions targets (derived via proportional top-down apportionment of 
-the energy-sector abatement target to gas-fired power generation), can 
-Energy-as-a-Service financing resolve the investment gap that prevents 
-simultaneous supply adequacy and climate compliance — and at what cost?
-
-Thirteen sub-questions are structured across the four dimensions of the 
-World Energy Council's 4As energy security framework (Availability, 
-Accessibility, Affordability, Acceptability), ensuring that model 
-outputs map directly to recognised policy-relevant criteria rather 
-than to purely technical metrics.
+**Tag `thesis-submitted`** marks the state the thesis was submitted in.
+467 tracked files, 113 MiB; a full clone fetches about 130 MB, most of
+it third-party PDFs and workbooks under `data/` rather than code.
 
 ---
 
-### A1 — Availability: Physical Supply Adequacy Under Gas Constraints
+## What the model is
 
-**GAS-1** quantifies the shadow price of gas deliverability to 
-Nigeria's power sector across all four structural gas regime scenarios 
-(baseline, upside, downside, shock_recovery) and tests whether that 
-scarcity rent systematically exceeds domestic regulated benchmarks and 
-LNG export parity. The model finds that gas shadow prices exceed LNG 
-export benchmarks by 40–50x in all no-policy scenarios, confirming 
-that Nigeria's gas constraint is physically driven, not price-driven — 
-and that the power sector values gas at multiples of what any 
-alternative use would pay.
+A deterministic linear programme. Each solve minimises discounted
+system cost over 2025–2054 under perfect foresight, with fixed
+coefficients. Results are reported over **2025–2045**; the final nine
+years are an end-effect buffer and are not reported.
 
-**GAS-3** isolates whether NDC compliance cost and feasibility are 
-determined by the level or the structural shape of gas decline — 
-exponential depletion vs shock-recovery vs lag-ramp-uplift — using 
-level-equivalent flat controls to disentangle the two effects. This 
-distinguishes whether the NDC cost premium is a permanent structural 
-feature of Nigeria's gas resource base or a transitional artefact of 
-decline timing.
+The analysis built on those solves is neither single-objective nor
+deterministic. Bi-objective trade-offs are recovered by the
+**ε-constraint** method over two objective pairs. Uncertainty is
+treated at three levels — scenario, parameter and realisation — and the
+value of the recourse formulation the study does *not* solve is
+bounded above from two evaluations it does perform.
 
-**STR-1** quantifies the role of battery storage in the optimal 
-system and tests how the deployable hours parameter and solar surplus 
-fraction determine whether storage complements or substitutes for EaaS 
-solar deployment. Storage is modelled as a physical supply adequacy 
-tool — an annual energy-shifting buffer that extends effective 
-availability of intermittent solar supply — rather than as a 
-standalone investment asset.
+**There is no weighted-sum objective and no stochastic programming with
+recourse.** Neither is claimed anywhere in the thesis.
 
----
+### Determined within the model
 
-### A2 — Accessibility: Reliability of Supply Reaching Users
+Solar additions, public and service-financed, by vintage; new gas
+capacity and open-cycle to combined-cycle conversion; battery storage;
+dispatch across six intra-annual slices; self-generation as a priced
+backstop and unserved energy; and **the split of each vintage's capital
+between a concessional and a commercial tranche**, bounded by a finite
+concessional envelope and disciplined by a coverage-ratio condition on
+privately financed capacity.
 
-**REL-1** tests whether reliability feasibility under a fixed capital 
-envelope depends primarily on the gas deliverability regime or the 
-level of solar investment, and whether the answer changes across 
-aggressive vs conservative solar build assumptions.
+### Supplied as scenarios
 
-**REL-2** computes the marginal cost of tightening the reliability 
-standard across gas regimes, testing whether the VoLL penalty in 
-the objective or the explicit reliability constraint is the active 
-driver of system reliability outcomes.
+Gas deliverability, gas fleet availability and retirement, demand
+growth, solar and storage capital cost trajectories, hydro energy, the
+emissions cap trajectory, the carbon price, and the financing terms.
+Each is exposed as a named arm; each arm value is classified SOURCED,
+DERIVED or ASSUMED; and where no defensible value exists the arm raises
+rather than substituting a placeholder.
 
-**REL-3** tests whether EaaS financing shifts the reliability 
-feasibility frontier relative to public-capital-only financing under 
-the same gas constraint, and whether this advantage persists when 
-NDC 3.0 emissions targets are simultaneously imposed. This directly 
-tests the claim that EaaS provides functional energy security benefit 
-beyond financial convenience.
+### Not represented
 
-**DEM-1** tests whether the financing bottleneck diagnosis and NDC 
-compliance cost findings are sensitive to the choice of served demand 
-(23.08 TWh/yr, 2024 actual generation) versus latent demand 
-(38–77 TWh/yr, reconstructed from electrification access rates) as 
-the planning baseline — addressing whether the model's accessibility 
-conclusions hold across the full range of plausible Nigerian demand 
-conditions.
+Single node, so no transmission constraint. No unit commitment,
+minimum stable generation, ramping or start-up cost; capacity is
+continuous. Demand is exogenous and price-inelastic. Policy is
+exogenous with no feedback. No reservoir or field-level gas production
+modelling — gas enters as a delivered-energy constraint on the power
+sector, not as subsurface mechanics. Chapter 3 §3.7 states each
+limitation with its direction of bias.
 
 ---
 
-### A3 — Affordability: System Cost, Financing Structure, and Capital Adequacy
+## Research questions
 
-**FIN-1** (Phase 8 cost-emissions frontier analysis) characterises 
-the full cost-emissions trade-off space across five scenario 
-combinations — baseline, NDC3 public-only, and NDC3 EaaS under both 
-unconditional and conditional ambition levels — computing marginal 
-abatement costs and quantifying the system cost reduction from 
-switching to EaaS financing at each NDC ambition level.
+1. What limits the least-cost expansion pathway to 2045, and what is
+   the system-cost value of relieving each limit?
+2. When the division of each vintage's capital between concessional and
+   commercial sources is determined within the model, what does that
+   change, and under what conditions does it change nothing?
+3. When an emissions constraint is applied to the grid-supplied
+   quantity rather than to the national inventory, how does tightening
+   it affect national emissions, and does the financing channel alter
+   the relationship?
+4. Does a plan optimised against a single deterministic future retain
+   capacity adequacy across demand realisations, and does the
+   specification of the service standard change what is observed?
 
-**FIN-2** derives and empirically verifies the minimum EaaS service 
-tariff T* at which private capital becomes self-financing without 
-public subsidy. T* is computed analytically as a function of solar 
-CAPEX, required margin, and horizon-discounted energy yield, then 
-confirmed across a tariff sweep grid. The conditional NDC scenario 
-(required_margin=1.05, concessional blended finance) produces a 
-strictly lower T* than the unconditional scenario (required_margin=1.10), 
-directly quantifying the bankability benefit of concessional 
-international climate finance.
-
-**FIN-3** sweeps the public capital budget ceiling from 50% to 120% 
-of B* to identify the budget level at which the capital bottleneck 
-disappears without EaaS. A DisCo collection rate sensitivity 
-(current=0.35 per NERC 2021–2023 average, reform_target=0.60 per 
-World Bank DPO target, no_friction=1.00) grounds the budget analysis 
-in Nigeria's institutional revenue reality — distinguishing whether 
-EaaS is a planning convenience or a structural necessity under 
-realistic public financing conditions.
-
-**DEM-2** examines how demand growth rate uncertainty (low 2.5%, 
-baseline 4%, high 6%) interacts with gas deliverability constraints 
-to determine system cost risk, and whether higher demand growth 
-amplifies or attenuates the marginal value of the EaaS financing 
-mechanism.
+Chapter 2 reports the systematic review, conducted to a registered
+protocol over seventy-five studies, that establishes the gaps these
+answer. Results are in Chapter 4; their interpretation in Chapter 5.
 
 ---
 
-### A4 — Acceptability: Long-Term Viability Under Emissions Targets
+## The model — `src/`
 
-**GAS-2** tests whether EaaS solar deployment materially reduces the 
-gas scarcity rent — establishing whether private capital deployment 
-provides functional energy security relief by substituting for 
-constrained gas, not merely repackaging the same investment under a 
-different ownership structure. A positive result means EaaS is an 
-energy security instrument as well as a financing instrument; a null 
-result means its value is purely financial.
-
-**POL-1** compares the investment trajectory and system cost under 
-NDC 3.0 (proportional top-down apportionment) unconditional and 
-conditional targets, with NDC 2.0 BAU-relative targets as a 
-methodological robustness arm. Tests whether the EaaS mechanism 
-absorbs or amplifies methodology-driven cost variation.
-
----
-
-### Dual-Based Scarcity Valuation — Cross-Cutting Contribution
-
-Across all four dimensions, the model extracts LP dual variables 
-(shadow prices) for the gas availability constraint, the public 
-capital budget constraint, the annual emissions cap, and the 
-reliability constraint. These shadow prices provide a unified 
-economic language for interpreting system bottlenecks: when the gas 
-shadow price exceeds LNG export parity (GAS-1), when the budget 
-shadow is positive (FIN-3), when the carbon shadow rises steeply 
-(POL-1), and when the reliability dual diverges across gas regimes 
-(REL-2), they collectively identify which constraint is actually 
-binding the system at each point in the planning horizon — and what 
-relaxing each constraint would be worth.
-
-## 🏗 Repository Structure
 ```
-thesis-repo/
-│
-├── data/                                 # Clean and processed datasets
-│   ├── demand/                           # Demand projections, load profiles
-│   ├── gas/                              # Reservoir decline inputs, analogs
-│   ├── solar/                            # PV irradiance datasets
-│   ├── cost/                             # CAPEX/OPEX tables
-│   ├── stochastic/                       # Probability distributions & samples
-│   └── README.md                         # Data provenance and licenses
-|
-|
-├── src/                                  # Core modeling modules
-│   ├── gas_supply.py                     # Gas availability loading
-│   ├── demand.py                         # Baseline demand projection
-│   ├── solar.py                          # PV generation + capacity factors
-│   ├── storage.py                        # Stateful SOC, dispatch simulation
-│   ├── dispatch.py                       # System dispatch & constraints
-│   ├── optimize_model.py                 # model construction + solve only
-│   ├── optimize_experiments.py           # experiment orchestration (Pareto, sweeps, diagnostics)
-│   ├── stochastic.py                     # Monte Carlo wrapper
-│   ├── scenarios.py                      # Scenario configuration
-│   ├── economics.py                      # Economic Evaluation Utilities 
-│   ├── EaaS.py                           # transforms system parameters
-│   ├── gas_balance.py
-│   ├── io.py                             # 
-│   ├── postprocess.py                    # shadow price benchmarking
-│   ├── build_gas_deliverability.py       # Gas decline & deliverability construction
-│   └── utils.py                          # Shared utilities / helpers
-|   
-│
-├── scripts/
-│   ├── 00_build_emissions_cap.py                   # Build NDC 3.0 (proportional) + NDC 2.0 (BAU-relative) caps
-│   ├── 01_run_baseline.py                          # Unconstrained baseline (no NDC, no EaaS)
-│   ├── 02_run_eaas.py                              # EaaS baseline (no NDC)
-│   ├── 02_run_ndc_caps.py                          # NDC3 public-only financing
-│   ├── 03_run_ndc_eaas.py                          # NDC3 with EaaS financing
-│   ├── 04_run_fin2_tariff_sweep.py                 # FIN-2: EaaS tariff bankability threshold
-│   ├── 05_run_fin3_capital_sweep.py                # FIN-3: Capital budget × collection rate
-│   ├── 06_run_gas1_shadow_benchmarks.py            # GAS-1: Gas scarcity rent vs benchmarks
-│   ├── 07_run_gas2_eaas_gas_relief.py              # GAS-2: EaaS gas constraint relief
-│   ├── 08_phase8_analysis.py                       # Phase 8: Cost-emissions frontier
-│   ├── 08_run_gas3_regime_ndc_feasibility.py       # GAS-3: Regime shape vs NDC
-│   ├── 09_run_rel1_feasibility.py                  # REL-1: Reliability feasibility matrix
-│   ├── 10_run_rel2_marginal_cost.py                # REL-2: Marginal cost of reliability
-│   ├── 11_run_rel3_financing_frontier.py           # REL-3: EaaS reliability frontier
-│   ├── 12_run_dem1_demand_sensitivity.py           # DEM-1: Demand sensitivity
-│   ├── 13_run_dem2_growth_gas_interaction.py       # DEM-2: Growth-gas interaction
-│   ├── 14_run_str1_storage_role.py                 # STR-1: Storage role and regime
-│   ├── 15_run_pol1_ndc_comparison.py               # POL-1: NDC 2.0 vs NDC 3.0
-│   ├── build_gas_deliverability.py                 # Construct gas deliverability scenarios
-│   ├── plot_storage_regime.py                      # Visualise storage constraint binding
-│   ├── 16_plot_cost_decomposition.py               # System cost decomposition figure
-│   ├── 99_validate_baseline.py                     # LP output vs 2024 observed validation
-│   ├── 09b_run_rel1_mode_sensitivity.py            # REL-1 robustness: annual vs total mode
-│   ├── 09b_run_rel1_retirement_sensitivity.py      # REL-1 robustness: gas fleet retirement rate|
-│   └── plot_system_diagnostics.py                  # Visualise system evolution + shadow prices|
-│
-│
-├── notebooks/                                                # Planned - not yet populated
-│   ├── 01_data_validation.ipynb                              # Proves the model is reality based
-│   ├── 02_cost_decomposition_and_eaas_mechanism.ipynb        # central thesis figure factory
-│   ├── 03_shadow_price_analysis.ipynb                        # Dual-variable deep dive
-│   ├── 04_pareto_analysis.ipynb
-│   ├── 04_gas_regime_and_shape_decomposition.ipynb           # GAS-1, GAS-2, GAS-3 result presentation
-│   ├── 06_monte_carlo_uncertainty.ipynb                      # Monte Carlo results presentation
-│   ├── 07_policy_synthesis_and_recommendations.ipynb
-│   └── 99_appendix_figures.ipynb│
-|
-|
-├── results/
-│   ├── baseline/              # 01_run_baseline.py outputs
-│   ├── eaas/                  # 02_run_eaas.py outputs
-│   ├── ndc/                   # 02_run_ndc_caps.py outputs
-│   ├── ndc_eaas/              # 03_run_ndc_eaas.py outputs
-│   ├── phase8/                # 08_phase8_analysis.py outputs
-│   ├── fin2/                  # FIN-2 tariff sweep outputs
-│   ├── fin3/                  # FIN-3 capital sweep outputs
-│   ├── gas1/                  # GAS-1 shadow benchmark outputs
-│   ├── gas2/                  # GAS-2 EaaS gas relief outputs
-│   └── [gas3/ rel1/ ... pol1/ populated by remaining RQ scripts]
-|
-|
-├── docs/                    # Draft thesis chapters, reports, policy briefs
-│   ├── thesis/
-│   ├── policy_brief/
-│   ├── investor_note/
-│   └── presentation/
-|
-|
-├── tests/                   # Integration tests (model smoke, cap binding, EaaS activation)
-│
-├── environment.yml          # Full environment specification
-├── requirements.txt         # Python dependencies
-├── LICENSE                  # License for code and reproducibility
-└── README.md                # This file
+optimize_model_sliced.py   the sliced builder; every reported result comes from it
+optimize_model.py          the annual builder, plus the shared solve_model used
+                           by every runner; retained and live
+optimize_experiments.py    experiment orchestration
+scenarios.py               arm definitions and scenario construction
+cli_arms.py                shared CLI arm-flag helper
+
+demand.py                  electricity demand projection
+solar.py                   PV generation and capacity factors
+storage.py                 battery storage, planning-level energy abstraction
+dispatch.py                deterministic energy-balance dispatch
+gas_supply.py              deliverability series construction
+gas_benchmarks.py          single source for the gas-price benchmarks
+
+economics.py               economic evaluation utilities
+blended_finance.py         blended concessional finance structure
+supplied_division.py       the supplied-division counterfactual (Question 2)
+
+stochastic.py              sampling for the realisation treatment
+pareto_plot.py             Pareto dominance and the two-panel frontier figure
+summary_years.py           year-labelled summary quantities
+output_naming.py           deterministic arm-keyed output paths
+io.py  utils.py            loading, serialisation, helpers
+
+EaaS.py  gas_balance.py  postprocess.py    dead; no import anywhere
 ```
 
-## ⚙️ Software & Dependencies
-This project uses the following major packages:
-* Python 3.10+
-* Pyomo 
-* NumPy, Pandas
-* SciPy
-* Matplotlib / Plotly
-Full environment details:
-* requirements.txt: pip installation
-* environment.yml: Conda environment with solver support
+## The runs — `scripts/`
 
-## ▶️ How to Reproduce the Model
+143 files. They fall into six groups, and the distinction matters for
+anyone running them.
 
-Step 1: Clone the repository
-git clone https://github.com/I-Sobe/thesis-code.git
-cd thesis-code
+| group | count | what they are |
+|---|---|---|
+| drivers | 20 | shell scripts that sequence runners; `run_phase_b.sh` is the main one |
+| baseline and cap construction | 7 | must run before the cap-dependent runners |
+| runners | 33 | produce reported results |
+| verification and diagnostics | 31 | read-only or regression; `52_invariants.py` is the suite |
+| figure scripts | 18 | reproduce the Chapter 4 figures |
+| one-off records | 32 | ran once; **not part of any pipeline** |
 
-Step 2: Create environment
-conda env create -f environment.yml
+**The one-off records are not re-runnable.** `task85_apply.py` and
+`task86_apply.py` edit chapter text and `task84_apply.py` appends to
+the findings file; running them again would rewrite the thesis. They
+are retained because they record how a correction was applied, not
+because they are tools.
+
+Two runners are suspended and their headers say so:
+`12_run_dem1_demand_sensitivity.py` and `14_run_str1_storage_role.py`.
+Two more are in `scripts/retired/`, moved rather than deleted. Eight
+further scripts have no live caller and are retained for attribution.
+
+A duplicate pair exists for figures 4.7 and 4.10 — a v1 and a v2 — and
+which produced the committed figure is not determinable from the files.
+
+## The thesis — `docs/chapters/`
+
+```
+ABSTRACT.md
+CHAPTER_1.md   Introduction          CHAPTER_4.md   Results
+CHAPTER_2.md   Literature review     CHAPTER_5.md   Discussion
+CHAPTER_3_assembled.md  Methodology  CHAPTER_6.md   Conclusions
+
+appendix_a.md  parameter provenance — every value classified and sourced
+appendix_b.md  limitations register, live entries
+appendix_c.md  limitations register, entries resolved during the study
+appendix_d.md  reproducibility record
+
+docx/                 the submitted Word copies, generated from the markdown
+media_CHAPTER_4/      figures embedded in the Chapter 4 document
+```
+
+## The inputs — `data/`
+
+74 files across the domains below. Provenance for every value is in
+Appendix A, not here.
+
+| directory | domain |
+|---|---|
+| `capacity/raw/` | gas plant availability and commissioning vintages |
+| `cost/processed/` | gas, genset, O&M, solar, storage, VoLL, emissions cap series |
+| `cost/raw/` | fuel prices, genset build-up, and the third-party sources below |
+| `cost/raw/{carbon,gas_price,solar_capex,storage_capex,unserved_energy_penalty}/` | IEA, IRENA, NREL, NERC and regulatory publications |
+| `demand/` | grid generation, access, population, per-capita diagnostics |
+| `gas/assumptions/` | availability, heating value, efficiency notes |
+| `gas/processed/` | gas-to-power, thermal generation, netback, deliverability cases |
+| `gas/raw/NERC_report/` | NERC 2025 quarterly reports, Q1–Q4 |
+| `review/` | the frozen systematic-review evidence base |
+| `stochastic/` | carbon price reference |
+
+## The outputs — `results/`
+
+Not tracked. Regenerated from the scripts; archives of the submitted
+state are held outside the repository.
+
+Every result directory is **keyed by its arm set**:
+`results/<runner>/arms_<hash8>/`, where `hash8` is the first eight hex
+characters of the SHA-1 of the full arm tag. Inside each sits an
+`ARMS.json` recording the arm tag and the exact invocation, alongside
+the runner's output. An `INDEX.md` in each runner folder maps hash to
+arm tag. The same configuration always writes the same directory.
+
+`_pre_*` directories are timestamped snapshots taken before a re-run.
+`DO_NOT_CITE.txt` marks a smoke-test tree that is not citable.
+
+---
+
+## Reproducing the results
+
+```bash
+conda env create -f environment_linux.yml
 conda activate nigeria-energy
 
-Step 3: Build gas deliverability scenarios
-python scripts/build_gas_deliverability.py
-
-Step 4: Run baseline (must run first — emissions caps depend on it)
-python scripts/01_run_baseline.py
-
-Step 5: Build emissions caps (reads baseline diagnostics)
-python scripts/00_build_emissions_cap.py
-
-Step 6: Validate baseline against observed 2024 data
-python scripts/99_validate_baseline.py
-
-Step 7: Run core NDC and EaaS scenarios
-python scripts/02_run_eaas.py
-python scripts/02_run_ndc_caps.py
-python scripts/03_run_ndc_eaas.py
-
-Step 8: Run financing research questions
-python scripts/04_run_fin2_tariff_sweep.py
-python scripts/05_run_fin3_capital_sweep.py
-
-Step 9: Run gas regime research questions
-python scripts/06_run_gas1_shadow_benchmarks.py
-python scripts/07_run_gas2_eaas_gas_relief.py
-python scripts/08_run_gas3_regime_ndc_feasibility.py
-
-Step 10: Run reliability research questions
-python scripts/09_run_rel1_feasibility.py
-python scripts/09b_run_rel1_mode_sensitivity.py
-python scripts/09b_run_rel1_retirement_sensitivity.py
-python scripts/10_run_rel2_marginal_cost.py
-python scripts/11_run_rel3_financing_frontier.py
-
-Step 11: Run demand and storage research questions
-python scripts/12_run_dem1_demand_sensitivity.py
-python scripts/13_run_dem2_growth_gas_interaction.py
-python scripts/14_run_str1_storage_role.py
-
-Step 12: Run policy comparison and aggregation
-python scripts/15_run_pol1_ndc_comparison.py
-python scripts/08_phase8_analysis.py
-
-Step 13: Generate cost decomposition figure
-python scripts/16_plot_cost_decomposition.py
-
-Results are written to results/<script_name>/ directories as CSV and JSON.
-
-## 📊 Outputs
-The model produces:
-* Optimal generation mixes
-* Capacity expansion schedules
-* Cost and LCOE trajectories
-* Emissions pathways
-* Reliability metrics (Unserved energy (TWh) and derived reliability metrics (annual and horizon-level adequacy))
-* Pareto frontiers for cost–emissions–reliability
-* Monte Carlo distributions (LCOE, reliability, solar share)
-* EaaS bankability threshold (T*) and financing gap quantification
-* DisCo collection rate sensitivity on public capital adequacy
-* Gas scarcity rent vs domestic and export opportunity cost benchmarks
-Accessible in (to be populated):
+python scripts/build_gas_deliverability.py   # deliverability series
+bash  scripts/run_emissions_baseline.sh      # baseline, then the cap trajectory
+bash  scripts/run_phase_b.sh                 # the reported result set
 ```
-results/deterministic/
-results/stochastic/
-results/figures/
-```
-## 📄 Reproducibility
-This repository follows FAIR principles and includes:
-* Full environment specifications
-* Data provenance documentation
-* Unit tests for core modules
-* Clear module-level docstrings
-* Notebook-based reproducibility pipeline
-Academic examiners, supervisors, and collaborators can fully replicate all results using the included instructions.
 
-## 🧩 Associated Documents
-* Full thesis draft (in docs/thesis/)
-* Policy brief for Nigerian regulators - planned
-* Investor notes for EaaS providers and DFIs - planned
-* Conference paper - planned
-* Defense presentation slides - planned
+Roughly 4,600 solves, four to five hours of wall clock.
 
-## 👤 Author
+Four things matter and are easy to get wrong.
+
+**The generation is set by the code default, not by the driver.** The
+reported results are the *vintage* dispatch generation. At the tagged
+code `run_phase_b.sh` selects it by default and writes to the same
+`arms_<hash8>` directories, so the command above reproduces the
+reported generation. The driver that originally produced it was
+`run_vintage_rerun.sh`, which is the same sequence differing in its log
+directory and in two items; `run_phase_b.sh` produced the earlier
+blended generation that Appendix D.2 records.
+
+**Some results were produced outside the drivers.** The baseline, NDC
+and F3 arms came from batch drivers, and at least one directory
+(`fin3/arms_7f91f752`) has no driver log. The vintage logs were also
+written from a working tree whose commits are not in the published
+history, so the exact generating commit cannot be shown from this
+repository. Appendix D records the reproducibility position in full.
+
+**`environment_linux.yml` is canonical.** `environment.yml` omits the
+solvers and a package the code imports, and will not reproduce the
+results.
+
+**The solver is CBC 2.10.13**, with Pyomo 6.10.1. HiGHS is available
+through the same interface but did not produce the reported results.
+One reported result rests on a degenerate optimal face where solver
+choice determines which vertex is returned, so the version is part of
+the record rather than an implementation detail.
+
+---
+
+## Verification
+
+The formulation is verified by an executable suite of **88 assertions**
+in `scripts/52_invariants.py`. Most derive from properties the
+formulation must satisfy mathematically — accounting identities,
+coefficient constructions, and the agreement of each reported aggregate
+with an independent recomputation — rather than from any claim made
+about the model. A smaller number test consistency between the model as
+built and statements made about it in the thesis.
+
+Of the 88, **81 pass and 7 fail**. Each failure is recorded in the
+limitations register reproduced as Appendices B and C.
+
+The suite found defects in the model's own claimed contribution,
+including an error in the annuitisation of capital and a cost series
+silently removed by an unrelated refactor. Chapter 3 §3.6.10 sets out
+the practices, what each caught, and three classes of defect the method
+cannot detect.
+
+---
+
+## Data and third-party sources
+
+Every parameter's provenance is in Appendix A, classified and sourced,
+with unsourced values declared rather than filled.
+
+Third-party publications are included under `data/` for
+reproducibility. They remain the property of their publishers — IRENA,
+the IEA, NREL, NERC and others — and are subject to those publishers'
+terms, not to this repository's licence.
+
+---
+
+## Status
+
+The thesis is submitted. Open items at submission — citation locators,
+sub-claims without a post-correction measurement, and one block of runs
+not executed — are recorded in Appendix B.
+
+---
+
+## Author
+
 Nwangene Sobe-Olisa Andrew
-MSc Petroleum & Energy Resource Engineering
-Specialization: Energy Systems Strategy, Techno-Economic Modeling, Power System Optimization
+MSc Petroleum and Energy Resource Engineering
